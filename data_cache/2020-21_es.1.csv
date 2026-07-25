@@ -1,0 +1,381 @@
+Date,Team 1,FT,HT,Team 2
+Sat Sep 12 2020,Eibar,0-0,0-0,Celta
+Sat Sep 12 2020,Granada,2-0,0-0,Ath Bilbao
+Sat Sep 12 2020,Cadiz,0-2,0-1,Osasuna
+Sun Sep 13 2020,Alaves,0-1,0-0,Betis
+Sun Sep 13 2020,Valladolid,1-1,1-0,Sociedad
+Sun Sep 13 2020,Villarreal,1-1,0-1,Huesca
+Sun Sep 13 2020,Valencia,4-2,2-2,Levante
+Sat Sep 19 2020,Villarreal,2-1,0-0,Eibar
+Sat Sep 19 2020,Getafe,1-0,0-0,Osasuna
+Sat Sep 19 2020,Celta,2-1,1-0,Valencia
+Sun Sep 20 2020,Huesca,0-2,0-1,Cadiz
+Sun Sep 20 2020,Betis,2-0,2-0,Valladolid
+Sun Sep 20 2020,Granada,2-1,1-1,Alaves
+Sun Sep 20 2020,Sociedad,0-0,0-0,Real Madrid
+Sat Sep 26 2020,Alaves,0-0,0-0,Getafe
+Sat Sep 26 2020,Valencia,1-1,1-0,Huesca
+Sat Sep 26 2020,Elche,0-3,0-0,Sociedad
+Sat Sep 26 2020,Betis,2-3,2-1,Real Madrid
+Sun Sep 27 2020,Osasuna,1-3,1-1,Levante
+Sun Sep 27 2020,Eibar,1-2,0-1,Ath Bilbao
+Sun Sep 27 2020,Ath Madrid,6-1,1-0,Granada
+Sun Sep 27 2020,Cadiz,1-3,0-0,Sevilla
+Sun Sep 27 2020,Valladolid,1-1,0-1,Celta
+Sun Sep 27 2020,Barcelona,4-0,4-0,Villarreal
+Tue Sep 29 2020,Sociedad,0-1,0-0,Valencia
+Tue Sep 29 2020,Getafe,3-0,3-0,Betis
+Wed Sep 30 2020,Huesca,0-0,0-0,Ath Madrid
+Wed Sep 30 2020,Villarreal,3-1,2-1,Alaves
+Wed Sep 30 2020,Eibar,0-1,0-1,Elche
+Wed Sep 30 2020,Real Madrid,1-0,0-0,Valladolid
+Thu Oct 1 2020,Ath Bilbao,0-1,0-0,Cadiz
+Thu Oct 1 2020,Sevilla,1-0,0-0,Levante
+Thu Oct 1 2020,Celta,0-3,0-1,Barcelona
+Sat Oct 3 2020,Valladolid,1-2,1-1,Eibar
+Sat Oct 3 2020,Ath Madrid,0-0,0-0,Villarreal
+Sat Oct 3 2020,Elche,0-0,0-0,Huesca
+Sat Oct 3 2020,Sociedad,3-0,1-0,Getafe
+Sat Oct 3 2020,Valencia,0-2,0-1,Betis
+Sun Oct 4 2020,Osasuna,2-0,1-0,Celta
+Sun Oct 4 2020,Alaves,1-0,0-0,Ath Bilbao
+Sun Oct 4 2020,Levante,0-2,0-1,Real Madrid
+Sun Oct 4 2020,Cadiz,1-1,0-1,Granada
+Sun Oct 4 2020,Barcelona,1-1,1-1,Sevilla
+Sat Oct 17 2020,Granada,1-0,0-0,Sevilla
+Sat Oct 17 2020,Celta,0-2,0-1,Ath Madrid
+Sat Oct 17 2020,Real Madrid,0-1,0-1,Cadiz
+Sat Oct 17 2020,Getafe,1-0,0-0,Barcelona
+Sun Oct 18 2020,Eibar,0-0,0-0,Osasuna
+Sun Oct 18 2020,Ath Bilbao,2-0,0-0,Levante
+Sun Oct 18 2020,Villarreal,2-1,1-1,Valencia
+Sun Oct 18 2020,Alaves,0-2,0-1,Elche
+Sun Oct 18 2020,Huesca,2-2,0-1,Valladolid
+Sun Oct 18 2020,Betis,0-3,0-1,Sociedad
+Fri Oct 23 2020,Elche,2-1,2-0,Valencia
+Sat Oct 24 2020,Barcelona,1-3,1-1,Real Madrid
+Sat Oct 24 2020,Osasuna,1-0,0-0,Ath Bilbao
+Sat Oct 24 2020,Sevilla,0-1,0-1,Eibar
+Sat Oct 24 2020,Ath Madrid,2-0,0-0,Betis
+Sun Oct 25 2020,Valladolid,0-2,0-0,Alaves
+Sun Oct 25 2020,Cadiz,0-0,0-0,Villarreal
+Sun Oct 25 2020,Getafe,0-1,0-1,Granada
+Sun Oct 25 2020,Sociedad,4-1,1-0,Huesca
+Mon Oct 26 2020,Levante,1-1,0-0,Celta
+Fri Oct 30 2020,Eibar,0-2,0-2,Cadiz
+Sat Oct 31 2020,Real Madrid,4-1,2-0,Huesca
+Sat Oct 31 2020,Ath Bilbao,2-1,0-1,Sevilla
+Sat Oct 31 2020,Osasuna,1-3,0-1,Ath Madrid
+Sat Oct 31 2020,Alaves,1-1,1-0,Barcelona
+Sun Nov 1 2020,Betis,3-1,2-0,Elche
+Sun Nov 1 2020,Celta,1-4,0-2,Sociedad
+Sun Nov 1 2020,Granada,1-1,1-1,Levante
+Sun Nov 1 2020,Valencia,2-2,1-0,Getafe
+Mon Nov 2 2020,Villarreal,2-0,2-0,Valladolid
+Fri Nov 6 2020,Elche,1-1,1-1,Celta
+Sat Nov 7 2020,Huesca,1-1,0-1,Eibar
+Sat Nov 7 2020,Barcelona,5-2,1-1,Betis
+Sat Nov 7 2020,Sevilla,1-0,0-0,Osasuna
+Sat Nov 7 2020,Ath Madrid,4-0,2-0,Cadiz
+Sun Nov 8 2020,Getafe,1-3,1-2,Villarreal
+Sun Nov 8 2020,Sociedad,2-0,2-0,Granada
+Sun Nov 8 2020,Levante,1-1,0-1,Alaves
+Sun Nov 8 2020,Valladolid,2-1,1-0,Ath Bilbao
+Sun Nov 8 2020,Valencia,4-1,2-1,Real Madrid
+Fri Nov 20 2020,Osasuna,1-1,0-1,Huesca
+Sat Nov 21 2020,Levante,1-1,1-0,Elche
+Sat Nov 21 2020,Villarreal,1-1,0-1,Real Madrid
+Sat Nov 21 2020,Sevilla,4-2,2-2,Celta
+Sat Nov 21 2020,Ath Madrid,1-0,1-0,Barcelona
+Sun Nov 22 2020,Eibar,0-0,0-0,Getafe
+Sun Nov 22 2020,Cadiz,0-1,0-0,Sociedad
+Sun Nov 22 2020,Granada,1-3,0-1,Valladolid
+Sun Nov 22 2020,Alaves,2-2,2-0,Valencia
+Mon Nov 23 2020,Ath Bilbao,4-0,2-0,Betis
+Fri Nov 27 2020,Valladolid,1-1,0-0,Levante
+Sat Nov 28 2020,Elche,1-1,1-0,Cadiz
+Sat Nov 28 2020,Valencia,0-1,0-0,Ath Madrid
+Sat Nov 28 2020,Huesca,0-1,0-0,Sevilla
+Sat Nov 28 2020,Real Madrid,1-2,0-1,Alaves
+Sun Nov 29 2020,Barcelona,4-0,2-0,Osasuna
+Sun Nov 29 2020,Getafe,1-1,0-1,Ath Bilbao
+Sun Nov 29 2020,Celta,3-1,1-1,Granada
+Sun Nov 29 2020,Sociedad,1-1,1-1,Villarreal
+Mon Nov 30 2020,Betis,0-2,0-0,Eibar
+Fri Dec 4 2020,Ath Bilbao,0-2,0-0,Celta
+Sat Dec 5 2020,Levante,3-0,2-0,Getafe
+Sat Dec 5 2020,Sevilla,0-1,0-0,Real Madrid
+Sat Dec 5 2020,Ath Madrid,2-0,0-0,Valladolid
+Sat Dec 5 2020,Cadiz,2-1,1-0,Barcelona
+Sun Dec 6 2020,Granada,3-3,1-1,Huesca
+Sun Dec 6 2020,Osasuna,0-2,0-0,Betis
+Sun Dec 6 2020,Villarreal,0-0,0-0,Elche
+Sun Dec 6 2020,Alaves,0-0,0-0,Sociedad
+Mon Dec 7 2020,Eibar,0-0,0-0,Valencia
+Fri Dec 11 2020,Valladolid,3-2,1-2,Osasuna
+Sat Dec 12 2020,Valencia,2-2,1-0,Ath Bilbao
+Sat Dec 12 2020,Getafe,0-1,0-0,Sevilla
+Sat Dec 12 2020,Huesca,1-0,0-0,Alaves
+Sat Dec 12 2020,Real Madrid,2-0,1-0,Ath Madrid
+Sun Dec 13 2020,Sociedad,1-1,1-0,Eibar
+Sun Dec 13 2020,Betis,1-1,0-1,Villarreal
+Sun Dec 13 2020,Elche,0-1,0-1,Granada
+Sun Dec 13 2020,Barcelona,1-0,0-0,Levante
+Mon Dec 14 2020,Celta,4-0,4-0,Cadiz
+Tue Dec 15 2020,Real Madrid,3-1,1-0,Ath Bilbao
+Wed Dec 16 2020,Barcelona,2-1,2-1,Sociedad
+Fri Dec 18 2020,Ath Bilbao,2-0,0-0,Huesca
+Sat Dec 19 2020,Ath Madrid,3-1,1-0,Elche
+Sat Dec 19 2020,Barcelona,2-2,1-1,Valencia
+Sat Dec 19 2020,Levante,2-1,1-1,Sociedad
+Sat Dec 19 2020,Osasuna,1-3,0-2,Villarreal
+Sat Dec 19 2020,Sevilla,1-1,1-0,Valladolid
+Sun Dec 20 2020,Celta,2-0,1-0,Alaves
+Sun Dec 20 2020,Granada,2-0,2-0,Betis
+Sun Dec 20 2020,Cadiz,0-2,0-1,Getafe
+Sun Dec 20 2020,Eibar,1-3,1-2,Real Madrid
+Tue Dec 22 2020,Elche,2-2,0-1,Osasuna
+Tue Dec 22 2020,Valencia,0-1,0-0,Sevilla
+Tue Dec 22 2020,Huesca,1-1,1-0,Levante
+Tue Dec 22 2020,Sociedad,0-2,0-0,Ath Madrid
+Tue Dec 22 2020,Valladolid,0-3,0-2,Barcelona
+Tue Dec 22 2020,Villarreal,1-1,0-1,Ath Bilbao
+Wed Dec 23 2020,Getafe,1-1,1-1,Celta
+Wed Dec 23 2020,Real Madrid,2-0,0-0,Granada
+Wed Dec 23 2020,Alaves,2-1,2-1,Eibar
+Wed Dec 23 2020,Betis,1-0,0-0,Cadiz
+Tue Dec 29 2020,Sevilla,2-0,1-0,Villarreal
+Tue Dec 29 2020,Barcelona,1-1,0-0,Eibar
+Tue Dec 29 2020,Cadiz,0-0,0-0,Valladolid
+Tue Dec 29 2020,Levante,4-3,3-1,Betis
+Wed Dec 30 2020,Granada,2-1,1-1,Valencia
+Wed Dec 30 2020,Ath Madrid,1-0,1-0,Getafe
+Wed Dec 30 2020,Celta,2-1,1-0,Huesca
+Wed Dec 30 2020,Elche,1-1,0-1,Real Madrid
+Thu Dec 31 2020,Ath Bilbao,0-1,0-1,Sociedad
+Thu Dec 31 2020,Osasuna,1-1,0-0,Alaves
+Sat Jan 2 2021,Villarreal,2-1,1-0,Levante
+Sat Jan 2 2021,Betis,1-1,0-0,Sevilla
+Sat Jan 2 2021,Getafe,0-1,0-1,Valladolid
+Sat Jan 2 2021,Real Madrid,2-0,1-0,Celta
+Sun Jan 3 2021,Ath Bilbao,1-0,1-0,Elche
+Sun Jan 3 2021,Alaves,1-2,0-1,Ath Madrid
+Sun Jan 3 2021,Eibar,2-0,0-0,Granada
+Sun Jan 3 2021,Sociedad,1-1,0-1,Osasuna
+Sun Jan 3 2021,Huesca,0-1,0-1,Barcelona
+Mon Jan 4 2021,Valencia,1-1,0-0,Cadiz
+Wed Jan 6 2021,Ath Bilbao,2-3,1-2,Barcelona
+Fri Jan 8 2021,Celta,0-4,0-4,Villarreal
+Sat Jan 9 2021,Sevilla,3-2,2-2,Sociedad
+Sat Jan 9 2021,Granada,0-4,0-3,Barcelona
+Sat Jan 9 2021,Osasuna,0-0,0-0,Real Madrid
+Sun Jan 10 2021,Levante,2-1,0-0,Eibar
+Sun Jan 10 2021,Cadiz,3-1,1-1,Alaves
+Sun Jan 10 2021,Valladolid,0-1,0-0,Valencia
+Mon Jan 11 2021,Elche,1-3,1-1,Getafe
+Mon Jan 11 2021,Huesca,0-2,0-0,Betis
+Tue Jan 12 2021,Granada,2-0,2-0,Osasuna
+Tue Jan 12 2021,Ath Madrid,2-0,1-0,Sevilla
+Tue Jan 19 2021,Cadiz,2-2,2-2,Levante
+Tue Jan 19 2021,Valladolid,2-2,0-2,Elche
+Tue Jan 19 2021,Alaves,1-2,1-2,Sevilla
+Wed Jan 20 2021,Getafe,1-0,0-0,Huesca
+Wed Jan 20 2021,Betis,2-1,2-1,Celta
+Wed Jan 20 2021,Villarreal,2-2,1-1,Granada
+Thu Jan 21 2021,Valencia,1-1,0-1,Osasuna
+Thu Jan 21 2021,Eibar,1-2,1-1,Ath Madrid
+Fri Jan 22 2021,Levante,2-2,0-0,Valladolid
+Sat Jan 23 2021,Huesca,0-0,0-0,Villarreal
+Sat Jan 23 2021,Sevilla,3-0,2-0,Cadiz
+Sat Jan 23 2021,Sociedad,2-2,0-0,Betis
+Sat Jan 23 2021,Alaves,1-4,0-3,Real Madrid
+Sun Jan 24 2021,Osasuna,3-1,2-0,Granada
+Sun Jan 24 2021,Elche,0-2,0-1,Barcelona
+Sun Jan 24 2021,Celta,1-1,1-0,Eibar
+Sun Jan 24 2021,Ath Madrid,3-1,1-1,Valencia
+Mon Jan 25 2021,Ath Bilbao,5-1,1-1,Getafe
+Fri Jan 29 2021,Valladolid,1-3,0-1,Huesca
+Sat Jan 30 2021,Eibar,0-2,0-1,Sevilla
+Sat Jan 30 2021,Real Madrid,1-2,1-1,Levante
+Sat Jan 30 2021,Valencia,1-0,1-0,Elche
+Sat Jan 30 2021,Villarreal,1-1,1-0,Sociedad
+Sun Jan 31 2021,Getafe,0-0,0-0,Alaves
+Sun Jan 31 2021,Cadiz,2-4,1-2,Ath Madrid
+Sun Jan 31 2021,Granada,0-0,0-0,Celta
+Sun Jan 31 2021,Barcelona,2-1,1-0,Ath Bilbao
+Mon Feb 1 2021,Betis,1-0,0-0,Osasuna
+Fri Feb 5 2021,Alaves,1-0,0-0,Valladolid
+Sat Feb 6 2021,Levante,2-2,1-1,Granada
+Sat Feb 6 2021,Huesca,1-2,0-0,Real Madrid
+Sat Feb 6 2021,Elche,2-2,0-2,Villarreal
+Sat Feb 6 2021,Sevilla,3-0,0-0,Getafe
+Sun Feb 7 2021,Sociedad,4-1,2-0,Cadiz
+Sun Feb 7 2021,Ath Bilbao,1-1,1-0,Valencia
+Sun Feb 7 2021,Osasuna,2-1,1-1,Eibar
+Sun Feb 7 2021,Betis,2-3,1-0,Barcelona
+Mon Feb 8 2021,Ath Madrid,2-2,1-1,Celta
+Tue Feb 9 2021,Real Madrid,2-0,0-0,Getafe
+Fri Feb 12 2021,Celta,3-1,2-0,Elche
+Sat Feb 13 2021,Granada,1-2,0-0,Ath Madrid
+Sat Feb 13 2021,Sevilla,1-0,0-0,Huesca
+Sat Feb 13 2021,Eibar,1-1,1-1,Valladolid
+Sat Feb 13 2021,Barcelona,5-1,2-0,Alaves
+Sun Feb 14 2021,Getafe,0-1,0-1,Sociedad
+Sun Feb 14 2021,Real Madrid,2-0,2-0,Valencia
+Sun Feb 14 2021,Levante,0-1,0-0,Osasuna
+Sun Feb 14 2021,Villarreal,1-2,0-1,Betis
+Mon Feb 15 2021,Cadiz,0-4,0-3,Ath Bilbao
+Wed Feb 17 2021,Levante,1-1,1-1,Ath Madrid
+Fri Feb 19 2021,Betis,1-0,0-0,Getafe
+Sat Feb 20 2021,Elche,1-0,1-0,Eibar
+Sat Feb 20 2021,Ath Madrid,0-2,0-1,Levante
+Sat Feb 20 2021,Valencia,2-0,0-0,Celta
+Sat Feb 20 2021,Valladolid,0-1,0-0,Real Madrid
+Sun Feb 21 2021,Barcelona,1-1,1-0,Cadiz
+Sun Feb 21 2021,Sociedad,4-0,1-0,Alaves
+Sun Feb 21 2021,Huesca,3-2,3-1,Granada
+Sun Feb 21 2021,Ath Bilbao,1-1,1-1,Villarreal
+Mon Feb 22 2021,Osasuna,0-2,0-1,Sevilla
+Wed Feb 24 2021,Barcelona,3-0,0-0,Elche
+Fri Feb 26 2021,Levante,1-1,1-0,Ath Bilbao
+Sat Feb 27 2021,Eibar,1-1,0-0,Huesca
+Sat Feb 27 2021,Sevilla,0-2,0-1,Barcelona
+Sat Feb 27 2021,Alaves,0-1,0-0,Osasuna
+Sat Feb 27 2021,Getafe,3-0,1-0,Valencia
+Sun Feb 28 2021,Celta,1-1,0-0,Valladolid
+Sun Feb 28 2021,Cadiz,0-1,0-0,Betis
+Sun Feb 28 2021,Granada,2-1,1-1,Elche
+Sun Feb 28 2021,Villarreal,0-2,0-1,Ath Madrid
+Mon Mar 1 2021,Real Madrid,1-1,0-0,Sociedad
+Fri Mar 5 2021,Valencia,2-1,0-1,Villarreal
+Sat Mar 6 2021,Valladolid,2-1,2-1,Getafe
+Sat Mar 6 2021,Elche,2-1,0-0,Sevilla
+Sat Mar 6 2021,Cadiz,1-0,1-0,Eibar
+Sat Mar 6 2021,Osasuna,0-2,0-1,Barcelona
+Sun Mar 7 2021,Huesca,3-4,2-2,Celta
+Sun Mar 7 2021,Ath Madrid,1-1,1-0,Real Madrid
+Sun Mar 7 2021,Sociedad,1-0,1-0,Levante
+Sun Mar 7 2021,Ath Bilbao,2-1,1-0,Granada
+Mon Mar 8 2021,Betis,3-2,0-2,Alaves
+Wed Mar 10 2021,Ath Madrid,2-1,1-1,Ath Bilbao
+Fri Mar 12 2021,Levante,1-0,1-0,Valencia
+Sat Mar 13 2021,Alaves,1-1,1-0,Cadiz
+Sat Mar 13 2021,Real Madrid,2-1,0-0,Elche
+Sat Mar 13 2021,Osasuna,0-0,0-0,Valladolid
+Sat Mar 13 2021,Getafe,0-0,0-0,Ath Madrid
+Sun Mar 14 2021,Celta,0-0,0-0,Ath Bilbao
+Sun Mar 14 2021,Granada,1-0,0-0,Sociedad
+Sun Mar 14 2021,Eibar,1-3,0-2,Villarreal
+Sun Mar 14 2021,Sevilla,1-0,1-0,Betis
+Mon Mar 15 2021,Barcelona,4-1,2-1,Huesca
+Wed Mar 17 2021,Sevilla,2-0,1-0,Elche
+Fri Mar 19 2021,Betis,2-0,0-0,Levante
+Sat Mar 20 2021,Ath Bilbao,1-1,1-1,Eibar
+Sat Mar 20 2021,Celta,1-3,1-2,Real Madrid
+Sat Mar 20 2021,Huesca,0-0,0-0,Osasuna
+Sat Mar 20 2021,Valladolid,1-1,1-0,Sevilla
+Sun Mar 21 2021,Getafe,1-1,0-1,Elche
+Sun Mar 21 2021,Valencia,2-1,1-0,Granada
+Sun Mar 21 2021,Villarreal,2-1,1-0,Cadiz
+Sun Mar 21 2021,Ath Madrid,1-0,0-0,Alaves
+Sun Mar 21 2021,Sociedad,1-6,0-2,Barcelona
+Fri Apr 2 2021,Levante,0-2,0-1,Huesca
+Sat Apr 3 2021,Granada,0-3,0-2,Villarreal
+Sat Apr 3 2021,Real Madrid,2-0,1-0,Eibar
+Sat Apr 3 2021,Osasuna,0-0,0-0,Getafe
+Sun Apr 4 2021,Alaves,1-3,0-3,Celta
+Sun Apr 4 2021,Elche,1-1,1-1,Betis
+Sun Apr 4 2021,Cadiz,2-1,1-1,Valencia
+Sun Apr 4 2021,Sevilla,1-0,0-0,Ath Madrid
+Mon Apr 5 2021,Barcelona,1-0,0-0,Valladolid
+Wed Apr 7 2021,Sociedad,1-1,0-0,Ath Bilbao
+Fri Apr 9 2021,Huesca,3-1,2-1,Elche
+Sat Apr 10 2021,Getafe,0-1,0-0,Cadiz
+Sat Apr 10 2021,Ath Bilbao,0-0,0-0,Alaves
+Sat Apr 10 2021,Eibar,0-1,0-1,Levante
+Sat Apr 10 2021,Real Madrid,2-1,2-0,Barcelona
+Sun Apr 11 2021,Villarreal,1-2,0-0,Osasuna
+Sun Apr 11 2021,Valencia,2-2,0-2,Sociedad
+Sun Apr 11 2021,Valladolid,1-2,1-0,Granada
+Sun Apr 11 2021,Betis,1-1,1-1,Ath Madrid
+Mon Apr 12 2021,Celta,3-4,3-2,Sevilla
+Sun Apr 18 2021,Osasuna,2-0,1-0,Elche
+Sun Apr 18 2021,Sociedad,1-2,1-2,Sevilla
+Sun Apr 18 2021,Alaves,1-0,0-0,Huesca
+Sun Apr 18 2021,Ath Madrid,5-0,2-0,Eibar
+Sun Apr 18 2021,Betis,2-2,2-1,Valencia
+Sun Apr 18 2021,Cadiz,0-0,0-0,Celta
+Sun Apr 18 2021,Getafe,0-0,0-0,Real Madrid
+Sun Apr 18 2021,Levante,1-5,1-2,Villarreal
+Wed Apr 21 2021,Levante,0-1,0-0,Sevilla
+Wed Apr 21 2021,Osasuna,3-1,2-1,Valencia
+Wed Apr 21 2021,Betis,0-0,0-0,Ath Bilbao
+Wed Apr 21 2021,Alaves,2-1,1-0,Villarreal
+Wed Apr 21 2021,Elche,1-1,1-0,Valladolid
+Wed Apr 21 2021,Cadiz,0-3,0-3,Real Madrid
+Thu Apr 22 2021,Ath Madrid,2-0,1-0,Huesca
+Thu Apr 22 2021,Granada,4-1,2-0,Eibar
+Thu Apr 22 2021,Sociedad,2-1,2-1,Celta
+Thu Apr 22 2021,Barcelona,5-2,3-1,Getafe
+Sat Apr 24 2021,Elche,1-0,1-0,Levante
+Sat Apr 24 2021,Valladolid,1-1,1-0,Cadiz
+Sat Apr 24 2021,Valencia,1-1,0-0,Alaves
+Sat Apr 24 2021,Real Madrid,0-0,0-0,Betis
+Sun Apr 25 2021,Huesca,0-2,0-1,Getafe
+Sun Apr 25 2021,Villarreal,1-2,1-2,Barcelona
+Sun Apr 25 2021,Celta,2-1,1-0,Osasuna
+Sun Apr 25 2021,Sevilla,2-1,1-0,Granada
+Sun Apr 25 2021,Ath Bilbao,2-1,1-0,Ath Madrid
+Mon Apr 26 2021,Eibar,0-1,0-1,Sociedad
+Wed Apr 28 2021,Ath Bilbao,2-2,1-0,Valladolid
+Thu Apr 29 2021,Barcelona,1-2,1-0,Granada
+Fri Apr 30 2021,Celta,2-0,0-0,Levante
+Sat May 1 2021,Eibar,3-0,1-0,Alaves
+Sat May 1 2021,Elche,0-1,0-1,Ath Madrid
+Sat May 1 2021,Huesca,1-0,0-0,Sociedad
+Sat May 1 2021,Real Madrid,2-0,0-0,Osasuna
+Sun May 2 2021,Valladolid,1-1,0-0,Betis
+Sun May 2 2021,Villarreal,1-0,0-0,Getafe
+Sun May 2 2021,Granada,0-1,0-1,Cadiz
+Sun May 2 2021,Valencia,2-3,0-0,Barcelona
+Mon May 3 2021,Sevilla,0-1,0-0,Ath Bilbao
+Fri May 7 2021,Sociedad,2-0,0-0,Elche
+Sat May 8 2021,Alaves,2-2,1-2,Levante
+Sat May 8 2021,Barcelona,0-0,0-0,Ath Madrid
+Sat May 8 2021,Cadiz,2-1,2-1,Huesca
+Sat May 8 2021,Ath Bilbao,2-2,1-1,Osasuna
+Sun May 9 2021,Getafe,0-1,0-0,Eibar
+Sun May 9 2021,Valencia,3-0,1-0,Valladolid
+Sun May 9 2021,Villarreal,2-4,1-3,Celta
+Sun May 9 2021,Real Madrid,2-2,0-1,Sevilla
+Mon May 10 2021,Betis,2-1,1-0,Granada
+Tue May 11 2021,Osasuna,3-2,1-0,Cadiz
+Tue May 11 2021,Elche,0-2,0-1,Alaves
+Tue May 11 2021,Levante,3-3,0-2,Barcelona
+Wed May 12 2021,Sevilla,1-0,0-0,Valencia
+Wed May 12 2021,Celta,1-0,1-0,Getafe
+Wed May 12 2021,Huesca,1-0,0-0,Ath Bilbao
+Wed May 12 2021,Ath Madrid,2-1,2-0,Sociedad
+Thu May 13 2021,Valladolid,0-2,0-0,Villarreal
+Thu May 13 2021,Eibar,1-1,0-1,Betis
+Thu May 13 2021,Granada,1-4,0-2,Real Madrid
+Sun May 16 2021,Alaves,4-2,2-1,Granada
+Sun May 16 2021,Ath Bilbao,0-1,0-0,Real Madrid
+Sun May 16 2021,Ath Madrid,2-1,0-0,Osasuna
+Sun May 16 2021,Barcelona,1-2,1-1,Celta
+Sun May 16 2021,Betis,1-0,0-0,Huesca
+Sun May 16 2021,Cadiz,1-3,1-0,Elche
+Sun May 16 2021,Getafe,2-1,1-1,Levante
+Sun May 16 2021,Sociedad,4-1,4-0,Valladolid
+Sun May 16 2021,Valencia,4-1,3-1,Eibar
+Sun May 16 2021,Villarreal,4-0,1-0,Sevilla
+Fri May 21 2021,Levante,2-2,1-2,Cadiz
+Sat May 22 2021,Celta,2-3,1-0,Betis
+Sat May 22 2021,Eibar,0-1,0-0,Barcelona
+Sat May 22 2021,Elche,2-0,1-0,Ath Bilbao
+Sat May 22 2021,Huesca,0-0,0-0,Valencia
+Sat May 22 2021,Osasuna,0-1,0-0,Sociedad
+Sat May 22 2021,Real Madrid,2-1,0-1,Villarreal
+Sat May 22 2021,Valladolid,1-2,1-0,Ath Madrid
+Sun May 23 2021,Granada,0-0,0-0,Getafe
+Sun May 23 2021,Sevilla,1-0,0-0,Alaves

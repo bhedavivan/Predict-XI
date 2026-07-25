@@ -1,0 +1,56 @@
+{
+  "accuracy": 0.5244,
+  "baseline_accuracy": 0.4354,
+  "log_loss": 1.0478,
+  "brier": 0.6174,
+  "eval_method": "temporal",
+  "classification_report": {
+    "-1": {
+      "precision": 0.469,
+      "recall": 0.674,
+      "f1-score": 0.553,
+      "support": 1106
+    },
+    "0": {
+      "precision": 0.2,
+      "recall": 0.001,
+      "f1-score": 0.002,
+      "support": 956
+    },
+    "1": {
+      "precision": 0.568,
+      "recall": 0.735,
+      "f1-score": 0.641,
+      "support": 1590
+    }
+  },
+  "test_samples": 3652,
+  "train_samples": 14604,
+  "cv_mean": 0.5118,
+  "cv_std": 0.0081,
+  "confusion_matrix": [
+    [
+      745,
+      0,
+      361
+    ],
+    [
+      427,
+      1,
+      528
+    ],
+    [
+      417,
+      4,
+      1169
+    ]
+  ],
+  "class_distribution": {
+    "-1": 4705,
+    "0": 3612,
+    "1": 6287
+  },
+  "trained_at": "2026-07-25T18:49:30.014741Z",
+  "n_teams": 280,
+  "training_samples": 18256
+}

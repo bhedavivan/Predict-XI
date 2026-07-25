@@ -14,23 +14,32 @@ def load_env():
                     key, val = line.split("=", 1)
                     os.environ[key.strip()] = val.strip()
 
-
 load_env()
 
 API_TOKEN = os.getenv("API_TOKEN", "")
 BASE_URL = "https://api.football-data.org/v4"
 
+# All 12 leagues from Predict-XI plus additional major leagues
 LEAGUE_CODES = {
-    "WC": "FIFA World Cup",
-    "CL": "UEFA Champions League",
+    "PL": "Premier League",
+    "SA": "Serie A",
     "BL1": "Bundesliga",
-    "DED": "Eredivisie",
-    "BSA": "Campeonato Brasileiro Série A",
     "PD": "Primera Division",
     "FL1": "Ligue 1",
-    "ELC": "Championship",
+    "DED": "Eredivisie",
     "PPL": "Primeira Liga",
+    "ELC": "Championship",
+    "BSA": "Campeonato Brasileiro Série A",
+    "CL": "UEFA Champions League",
     "EC": "European Championship",
-    "SA": "Serie A",
-    "PL": "Premier League",
+    "WC": "FIFA World Cup",
+    "FL2": "Ligue 2",
+    "PD2": "Segunda Division",
+    "BL2": "2. Bundesliga",
+    "ELC2": "League One",
+    "ELC3": "League Two",
+    "SA2": "Serie B",
+    "PPL2": "Liga Portugal 2",
+    "DED2": "Eerste Divisie",
+    "BSA2": "Campeonato Brasileiro Série B",
 }

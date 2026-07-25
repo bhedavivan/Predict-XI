@@ -1,1 +1,10 @@
-Flask>=2.3.0
+# Core dependencies
+# (the model itself uses only the Python standard library — Flask is just for the web UI)
+flask==3.0.3
+
+# Development dependencies
+pytest==7.4.4
+pytest-cov==4.1.0
+black==23.12.1
+flake8==7.0.0
+mypy==1.8.0

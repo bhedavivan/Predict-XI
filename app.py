@@ -1,401 +1,470 @@
 #!/usr/bin/env python3
 """
-Predict-XI Web UI — Flask app served on http://localhost:5000
+Predict-XI — Flask web UI.
+A polished front-end over the from-scratch match-outcome model.
+Serves on http://localhost:5000
 """
 
-import sys
 import os
+import json
 import urllib.parse
 from datetime import datetime
 
 from flask import Flask, render_template_string, request, redirect
 
-# Ensure we resolve paths relative to this script's directory
+# Resolve paths relative to this script so it runs from any working directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 os.chdir(SCRIPT_DIR)
 
 from config import LEAGUE_CODES
 from api_client import fetch_upcoming_matches, MissingTokenError
-from data_processor import prepare_prediction_features, load_data
+from data_processor import prepare_prediction_features, load_data, compute_team_stats
 from model_trainer import MatchPredictorModel
 
 app = Flask(__name__)
+app.jinja_env.filters['urlencode'] = lambda s: urllib.parse.quote(str(s), safe='')
 
 
-def urlencode_filter(s):
-    """Jinja2 filter for URL-encoding strings."""
-    return urllib.parse.quote(str(s), safe='')
+# ─── Shared design system (injected into every page) ──────────────────────
+
+BASE_CSS = r"""
+:root {
+  --bg: #060b16;
+  --bg-2: #0b1424;
+  --panel: rgba(22, 33, 54, 0.72);
+  --panel-solid: #16213a;
+  --border: rgba(120, 150, 200, 0.16);
+  --text: #e8eefc;
+  --muted: #93a4c4;
+  --faint: #64748b;
+  --home: #38e8b0;   /* green */
+  --draw: #f5c451;   /* amber */
+  --away: #6aa8ff;   /* blue  */
+  --accent: #7c5cff; /* violet */
+  --accent-2: #22d3ee;
+  --danger: #ff6b7d;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 600px at 15% -10%, rgba(124,92,255,0.22), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(34,211,238,0.16), transparent 55%),
+    radial-gradient(800px 700px at 50% 120%, rgba(56,232,176,0.10), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+a { color: inherit; text-decoration: none; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+
+.nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.2rem; }
+.brand { display: flex; align-items: center; gap: .6rem; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; }
+.brand .logo {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); font-size: 1.1rem;
+  box-shadow: 0 6px 20px rgba(124,92,255,0.45);
+}
+.brand small { color: var(--muted); font-weight: 500; }
+.nav-links { display: flex; gap: 1.2rem; font-size: .92rem; color: var(--muted); }
+.nav-links a:hover { color: var(--text); }
+
+.hero { margin-bottom: 2rem; }
+.hero h1 {
+  font-size: clamp(2.1rem, 5vw, 3.2rem); font-weight: 850; letter-spacing: -0.03em; line-height: 1.05;
+  background: linear-gradient(120deg, #fff 20%, var(--accent-2) 60%, var(--home));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero p { color: var(--muted); margin-top: .7rem; font-size: 1.05rem; max-width: 42rem; }
+
+.card {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+  padding: 1.5rem; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 50px rgba(2, 6, 20, 0.45);
+}
+.card + .card { margin-top: 1.25rem; }
+.card h2 { font-size: 1.05rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+.card h2 .tag { font-size: .68rem; font-weight: 700; color: var(--accent-2); border: 1px solid rgba(34,211,238,.35);
+  padding: .12rem .5rem; border-radius: 999px; letter-spacing: .04em; text-transform: uppercase; }
+
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .9rem; }
+.stat {
+  background: rgba(10, 17, 33, 0.55); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem;
+  position: relative; overflow: hidden;
+}
+.stat::after { content:""; position:absolute; inset:0 auto 0 0; width:3px;
+  background: linear-gradient(var(--accent), var(--accent-2)); opacity:.9; }
+.stat .v { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+.stat .l { color: var(--muted); font-size: .78rem; margin-top: .15rem; }
+.stat .sub { color: var(--faint); font-size: .72rem; margin-top: .3rem; }
+
+label { display: block; color: var(--muted); font-size: .82rem; font-weight: 600; margin-bottom: .4rem; }
+select, input[type=text], button {
+  width: 100%; padding: .8rem 1rem; border-radius: 12px; border: 1px solid var(--border);
+  background: rgba(8, 14, 28, 0.75); color: var(--text); font-size: .98rem; font-family: inherit;
+}
+select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,92,255,.22); }
+.btn {
+  border: none; cursor: pointer; font-weight: 700; color: #08101f;
+  background: linear-gradient(135deg, var(--accent-2), var(--home));
+  transition: transform .12s ease, box-shadow .2s ease; box-shadow: 0 10px 24px rgba(34,211,238,.28);
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 14px 30px rgba(34,211,238,.4); }
+.btn.violet { background: linear-gradient(135deg, var(--accent), #b06bff); color: #fff; box-shadow: 0 10px 24px rgba(124,92,255,.4); }
+.btn.ghost { background: rgba(255,255,255,.04); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+.row { display: grid; grid-template-columns: 1fr auto 1fr; gap: .8rem; align-items: end; }
+@media (max-width: 620px){ .row { grid-template-columns: 1fr; } .vs-mid { display:none; } }
+.vs-mid { text-align: center; color: var(--faint); font-weight: 800; padding-bottom: .8rem; }
+
+.alert { padding: .9rem 1.1rem; border-radius: 12px; margin-bottom: 1.2rem; font-size: .92rem; }
+.alert.err { background: rgba(255,107,125,.12); border: 1px solid rgba(255,107,125,.4); color: #ffc2ca; }
+.alert.warn { background: rgba(245,196,81,.12); border: 1px solid rgba(245,196,81,.4); color: #ffe9ad; }
+.alert.ok { background: rgba(56,232,176,.12); border: 1px solid rgba(56,232,176,.4); color: #b6ffe6; }
+
+.pill { display:inline-flex; align-items:center; gap:.4rem; font-size:.75rem; font-weight:700; padding:.25rem .6rem;
+  border-radius: 999px; border:1px solid var(--border); color: var(--muted); }
+.dot { width:8px; height:8px; border-radius:50%; }
+.muted { color: var(--muted); }
+.foot { margin-top: 2.5rem; text-align:center; color: var(--faint); font-size:.8rem; }
+.foot code { color: var(--muted); }
+"""
 
 
-app.jinja_env.filters['urlencode'] = urlencode_filter
+def head(title):
+    return (
+        '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+        '<link rel="preconnect" href="https://fonts.googleapis.com">'
+        '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;850&display=swap" rel="stylesheet">'
+        f'<title>{title}</title><style>{BASE_CSS}</style></head><body><div class="wrap">'
+    )
 
 
-# ─── HTML Templates ───────────────────────────────────────────────
+NAV = r"""
+<div class="nav">
+  <a class="brand" href="/"><span class="logo">⚽</span><span>Predict-XI<br><small>match outcome engine</small></span></a>
+  <div class="nav-links"><a href="/">Dashboard</a><a href="/#predict">Predict</a><a href="/#leagues">Fixtures</a></div>
+</div>
+"""
 
-HOME_TEMPLATE = r"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predict-XI</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-        .container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
-        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #38bdf8; }
-        .subtitle { color: #94a3b8; margin-bottom: 2rem; }
-        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid #334155; }
-        .card h2 { font-size: 1.25rem; margin-bottom: 1rem; color: #f1f5f9; }
-        label { display: block; margin-bottom: 0.5rem; color: #94a3b8; font-weight: 500; }
-        select, button { width: 100%; padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #e2e8f0; font-size: 1rem; margin-bottom: 1rem; }
-        select:focus, button:focus { outline: none; border-color: #38bdf8; }
-        button { background: #38bdf8; color: #0f172a; font-weight: 600; cursor: pointer; border: none; }
-        button:hover { background: #0ea5e9; }
-        button:disabled { background: #475569; color: #94a3b8; cursor: not-allowed; }
-        .error { background: #7f1d1d; border: 1px solid #dc2626; color: #fca5a5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .success { background: #14532d; border: 1px solid #22c55e; color: #86efac; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .warning { background: #713f12; border: 1px solid #eab308; color: #fde047; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .train-btn { background: #eab308; color: #0f172a; }
-        .train-btn:hover { background: #ca8a04; }
-        .model-status { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
-        .status-dot.green { background: #22c55e; }
-        .status-dot.red { background: #dc2626; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>⚽ Predict-XI</h1>
-        <p class="subtitle">Soccer match outcome predictions</p>
+FOOT = r"""
+<div class="foot">Predict-XI · softmax regression + Elo, built from scratch (Python stdlib only)<br>
+Data: <code>football-data.org</code> (live fixtures) · <code>footballcsv</code> (training)</div>
+</div></body></html>
+"""
 
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
 
-        {% if warning %}
-        <div class="warning">{{ warning }}</div>
-        {% endif %}
+# ─── Templates ────────────────────────────────────────────────────────────
 
-        <div class="card">
-            <h2>Select a League</h2>
-            <form method="GET" action="/fixtures">
-                <label for="league">League</label>
-                <select name="league" id="league">
-                    <option value="">-- Choose a league --</option>
-                    {% for code, name in leagues.items() %}
-                    <option value="{{ code }}" {% if selected_league == code %}selected{% endif %}>{{ name }} ({{ code }})</option>
-                    {% endfor %}
-                </select>
-                <button type="submit">View Upcoming Fixtures</button>
-            </form>
-        </div>
+HOME_TEMPLATE = head("Predict-XI · Dashboard") + NAV + r"""
+<div class="hero">
+  <h1>Predict the match<br>before it's played.</h1>
+  <p>A from-scratch machine-learning engine rates every team with a running Elo and
+     softmax-regression model trained on {{ "{:,}".format(metrics.get('training_samples', 0)) }}
+     matches across {{ n_leagues }} leagues.</p>
+</div>
 
-        {% if not model_exists %}
-        <div class="card">
-            <h2>No Trained Model Found</h2>
-            <p style="color: #94a3b8; margin-bottom: 1rem;">A trained model is required to make predictions. Train one now using the CLI or click below.</p>
-            <form method="POST" action="/train">
-                <button type="submit" class="train-btn">Train Model (Season 2023)</button>
-            </form>
-        </div>
-        {% else %}
-        <div class="card">
-            <div class="model-status">
-                <span class="status-dot green"></span>
-                <span style="color: #86efac;">Model loaded and ready</span>
-            </div>
-        </div>
-        {% endif %}
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+{% if warning %}<div class="alert warn">{{ warning }}</div>{% endif %}
+
+<div class="card">
+  <h2>Model performance <span class="tag">live</span></h2>
+  {% if metrics %}
+  <div class="stat-grid">
+    <div class="stat"><div class="v"><span class="cnt" data-to="{{ (metrics.accuracy*100)|round(1) }}">0</span>%</div>
+      <div class="l">Accuracy</div><div class="sub">temporal holdout</div></div>
+    <div class="stat"><div class="v">+<span class="cnt" data-to="{{ ((metrics.accuracy-metrics.baseline_accuracy)*100)|round(1) }}">0</span></div>
+      <div class="l">Lift vs baseline</div><div class="sub">over always-home</div></div>
+    <div class="stat"><div class="v"><span class="cnt" data-dec="3" data-to="{{ metrics.log_loss }}">0</span></div>
+      <div class="l">Log-loss</div><div class="sub">{{ 'calibrated' if metrics.log_loss < 1.0986 else 'ok' }} (&lt;1.099)</div></div>
+    <div class="stat"><div class="v"><span class="cnt" data-to="{{ metrics.training_samples }}">0</span></div>
+      <div class="l">Matches trained</div><div class="sub">5 seasons</div></div>
+    <div class="stat"><div class="v"><span class="cnt" data-to="{{ metrics.get('n_teams', teams|length) }}">0</span></div>
+      <div class="l">Teams rated</div><div class="sub">by Elo</div></div>
+  </div>
+  {% else %}
+  <p class="muted">No trained model found. Run <code>python main.py --source csv --train eng.1 es.1 de.1 it.1 fr.1</code>
+     to train one, then refresh.</p>
+  {% endif %}
+</div>
+
+<div class="card" id="predict">
+  <h2>Predict a matchup</h2>
+  {% if teams %}
+  <form method="GET" action="/predict">
+    <div class="row">
+      <div><label for="home">Home team</label>
+        <input list="teamlist" id="home" name="home" placeholder="e.g. Arsenal FC" autocomplete="off" required></div>
+      <div class="vs-mid">vs</div>
+      <div><label for="away">Away team</label>
+        <input list="teamlist" id="away" name="away" placeholder="e.g. Chelsea FC" autocomplete="off" required></div>
     </div>
-</body>
-</html>"""
+    <datalist id="teamlist">
+      {% for t in teams %}<option value="{{ t.name }}">{{ t.tier }} · Elo {{ t.elo|round|int }}</option>{% endfor %}
+    </datalist>
+    <button class="btn violet" type="submit" style="margin-top:1rem;">Run prediction →</button>
+  </form>
+  {% else %}
+  <p class="muted">Team ratings load once a model is trained.</p>
+  {% endif %}
+</div>
 
-FIXTURES_TEMPLATE = r"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fixtures - Predict-XI</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-        .container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
-        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #38bdf8; }
-        .subtitle { color: #94a3b8; margin-bottom: 2rem; }
-        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid #334155; }
-        .card h2 { font-size: 1.25rem; margin-bottom: 1rem; color: #f1f5f9; }
-        .fixture-list { list-style: none; }
-        .fixture-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; border-bottom: 1px solid #334155; }
-        .fixture-item:last-child { border-bottom: none; }
-        .fixture-teams { font-weight: 600; font-size: 1.1rem; }
-        .fixture-date { color: #94a3b8; font-size: 0.85rem; }
-        .fixture-vs { color: #64748b; margin: 0 0.5rem; }
-        .predict-btn { background: #38bdf8; color: #0f172a; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; text-decoration: none; display: inline-block; }
-        .predict-btn:hover { background: #0ea5e9; }
-        .back-link { display: inline-block; margin-top: 1rem; color: #38bdf8; text-decoration: none; }
-        .back-link:hover { text-decoration: underline; }
-        .error { background: #7f1d1d; border: 1px solid #dc2626; color: #fca5a5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .no-fixtures { text-align: center; padding: 2rem; color: #94a3b8; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>⚽ Upcoming Fixtures</h1>
-        <p class="subtitle">{{ league_name }} ({{ league_code }})</p>
+<div class="card" id="leagues">
+  <h2>Browse live fixtures</h2>
+  <form method="GET" action="/fixtures">
+    <label for="league">League</label>
+    <select name="league" id="league">
+      <option value="">— choose a league —</option>
+      {% for code, name in leagues.items() %}<option value="{{ code }}">{{ name }} ({{ code }})</option>{% endfor %}
+    </select>
+    <button class="btn" type="submit" style="margin-top:1rem;">View upcoming fixtures →</button>
+  </form>
+  <p class="muted" style="margin-top:.8rem; font-size:.82rem;">Requires a free football-data.org API token in <code>.env</code>.</p>
+</div>
+""" + FOOT + r"""
+<script>
+document.querySelectorAll('.cnt').forEach(function(el){
+  var to = parseFloat(el.dataset.to) || 0, dec = parseInt(el.dataset.dec || '0');
+  var start = null, dur = 900;
+  function step(ts){ if(!start) start = ts; var p = Math.min((ts-start)/dur, 1);
+    var val = to * (1 - Math.pow(1-p, 3));
+    el.textContent = dec ? val.toFixed(dec) : Math.round(val).toLocaleString();
+    if(p < 1) requestAnimationFrame(step); }
+  requestAnimationFrame(step);
+});
+</script>
+</body></html>
+"""
 
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
+PREDICT_TEMPLATE = head("Predict-XI · Prediction") + NAV + r"""
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+{% if warning %}<div class="alert warn">{{ warning }}</div>{% endif %}
 
-        <div class="card">
-            <h2>Fixtures</h2>
-            {% if fixtures %}
-            <ul class="fixture-list">
-                {% for match in fixtures %}
-                <li class="fixture-item">
-                    <div>
-                        <span class="fixture-teams">{{ match.home_team }}</span>
-                        <span class="fixture-vs">vs</span>
-                        <span class="fixture-teams">{{ match.away_team }}</span>
-                        <div class="fixture-date">{{ match.date }}</div>
-                    </div>
-                    <a href="/predict?home={{ match.home_team|urlencode }}&away={{ match.away_team|urlencode }}" class="predict-btn">Predict</a>
-                </li>
-                {% endfor %}
-            </ul>
-            {% else %}
-            <p class="no-fixtures">No upcoming fixtures found for this league. The season may be over or no matches are scheduled yet.</p>
-            {% endif %}
-        </div>
-
-        <a href="/" class="back-link">← Back to league selection</a>
+{% if prediction %}
+<div class="card">
+  <div style="display:grid; grid-template-columns:1fr auto 1fr; gap:1rem; align-items:center; text-align:center; margin-bottom:1.5rem;">
+    <div>
+      <div style="font-size:1.35rem; font-weight:800;">{{ home_team }}</div>
+      <div class="pill" style="margin-top:.5rem;"><span class="dot" style="background:var(--home)"></span>{{ home_info.tier }} · Elo {{ home_info.elo|round|int }}</div>
     </div>
-</body>
-</html>"""
-
-PREDICT_TEMPLATE = r"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prediction - Predict-XI</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-        .container { max-width: 700px; margin: 0 auto; padding: 2rem 1rem; }
-        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #38bdf8; }
-        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid #334155; }
-        .match-header { text-align: center; margin-bottom: 2rem; }
-        .match-header .home { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; }
-        .match-header .away { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; }
-        .match-header .vs { font-size: 1.25rem; color: #64748b; margin: 0 1rem; }
-        .prediction-outcome { text-align: center; font-size: 2rem; font-weight: 700; color: #38bdf8; margin-bottom: 1.5rem; }
-        .probabilities { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-        .prob-box { background: #0f172a; border-radius: 10px; padding: 1.25rem 1.5rem; text-align: center; min-width: 120px; border: 2px solid #334155; }
-        .prob-box.winner { border-color: #38bdf8; }
-        .prob-label { font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.5rem; }
-        .prob-value { font-size: 1.75rem; font-weight: 700; color: #f1f5f9; }
-        .back-link { display: inline-block; margin-top: 1.5rem; color: #38bdf8; text-decoration: none; }
-        .back-link:hover { text-decoration: underline; }
-        .error { background: #7f1d1d; border: 1px solid #dc2626; color: #fca5a5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .warning { background: #713f12; border: 1px solid #eab308; color: #fde047; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .no-model { text-align: center; padding: 2rem; }
-        .no-model p { color: #94a3b8; margin-bottom: 1rem; }
-        .train-btn { background: #eab308; color: #0f172a; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1rem; }
-        .train-btn:hover { background: #ca8a04; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>⚽ Match Prediction</h1>
-
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
-
-        {% if warning %}
-        <div class="warning">{{ warning }}</div>
-        {% endif %}
-
-        <div class="card">
-            <div class="match-header">
-                <span class="home">{{ home_team }}</span>
-                <span class="vs">vs</span>
-                <span class="away">{{ away_team }}</span>
-            </div>
-
-            {% if prediction %}
-            <div class="prediction-outcome">{{ prediction.prediction }}</div>
-            <div class="probabilities">
-                {% for outcome, prob in prediction.probabilities.items() %}
-                <div class="prob-box {% if outcome == prediction.prediction %}winner{% endif %}">
-                    <div class="prob-label">{{ outcome }}</div>
-                    <div class="prob-value">{{ "%.1f"|format(prob * 100) }}%</div>
-                </div>
-                {% endfor %}
-            </div>
-            {% elif not model_exists %}
-            <div class="no-model">
-                <p>No trained model found. Train a model to make predictions.</p>
-                <form method="POST" action="/train" style="display: inline;">
-                    <input type="hidden" name="redirect" value="/predict?home={{ home_team|urlencode }}&away={{ away_team|urlencode }}">
-                    <button type="submit" class="train-btn">Train Model Now</button>
-                </form>
-            </div>
-            {% endif %}
-        </div>
-
-        <a href="/" class="back-link">← Back to league selection</a>
+    <div style="color:var(--faint); font-weight:800; font-size:1.1rem;">VS</div>
+    <div>
+      <div style="font-size:1.35rem; font-weight:800;">{{ away_team }}</div>
+      <div class="pill" style="margin-top:.5rem;"><span class="dot" style="background:var(--away)"></span>{{ away_info.tier }} · Elo {{ away_info.elo|round|int }}</div>
     </div>
-</body>
-</html>"""
+  </div>
 
-TRAINING_TEMPLATE = r"""<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Training - Predict-XI</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-        .container { max-width: 700px; margin: 0 auto; padding: 2rem 1rem; }
-        h1 { font-size: 2rem; margin-bottom: 0.5rem; color: #38bdf8; }
-        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid #334155; }
-        .card h2 { font-size: 1.25rem; margin-bottom: 1rem; color: #f1f5f9; }
-        .success { background: #14532d; border: 1px solid #22c55e; color: #86efac; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .error { background: #7f1d1d; border: 1px solid #dc2626; color: #fca5a5; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
-        .back-link { display: inline-block; margin-top: 1.5rem; color: #38bdf8; text-decoration: none; }
-        .back-link:hover { text-decoration: underline; }
-        .metric { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #334155; }
-        .metric:last-child { border-bottom: none; }
-        .metric-label { color: #94a3b8; }
-        .metric-value { font-weight: 600; }
-        .btn { display: inline-block; background: #38bdf8; color: #0f172a; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; text-decoration: none; margin-top: 1rem; }
-        .btn:hover { background: #0ea5e9; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>⚽ Model Training</h1>
+  <div style="text-align:center; margin-bottom:1.3rem;">
+    <div class="muted" style="font-size:.8rem; letter-spacing:.05em; text-transform:uppercase;">Predicted outcome</div>
+    <div style="font-size:2rem; font-weight:850; margin-top:.2rem;
+      color: {% if prediction.prediction=='Home Win' %}var(--home){% elif prediction.prediction=='Away Win' %}var(--away){% else %}var(--draw){% endif %};">
+      {{ prediction.prediction }}</div>
+    <span class="pill" style="margin-top:.4rem;">{{ confidence_label }} confidence · {{ (top_prob*100)|round|int }}%</span>
+  </div>
 
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
+  <!-- stacked probability bar -->
+  <div style="display:flex; height:16px; border-radius:999px; overflow:hidden; border:1px solid var(--border); margin-bottom:1.2rem;">
+    <div class="seg" style="width:0; background:var(--home);" data-w="{{ (p_home*100)|round(1) }}"></div>
+    <div class="seg" style="width:0; background:var(--draw);" data-w="{{ (p_draw*100)|round(1) }}"></div>
+    <div class="seg" style="width:0; background:var(--away);" data-w="{{ (p_away*100)|round(1) }}"></div>
+  </div>
 
-        {% if success %}
-        <div class="success">{{ success }}</div>
-        <div class="card">
-            <h2>Training Results</h2>
-            <div class="metric">
-                <span class="metric-label">Accuracy</span>
-                <span class="metric-value">{{ "%.1f"|format(accuracy * 100) }}%</span>
-            </div>
-            <div class="metric">
-                <span class="metric-label">Test Samples</span>
-                <span class="metric-value">{{ test_samples }}</span>
-            </div>
-            <div class="metric">
-                <span class="metric-label">Training Samples</span>
-                <span class="metric-value">{{ train_samples }}</span>
-            </div>
-        </div>
-        {% if redirect_url %}
-        <a href="{{ redirect_url }}" class="btn">← Back to Prediction</a>
-        {% endif %}
-        {% endif %}
-
-        <a href="/" class="back-link">← Back to league selection</a>
+  <div class="stat-grid">
+    {% for name, prob, col in bars %}
+    <div class="stat" style="border-color: {% if name==prediction.prediction %}{{ col }}{% else %}var(--border){% endif %};">
+      <div class="v" style="color:{{ col }};">{{ (prob*100)|round(1) }}%</div>
+      <div class="l">{{ name }}</div>
+      <div style="height:6px; border-radius:999px; background:rgba(255,255,255,.07); margin-top:.5rem; overflow:hidden;">
+        <div class="minibar" style="height:100%; width:0; background:{{ col }};" data-w="{{ (prob*100)|round(1) }}"></div>
+      </div>
     </div>
-</body>
-</html>"""
+    {% endfor %}
+  </div>
+
+  <p class="muted" style="margin-top:1.2rem; font-size:.85rem;">
+    Elo edge: <strong style="color:var(--text)">{{ home_team if elo_diff>=0 else away_team }}</strong>
+    by {{ elo_diff|abs|round|int }} points{% if not both_known %} · ⚠ limited data for one team, prediction may be weak{% endif %}.
+  </p>
+</div>
+
+<div style="display:flex; gap:.8rem; margin-top:1.25rem; flex-wrap:wrap;">
+  <a class="btn violet" href="/#predict" style="width:auto; padding:.7rem 1.4rem;">← Predict another</a>
+  <a class="btn ghost" href="/" style="width:auto; padding:.7rem 1.4rem;">Dashboard</a>
+</div>
+
+{% elif not model_exists %}
+<div class="card">
+  <h2>No trained model</h2>
+  <p class="muted">Train a model first, then come back to predict.</p>
+  <form method="POST" action="/train" style="margin-top:1rem;">
+    <input type="hidden" name="redirect" value="/predict?home={{ home_team|urlencode }}&away={{ away_team|urlencode }}">
+    <button class="btn violet" type="submit" style="width:auto; padding:.7rem 1.4rem;">Train model now</button>
+  </form>
+</div>
+{% endif %}
+""" + FOOT + r"""
+<script>
+window.addEventListener('load', function(){
+  setTimeout(function(){
+    document.querySelectorAll('.seg').forEach(function(e){ e.style.transition='width 1s cubic-bezier(.2,.8,.2,1)'; e.style.width=e.dataset.w+'%'; });
+    document.querySelectorAll('.minibar').forEach(function(e){ e.style.transition='width 1.1s cubic-bezier(.2,.8,.2,1)'; e.style.width=e.dataset.w+'%'; });
+  }, 80);
+});
+</script>
+</body></html>
+"""
+
+FIXTURES_TEMPLATE = head("Predict-XI · Fixtures") + NAV + r"""
+<div class="hero"><h1 style="font-size:2rem;">{{ league_name }}</h1><p>Upcoming fixtures · {{ league_code }}</p></div>
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+<div class="card">
+  <h2>Fixtures</h2>
+  {% if fixtures %}
+  <div style="display:flex; flex-direction:column; gap:.6rem;">
+    {% for m in fixtures %}
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:.9rem 1rem;
+      background:rgba(10,17,33,.5); border:1px solid var(--border); border-radius:12px;">
+      <div>
+        <div style="font-weight:700;">{{ m.home_team }} <span class="muted">vs</span> {{ m.away_team }}</div>
+        <div class="muted" style="font-size:.8rem; margin-top:.15rem;">{{ m.date }}</div>
+      </div>
+      <a class="btn" style="width:auto; padding:.55rem 1.1rem; font-size:.88rem;"
+         href="/predict?home={{ m.home_team|urlencode }}&away={{ m.away_team|urlencode }}">Predict</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">No upcoming fixtures found — the season may be between rounds, or the API token isn't set.</p>
+  {% endif %}
+</div>
+<div style="margin-top:1.25rem;"><a class="btn ghost" href="/" style="width:auto; padding:.7rem 1.4rem;">← Dashboard</a></div>
+""" + FOOT
+
+TRAINING_TEMPLATE = head("Predict-XI · Training") + NAV + r"""
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+{% if success %}
+<div class="alert ok">{{ success }}</div>
+<div class="card">
+  <h2>Training results</h2>
+  <div class="stat-grid">
+    <div class="stat"><div class="v">{{ (accuracy*100)|round(1) }}%</div><div class="l">Accuracy</div></div>
+    <div class="stat"><div class="v">{{ train_samples }}</div><div class="l">Train samples</div></div>
+    <div class="stat"><div class="v">{{ test_samples }}</div><div class="l">Test samples</div></div>
+  </div>
+</div>
+{% if redirect_url %}<div style="margin-top:1.25rem;"><a class="btn violet" href="{{ redirect_url }}" style="width:auto; padding:.7rem 1.4rem;">→ Continue to prediction</a></div>{% endif %}
+{% endif %}
+<div style="margin-top:1.25rem;"><a class="btn ghost" href="/" style="width:auto; padding:.7rem 1.4rem;">← Dashboard</a></div>
+""" + FOOT
 
 
-# ─── Helpers ──────────────────────────────────────────────────────
+# ─── Helpers ──────────────────────────────────────────────────────────────
 
-def get_model():
-    """Load the model if it exists, return None otherwise."""
-    model = MatchPredictorModel()
-    if model.load():
-        return model
-    return None
+def _load_json(name):
+    try:
+        with open(os.path.join(SCRIPT_DIR, name)) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
 
 
-def model_exists():
-    """Check if a saved model exists (relative to script directory)."""
-    return os.path.exists(os.path.join(SCRIPT_DIR, "model.json"))
+def load_metrics():
+    return _load_json("model_metrics.json") or {}
 
 
 def build_team_stats():
-    """Build team stats from saved match data, using the MOST RECENT form for each team."""
+    """Team stats for predictions. Prefer the committed team_stats.json, then
+    the full processed_data.json, then the API-path matches_data.json."""
+    stats = _load_json("team_stats.json")
+    if stats:
+        return stats
+    processed = _load_json("processed_data.json")
+    if processed and processed.get("team_stats"):
+        return processed["team_stats"]
     rows = load_data()
-    if not rows:
-        return {}
-    team_stats = {}
-    for row in rows:
-        for team_key, form_key, gs_key, gc_key, mp_key in [
-            (row["home_team"], "home_form", "home_goals_scored_avg", "home_goals_conceded_avg", "home_matches_played"),
-            (row["away_team"], "away_form", "away_goals_scored_avg", "away_goals_conceded_avg", "away_matches_played"),
-        ]:
-            # Always overwrite with the latest occurrence (rows are sorted by date)
-            team_stats[team_key] = {
-                "form": row.get(form_key, 0),
-                "goals_scored_avg": row.get(gs_key, 0),
-                "goals_conceded_avg": row.get(gc_key, 0),
-                "matches_played": row.get(mp_key, 0),
-            }
-    return team_stats
+    return compute_team_stats(rows) if rows else {}
 
 
-# ─── Routes ───────────────────────────────────────────────────────
+def model_exists():
+    return os.path.exists(os.path.join(SCRIPT_DIR, "model.json"))
+
+
+def get_model():
+    model = MatchPredictorModel()
+    return model if model.load() else None
+
+
+def team_tier(elo):
+    if elo >= 1650:
+        return "Elite"
+    if elo >= 1560:
+        return "Strong"
+    if elo >= 1470:
+        return "Mid-table"
+    return "Underdog"
+
+
+def team_list(stats):
+    out = []
+    for name, s in stats.items():
+        if not name or s.get("matches_played", 0) <= 0:
+            continue
+        elo = s.get("elo", 1500)
+        out.append({"name": name, "elo": elo, "tier": team_tier(elo)})
+    out.sort(key=lambda t: t["elo"], reverse=True)
+    return out
+
+
+def team_info(stats, name):
+    s = stats.get(name, {})
+    elo = s.get("elo", 1500)
+    return {"elo": elo, "tier": team_tier(elo), "known": bool(s)}
+
+
+# ─── Routes ───────────────────────────────────────────────────────────────
 
 @app.route("/")
 def home():
-    """Homepage with league selection."""
-    error = request.args.get("error", "")
-    warning = request.args.get("warning", "")
-    selected_league = request.args.get("league", "")
+    stats = build_team_stats()
     return render_template_string(
         HOME_TEMPLATE,
+        metrics=load_metrics(),
+        teams=team_list(stats),
         leagues=LEAGUE_CODES,
+        n_leagues=len(LEAGUE_CODES),
         model_exists=model_exists(),
-        error=error,
-        warning=warning,
-        selected_league=selected_league,
+        error=request.args.get("error", ""),
+        warning=request.args.get("warning", ""),
     )
 
 
 @app.route("/fixtures")
 def fixtures():
-    """Show upcoming fixtures for a selected league."""
     league_code = request.args.get("league", "").strip()
-
     if not league_code:
         return redirect("/?error=" + urllib.parse.quote("Please select a league."))
-
     if league_code not in LEAGUE_CODES:
         return redirect("/?error=" + urllib.parse.quote(f"Unknown league code: {league_code}"))
 
     try:
-        raw_matches = fetch_upcoming_matches(league_code)
+        raw = fetch_upcoming_matches(league_code)
     except MissingTokenError as e:
         return redirect("/?error=" + urllib.parse.quote(str(e)))
     except Exception as e:
         return redirect("/?error=" + urllib.parse.quote(f"API error: {e}"))
 
     fixtures_list = []
-    for m in raw_matches:
-        home = m.get("homeTeam", {}).get("name", "Unknown")
-        away = m.get("awayTeam", {}).get("name", "Unknown")
+    for m in raw:
         date_str = m.get("utcDate", "")
         try:
-            dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-            date_str = dt.strftime("%b %d, %Y at %H:%M")
+            date_str = datetime.fromisoformat(date_str.replace("Z", "+00:00")).strftime("%b %d, %Y · %H:%M")
         except (ValueError, AttributeError):
             pass
         fixtures_list.append({
-            "home_team": home,
-            "away_team": away,
+            "home_team": m.get("homeTeam", {}).get("name", "Unknown"),
+            "away_team": m.get("awayTeam", {}).get("name", "Unknown"),
             "date": date_str,
         })
 
@@ -410,100 +479,73 @@ def fixtures():
 
 @app.route("/predict")
 def predict():
-    """Show prediction for a specific match."""
     home_team = request.args.get("home", "").strip()
     away_team = request.args.get("away", "").strip()
 
     if not home_team or not away_team:
         return render_template_string(
-            PREDICT_TEMPLATE,
-            home_team=home_team or "?",
-            away_team=away_team or "?",
-            prediction=None,
-            model_exists=model_exists(),
-            error="Please provide both home and away team names.",
-            warning="",
+            PREDICT_TEMPLATE, home_team=home_team or "?", away_team=away_team or "?",
+            prediction=None, model_exists=model_exists(),
+            error="Please provide both a home and away team.", warning="",
         )
 
     model = get_model()
     if model is None:
         return render_template_string(
-            PREDICT_TEMPLATE,
-            home_team=home_team,
-            away_team=away_team,
-            prediction=None,
-            model_exists=False,
-            error="",
-            warning="",
+            PREDICT_TEMPLATE, home_team=home_team, away_team=away_team,
+            prediction=None, model_exists=False, error="", warning="",
         )
 
-    # Build team stats from saved data (most recent form)
-    team_stats = build_team_stats()
-    features = prepare_prediction_features(home_team, away_team, team_stats)
+    stats = build_team_stats()
+    features = prepare_prediction_features(home_team, away_team, stats)
     result = model.predict(features)
+
+    probs = result["probabilities"]
+    p_home = probs.get("Home Win", 0.0)
+    p_draw = probs.get("Draw", 0.0)
+    p_away = probs.get("Away Win", 0.0)
+    top_prob = max(p_home, p_draw, p_away)
+    conf = "High" if top_prob >= 0.55 else ("Moderate" if top_prob >= 0.42 else "Low")
+
+    h_info = team_info(stats, home_team)
+    a_info = team_info(stats, away_team)
 
     return render_template_string(
         PREDICT_TEMPLATE,
-        home_team=home_team,
-        away_team=away_team,
-        prediction=result,
-        model_exists=True,
-        error="",
-        warning="",
+        home_team=home_team, away_team=away_team, prediction=result,
+        model_exists=True, error="", warning="",
+        p_home=p_home, p_draw=p_draw, p_away=p_away,
+        top_prob=top_prob, confidence_label=conf,
+        home_info=h_info, away_info=a_info,
+        elo_diff=h_info["elo"] - a_info["elo"],
+        both_known=h_info["known"] and a_info["known"],
+        bars=[("Home Win", p_home, "var(--home)"), ("Draw", p_draw, "var(--draw)"),
+              ("Away Win", p_away, "var(--away)")],
     )
 
 
 @app.route("/train", methods=["POST"])
 def train():
-    """Train the model from the web UI."""
-    from main import train_model, TrainingError
+    from main import train_model_csv, TrainingError
 
     redirect_url = request.form.get("redirect", "")
-
+    top5 = ["eng.1", "es.1", "de.1", "it.1", "fr.1"]
+    seasons = ["2021-22", "2022-23", "2023-24"]
     try:
-        model, metrics = train_model(["PL", "SA", "BL1", "PD", "FL1"], "2023")
+        _, metrics = train_model_csv(seasons, top5, cv_folds=3, model_type="logreg")
         return render_template_string(
-            TRAINING_TEMPLATE,
-            success="Model trained successfully!",
-            accuracy=metrics.get("accuracy", 0),
-            test_samples=metrics.get("test_samples", 0),
-            train_samples=metrics.get("train_samples", 0),
-            redirect_url=redirect_url,
-            error="",
+            TRAINING_TEMPLATE, success="Model trained successfully!",
+            accuracy=metrics.get("accuracy", 0), test_samples=metrics.get("test_samples", 0),
+            train_samples=metrics.get("train_samples", 0), redirect_url=redirect_url, error="",
         )
-    except MissingTokenError as e:
-        return render_template_string(
-            TRAINING_TEMPLATE,
-            success="",
-            accuracy=0,
-            test_samples=0,
-            train_samples=0,
-            redirect_url="",
-            error=str(e),
-        )
-    except TrainingError as e:
-        return render_template_string(
-            TRAINING_TEMPLATE,
-            success="",
-            accuracy=0,
-            test_samples=0,
-            train_samples=0,
-            redirect_url="",
-            error=str(e),
-        )
+    except (TrainingError, MissingTokenError) as e:
+        return render_template_string(TRAINING_TEMPLATE, success="", accuracy=0,
+                                      test_samples=0, train_samples=0, redirect_url="", error=str(e))
     except Exception as e:
-        return render_template_string(
-            TRAINING_TEMPLATE,
-            success="",
-            accuracy=0,
-            test_samples=0,
-            train_samples=0,
-            redirect_url="",
-            error=f"Training failed: {e}",
-        )
+        return render_template_string(TRAINING_TEMPLATE, success="", accuracy=0,
+                                      test_samples=0, train_samples=0, redirect_url="", error=f"Training failed: {e}")
 
 
 if __name__ == "__main__":
-    print("Starting Predict-XI web UI...")
-    print("Open http://localhost:5000 in your browser")
+    print("Starting Predict-XI web UI  ->  http://localhost:5000")
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -1,98 +1,132 @@
 # Predict-XI
 
-Soccer match outcome predictor using historical data from the [football-data.org](https://www.football-data.org/) API and a Gaussian Naive Bayes classifier built from scratch.
+Soccer match-outcome predictor. Rates every team with a running **Elo** and predicts
+**Home Win / Draw / Away Win** with a **multinomial softmax-regression** model —
+both built from scratch using only the Python standard library (no scikit-learn, no numpy).
 
-Predicts **Home Win / Draw / Away Win** for upcoming fixtures across 12 leagues.
+Trained on **18,000+ matches** across five seasons of Europe's top divisions.
 
-## Setup
+---
 
-1. **Get an API token** — register for free at https://www.football-data.org/client/register
-2. **Create a `.env` file** in the project directory:
+## Model (v2)
+
+| Metric | Value | Notes |
+|---|---|---|
+| Accuracy | **52.4%** | temporal hold-out (tested only on matches *after* training) |
+| Baseline | 43.5% | always-predict-home |
+| **Lift** | **+8.9 pts** | over the baseline |
+| Log-loss | **1.048** | below uniform (1.099) → probabilities are calibrated |
+| Brier score | 0.617 | multiclass |
+| Training matches | 18,256 | 12 leagues × 5 seasons |
+| Teams rated | 280 | by Elo |
+
+**How it works**
+- **Elo ratings** — every team carries a running strength rating (start 1500, home edge +65,
+  K-factor 24), updated after each match. This is the single strongest feature.
+- **Form features** — rolling 5-match form, goals scored/conceded (home / away / overall),
+  head-to-head history, and rest days.
+- **Softmax regression** — a 3-class logistic model trained with mini-batch gradient descent,
+  feature standardization, and L2 regularization. Unlike Naive Bayes it doesn't assume features
+  are independent, so its probabilities stay well-calibrated.
+- Alternative models (`nb`, `ensemble`) are selectable with `--model-type`.
+
+> **Note on Elo across leagues:** teams only ever play within their own league in the training
+> data, so Elo is calibrated *within* a league, not across leagues. Compare Arsenal to Chelsea,
+> not Arsenal to Celtic.
+
+---
+
+## Getting a football-data.org API key
+
+The API key is only needed for the **live upcoming-fixtures** feature. Training and predictions
+work without it (they use the bundled/cached historical data).
+
+1. Go to **https://www.football-data.org/client/register**
+2. Enter your name and email and submit the form — it's **free**.
+3. Check your email; football-data.org sends your **API token** (a long string of letters/numbers).
+4. Create a file named `.env` in the project folder (copy `.env.example`) and add the line:
    ```
    API_TOKEN=your_actual_token_here
    ```
-   (Copy `.env.example` and replace the placeholder.)
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+5. Save. The `.env` file is git-ignored, so your token never gets committed.
 
-## CLI Usage
+The free tier allows 10 requests/minute and covers all the major leagues used here.
 
-Train a model and make predictions from the command line.
+---
+
+## Setup
 
 ```bash
-# Train on default leagues (PL, SA, BL1, PD, FL1) for season 2023
-python main.py --train
-
-# Train on specific leagues
-python main.py --train PL SA BL1 --season 2023
-
-# Predict a match (loads saved model.json if it exists, trains only if needed)
-python main.py --predict "Manchester City" "Arsenal"
-
-# Force retrain even if model.json exists
-python main.py --predict "Manchester City" "Arsenal" --force-retrain
-
-# Interactive prediction mode
-python main.py --interactive
-
-# List available league codes
-python main.py --list-leagues
+pip install -r requirements.txt
 ```
 
-### How it works
-- `--predict` loads the saved `model.json` if one exists. It only trains when there's no saved model or `--force-retrain` is passed.
-- Training defaults to season **2023** (a completed season). If any fetch returns 0 finished matches, a clear error is shown telling you to pass `--season` with a completed season.
-- If your API token is missing or invalid, you'll get a helpful error message instead of a crash.
+That's it — Flask is the only third-party dependency (for the web UI). The model itself is
+pure standard library.
+
+---
 
 ## Web UI
-
-A Flask web app is available at **http://localhost:5000**.
 
 ```bash
 python app.py
 ```
 
-### Features
-- **Homepage:** Pick a league from a dropdown to see upcoming fixtures (fetched live from football-data.org)
-- **Click a fixture** (or pick home + away team) to see predicted probabilities for Home Win / Draw / Away Win
-- If no trained model exists, a "Train Model" button is shown
-- API errors (bad token, no fixtures, network failure) are handled gracefully with user-friendly messages
+Open **http://localhost:5000**. The app ships with a pre-trained model, so it works immediately:
 
-## Project Structure
+- **Dashboard** — live model performance stats.
+- **Predict a matchup** — type any two teams (autocomplete lists all 280 rated teams with their
+  Elo) and get calibrated Home/Draw/Away probabilities with an animated breakdown.
+- **Browse live fixtures** — pick a league to pull upcoming fixtures from football-data.org
+  (needs an API token) and predict any of them in one click.
+
+## CLI
+
+```bash
+# Predict a single match (uses the shipped model)
+python main.py --predict "Man City" "Liverpool"
+
+# Interactive prediction mode
+python main.py --interactive
+
+# Retrain on the top European leagues, 5 seasons
+python main.py --source csv \
+  --train eng.1 es.1 de.1 it.1 fr.1 nl.1 pt.1 be.1 tr.1 sco.1 at.1 ch.1 \
+  --seasons 2019-20 2020-21 2021-22 2022-23 2023-24
+
+# Try a different model
+python main.py --model-type nb --train eng.1 es.1 de.1 it.1 fr.1
+
+# List available leagues / seasons
+python main.py --list-leagues
+python main.py --list-seasons
+```
+
+Training prints accuracy, lift, log-loss, Brier, a confusion matrix, and per-class precision/recall.
+
+---
+
+## Project structure
 
 | File | Purpose |
 |------|---------|
-| `main.py` | CLI entry point (train, predict, interactive) |
+| `main.py` | CLI: train, predict, interactive |
 | `app.py` | Flask web UI |
-| `config.py` | API token loading, league codes |
-| `api_client.py` | football-data.org API calls |
-| `data_processor.py` | Feature engineering (form, goals) |
-| `model_trainer.py` | Gaussian Naive Bayes from scratch |
-| `model.json` | Saved trained model (generated) |
-| `matches_data.json` | Cached processed match data (generated) |
-| `.env` | Your API token (not committed) |
+| `model_trainer.py` | Gaussian Naive Bayes **and** softmax regression, both from scratch |
+| `data_processor.py` | Feature engineering: form, H2H, rest days, **Elo** |
+| `csv_data_loader.py` | Loads historical CSVs from footballcsv/cache.footballdata |
+| `api_client.py` | football-data.org live-fixtures client |
+| `config.py` | API token loading + league codes |
+| `model.json` | Shipped trained model |
+| `model_metrics.json` | Metrics shown on the dashboard |
+| `team_stats.json` | Latest per-team stats/Elo for predictions |
+| `tests/` | Unit tests (`python -m pytest`) |
+
+## Data sources
+
+- **Training:** [footballcsv/cache.footballdata](https://github.com/footballcsv/cache.footballdata) — historical results, no key needed.
+- **Live fixtures:** [football-data.org](https://www.football-data.org/) — free API key required.
 
 ## Requirements
 
 - Python 3.8+
-- Flask (for web UI)
-- No other external dependencies — the ML model is built from scratch using only the Python standard library
-
-## Supported Leagues
-
-| Code | League |
-|------|--------|
-| PL | Premier League |
-| SA | Serie A |
-| BL1 | Bundesliga |
-| PD | Primera Division |
-| FL1 | Ligue 1 |
-| DED | Eredivisie |
-| PPL | Primeira Liga |
-| ELC | Championship |
-| BSA | Campeonato Brasileiro Série A |
-| CL | UEFA Champions League |
-| EC | European Championship |
-| WC | FIFA World Cup |
+- Flask (web UI only)
