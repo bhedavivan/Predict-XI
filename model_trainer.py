@@ -176,6 +176,7 @@ try:
         RandomForestClassifier,
         HistGradientBoostingClassifier,
         VotingClassifier,
+        StackingClassifier,
     )
     from sklearn.linear_model import LogisticRegression
     from sklearn.calibration import CalibratedClassifierCV
@@ -228,9 +229,18 @@ _DEFAULT_VOTING_WEIGHTS = [0.4, 0.35, 0.25]  # (histgb, rf, lr)
 #   cost can dominate wall time on small folds) — so this stays a light,
 #   bounded search rather than an exhaustive one.
 _RF_GRID = [
+    # n_estimators/max_depth kept modest on purpose: CalibratedClassifierCV
+    # (cv=3) stores 3 FULL COPIES of whichever RF wins, so tree count is a
+    # direct multiplier on shipped model size, not just training time. An
+    # n_estimators=500/max_depth=None candidate here once produced a 557MB
+    # model.joblib (390MB even at depth=18) for a ~0.001 macro-F1 gain over
+    # these smaller candidates — not worth it for a model that has to be
+    # distributable via Git LFS.
+    dict(n_estimators=300, max_depth=10, min_samples_split=10, min_samples_leaf=10,
+         max_features="sqrt", random_state=42, n_jobs=1),
     dict(n_estimators=400, max_depth=10, min_samples_split=10, min_samples_leaf=5,
          max_features="sqrt", random_state=42, n_jobs=1),
-    dict(n_estimators=500, max_depth=None, min_samples_split=20, min_samples_leaf=8,
+    dict(n_estimators=350, max_depth=12, min_samples_split=15, min_samples_leaf=8,
          max_features="log2", random_state=42, n_jobs=1),
 ]
 _HISTGB_GRID = [
@@ -238,10 +248,13 @@ _HISTGB_GRID = [
          l2_regularization=0.1, random_state=42),
     dict(max_depth=6, max_iter=250, learning_rate=0.03, min_samples_leaf=30,
          l2_regularization=0.3, random_state=42),
+    dict(max_depth=5, max_iter=400, learning_rate=0.04, min_samples_leaf=15,
+         l2_regularization=0.2, random_state=42),
 ]
 _LR_GRID = [
     dict(max_iter=2000, C=0.2, random_state=42),
     dict(max_iter=2000, C=1.0, random_state=42),
+    dict(max_iter=2000, C=0.05, random_state=42),
 ]
 # (histgb, rf, lr) weight triples for the soft-voting ensemble — replaces the
 # single hardcoded [0.5, 0.3, 0.2] guess with a handful chosen by CV.
@@ -249,6 +262,7 @@ _VOTING_WEIGHT_GRID = [
     [0.5, 0.3, 0.2],
     [0.4, 0.35, 0.25],
     [0.34, 0.33, 0.33],
+    [0.25, 0.45, 0.3],
 ]
 
 
@@ -299,6 +313,21 @@ def _build_sklearn_pipeline(model_type: str, n_features: int, use_feature_select
             weights=voting_weights or _DEFAULT_VOTING_WEIGHTS,
         )
         steps.append(("clf", ensemble))
+    elif model_type == "stacking":
+        # A logistic-regression meta-learner over the three base models'
+        # out-of-fold probabilities, instead of hand-picked voting weights —
+        # lets the data decide how much to trust each leg per class.
+        tp = tree_params or {}
+        histgb = _calibrated(_histgb(tp.get("histgb")))
+        rf = _calibrated(_rf(tp.get("rf")))
+        lr = _calibrated(_lr(tp.get("lr")))
+        stacking = StackingClassifier(
+            estimators=[("histgb", histgb), ("rf", rf), ("lr", lr)],
+            final_estimator=LogisticRegression(max_iter=2000),
+            cv=3,
+            n_jobs=1,
+        )
+        steps.append(("clf", stacking))
     else:
         raise ValueError(f"Unknown model_type: {model_type}")
 
@@ -426,11 +455,13 @@ class MatchPredictorModel:
       - "histgb":   sklearn HistGradientBoostingClassifier
       - "rf":       sklearn RandomForestClassifier
       - "ensemble": sklearn VotingClassifier + Calibration (default)
+      - "stacking": sklearn StackingClassifier (logistic-regression meta-learner
+                    over the same three base legs, instead of fixed voting weights)
     """
 
     def __init__(self, model_type: str = "ensemble"):
         self.model_type = model_type
-        self.sklearn_model_type = model_type if model_type in ("histgb", "rf", "logreg", "ensemble") else "ensemble"
+        self.sklearn_model_type = model_type if model_type in ("histgb", "rf", "logreg", "ensemble", "stacking") else "ensemble"
         self.pipeline = None
         self.classes: List[int] = []
         self.trained = False
@@ -452,7 +483,8 @@ class MatchPredictorModel:
         self.test_samples: int = 0
         self.tuning_notes: Dict[str, Any] = {}
 
-    def _fit_sklearn(self, X, y, feature_names, cv_folds=5, purge_gap=0):
+    def _fit_sklearn(self, X, y, feature_names, cv_folds=5, purge_gap=0,
+                      tree_params_override=None, voting_weights_override=None):
         """Fit sklearn pipeline with time-series CV."""
         X_arr, y_arr = _to_numpy(X, y)
         n_features = X_arr.shape[1]
@@ -461,15 +493,16 @@ class MatchPredictorModel:
         actual_model_type = self.sklearn_model_type
         if n_features < 5 or len(X) < 50:
             actual_model_type = "logreg"
-        elif len(X) < 200 and actual_model_type == "ensemble":
+        elif len(X) < 200 and actual_model_type in ("ensemble", "stacking"):
             actual_model_type = "histgb"
 
         # Light hyperparameter / voting-weight search, scored by macro-F1 so
         # the search can't "win" by ignoring draws. Tuning runs on a
         # recency-capped subsample to stay fast; the winning config is then
-        # evaluated and fit on the full dataset below.
+        # evaluated and fit on the full dataset below. Skipped entirely if
+        # the caller already knows the config it wants (tree_params_override).
         tuning_folds = min(cv_folds, 3)
-        tree_params, voting_weights = None, None
+        tree_params, voting_weights = tree_params_override, voting_weights_override
         self.tuning_notes = {}
         tuning_cap = 8000
         if len(X_arr) > tuning_cap:
@@ -477,13 +510,18 @@ class MatchPredictorModel:
         else:
             Xt, yt = X_arr, y_arr
 
-        if len(X_arr) >= 500 and actual_model_type in ("rf", "histgb", "logreg"):
+        if tree_params_override is not None:
+            pass
+        elif len(X_arr) >= 500 and actual_model_type in ("rf", "histgb", "logreg"):
             grid = {"rf": _RF_GRID, "histgb": _HISTGB_GRID, "logreg": _LR_GRID}[actual_model_type]
             tree_params, score = _select_best(
                 grid, lambda p: _build_sklearn_pipeline(actual_model_type, n_features, tree_params=p),
                 Xt, yt, tuning_folds, purge_gap)
             self.tuning_notes[actual_model_type] = {"params": tree_params, "cv_macro_f1": round(score, 4)}
-        elif len(X_arr) >= 500 and actual_model_type == "ensemble":
+        elif len(X_arr) >= 500 and actual_model_type in ("ensemble", "stacking"):
+            # Both combiners (fixed-weight voting and the stacking
+            # meta-learner) reuse the same tuned rf/histgb/lr base legs —
+            # only how they're combined differs.
             best_rf, rf_score = _select_best(
                 _RF_GRID, lambda p: _build_sklearn_pipeline("rf", n_features, tree_params=p),
                 Xt, yt, tuning_folds, purge_gap)
@@ -494,16 +532,17 @@ class MatchPredictorModel:
                 _LR_GRID, lambda p: _build_sklearn_pipeline("logreg", n_features, tree_params=p),
                 Xt, yt, tuning_folds, purge_gap)
             tree_params = {"rf": best_rf, "histgb": best_histgb, "lr": best_lr}
-            voting_weights, weight_score = _select_best(
-                _VOTING_WEIGHT_GRID,
-                lambda w: _build_sklearn_pipeline("ensemble", n_features, tree_params=tree_params, voting_weights=w),
-                Xt, yt, tuning_folds, purge_gap)
             self.tuning_notes = {
                 "rf": {"params": best_rf, "cv_macro_f1": round(rf_score, 4)},
                 "histgb": {"params": best_histgb, "cv_macro_f1": round(histgb_score, 4)},
                 "logreg": {"params": best_lr, "cv_macro_f1": round(lr_score, 4)},
-                "voting_weights": {"weights": voting_weights, "cv_macro_f1": round(weight_score, 4)},
             }
+            if actual_model_type == "ensemble":
+                voting_weights, weight_score = _select_best(
+                    _VOTING_WEIGHT_GRID,
+                    lambda w: _build_sklearn_pipeline("ensemble", n_features, tree_params=tree_params, voting_weights=w),
+                    Xt, yt, tuning_folds, purge_gap)
+                self.tuning_notes["voting_weights"] = {"weights": voting_weights, "cv_macro_f1": round(weight_score, 4)}
 
         # Build the winning pipeline
         pipe = _build_sklearn_pipeline(actual_model_type, n_features,
@@ -727,18 +766,26 @@ class MatchPredictorModel:
         return cm
 
     def train(self, X, y, feature_names: Optional[List[str]] = None,
-              cv_folds: int = 5, temporal: bool = True):
+              cv_folds: int = 5, temporal: bool = True,
+              tree_params_override: Optional[dict] = None,
+              voting_weights_override: Optional[list] = None):
+        """`*_override` skip the hyperparameter/voting-weight search and fit
+        directly with the given config (e.g. re-using a config a previous
+        tuning run already found) — same final evaluate+refit, just without
+        re-paying for the search."""
         self.feature_names = feature_names or [f"feature_{i}" for i in range(len(X[0]) if X else 0)]
-        
+
         purge_gap = 0
         if temporal and len(X) > 50:
             # Estimate horizon from data if possible; default to 1 event
             purge_gap = 1
-        
+
         if self.model_type in ("nb", "logreg") or not SKLEARN_AVAILABLE:
             self._fit_legacy(X, y, self.feature_names, cv_folds, temporal)
         else:
-            cv_res = self._fit_sklearn(X, y, self.feature_names, cv_folds=cv_folds, purge_gap=purge_gap)
+            cv_res = self._fit_sklearn(X, y, self.feature_names, cv_folds=cv_folds, purge_gap=purge_gap,
+                                        tree_params_override=tree_params_override,
+                                        voting_weights_override=voting_weights_override)
             self.eval_method = "temporal" if temporal else "shuffled"
             self.training_samples = len(X)
             self.class_distribution = {c: int(y.count(c)) for c in self.classes}
@@ -870,7 +917,7 @@ class MatchPredictorModel:
         
         self.version = data.get("version", "1.0.0")
         self.model_type = data.get("model_type", "ensemble")
-        self.sklearn_model_type = self.model_type if self.model_type in ("histgb", "rf", "logreg", "ensemble") else "ensemble"
+        self.sklearn_model_type = self.model_type if self.model_type in ("histgb", "rf", "logreg", "ensemble", "stacking") else "ensemble"
         self.trained_at = data.get("trained_at")
         self.training_samples = data.get("training_samples", 0)
         self.feature_names = data.get("feature_names", [])

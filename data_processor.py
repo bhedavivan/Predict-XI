@@ -7,6 +7,8 @@ from typing import List, Dict, Any, Tuple, Optional
 
 import numpy as np
 
+import dixon_coles
+
 
 def process_matches(matches: list) -> list:
     """Convert raw match data into a list of dicts with engineered features."""
@@ -39,6 +41,9 @@ def process_matches(matches: list) -> list:
             "result": result,
             "total_goals": home_score + away_score,
             "goal_diff": home_score - away_score,
+            # Optional richer per-match stats (shots/corners/cards/fouls) —
+            # only present for matches sourced from football-data.co.uk.
+            "stats": match.get("stats") or {},
         })
     rows.sort(key=lambda r: r["date"])
     return rows
@@ -91,6 +96,7 @@ def add_form_features(rows: list, n_matches: int = 5) -> list:
     team_away_history = defaultdict(list)
     team_overall_history = defaultdict(list)
     team_elo = {}
+    dc_ratings = dixon_coles.DixonColesRatings()
     team_season_matches = defaultdict(int)
     result_rows = []
 
@@ -102,6 +108,7 @@ def add_form_features(rows: list, n_matches: int = 5) -> list:
         away = row["away_team"]
         result = row["result"]
         match_date = row["date"]
+        stats = row.get("stats") or {}
 
         # Season progress
         team_season_matches[home] += 1
@@ -230,6 +237,26 @@ def add_form_features(rows: list, n_matches: int = 5) -> list:
         home_rest_days = _days_between(home_last_date, match_date) if home_last_date else 7
         away_rest_days = _days_between(away_last_date, match_date) if away_last_date else 7
 
+        # Match-stat rolling averages (shots/shots-on-target/corners/cards).
+        # Only populated for matches sourced from football-data.co.uk; older
+        # footballcsv-only rows leave these at 0 in team_overall_history, so
+        # this degrades gracefully rather than crashing.
+        def _stat_avg(history, key):
+            recent = history[-5:]
+            return sum(m.get(key, 0) for m in recent) / max(len(recent), 1)
+
+        home_hist = team_overall_history[home]
+        away_hist = team_overall_history[away]
+        stat_features = {}
+        for side, hist in (("home", home_hist), ("away", away_hist)):
+            for label, key in (
+                ("shots", "shots_for"), ("shots_against", "shots_against"),
+                ("sot", "sot_for"), ("sot_against", "sot_against"),
+                ("corners", "corners_for"), ("corners_against", "corners_against"),
+                ("cards", "cards_for"), ("cards_against", "cards_against"),
+            ):
+                stat_features[f"{side}_{label}_avg"] = _stat_avg(hist, key)
+
         # Elo
         for team, last_date in ((home, home_last_date), (away, away_last_date)):
             if team not in team_elo:
@@ -240,6 +267,10 @@ def add_form_features(rows: list, n_matches: int = 5) -> list:
         away_earned = team_elo[away]
         home_elo = home_earned
         away_elo = away_earned
+
+        # Dixon-Coles attack/defense derived probabilities (pre-match ratings
+        # only — no lookahead, same discipline as Elo above).
+        dc_p_home, dc_p_draw, dc_p_away, dc_exp_home, dc_exp_away = dc_ratings.predict(home, away)
 
         new_row = dict(row)
         new_row.update({
@@ -296,8 +327,23 @@ def add_form_features(rows: list, n_matches: int = 5) -> list:
             "home_gd_10": home_overall_gd / max(len(home_overall), 1),
             "away_gd_10": away_overall_gd / max(len(away_overall), 1),
             "season_progress": min(season_match_num / 40.0, 1.0),
+            "dc_home_exp_goals": dc_exp_home,
+            "dc_away_exp_goals": dc_exp_away,
+            "dc_home_prob": dc_p_home,
+            "dc_draw_prob": dc_p_draw,
+            "dc_away_prob": dc_p_away,
         })
+        new_row.update(stat_features)
         result_rows.append(new_row)
+
+        # Update Dixon-Coles ratings from the real result, then persist the
+        # post-match attack/defense so compute_team_stats can carry it
+        # forward for predicting brand-new (untrained) matchups.
+        dc_ratings.update(home, away, row["home_score"], row["away_score"])
+        new_row["home_dc_attack_post"] = dc_ratings.attack[home]
+        new_row["home_dc_defense_post"] = dc_ratings.defense[home]
+        new_row["away_dc_attack_post"] = dc_ratings.attack[away]
+        new_row["away_dc_defense_post"] = dc_ratings.defense[away]
 
         # Update Elo (margin-of-victory scaled)
         exp_home = _elo_expected(home_earned, away_earned)
@@ -323,10 +369,20 @@ def add_form_features(rows: list, n_matches: int = 5) -> list:
         team_overall_history[home].append({
             "points": home_points, "gs": row["home_score"], "gc": row["away_score"],
             "gd": row["goal_diff"], "date": match_date, "opponent": away, "result": result,
+            "shots_for": stats.get("home_shots", 0), "shots_against": stats.get("away_shots", 0),
+            "sot_for": stats.get("home_shots_on_target", 0), "sot_against": stats.get("away_shots_on_target", 0),
+            "corners_for": stats.get("home_corners", 0), "corners_against": stats.get("away_corners", 0),
+            "cards_for": stats.get("home_yellow", 0) + stats.get("home_red", 0),
+            "cards_against": stats.get("away_yellow", 0) + stats.get("away_red", 0),
         })
         team_overall_history[away].append({
             "points": away_points, "gs": row["away_score"], "gc": row["home_score"],
             "gd": -row["goal_diff"], "date": match_date, "opponent": home, "result": -result,
+            "shots_for": stats.get("away_shots", 0), "shots_against": stats.get("home_shots", 0),
+            "sot_for": stats.get("away_shots_on_target", 0), "sot_against": stats.get("home_shots_on_target", 0),
+            "corners_for": stats.get("away_corners", 0), "corners_against": stats.get("home_corners", 0),
+            "cards_for": stats.get("away_yellow", 0) + stats.get("away_red", 0),
+            "cards_against": stats.get("home_yellow", 0) + stats.get("home_red", 0),
         })
 
         # Update H2H pair history
@@ -360,8 +416,17 @@ def prepare_training_data(rows: list) -> Tuple[List[List[float]], List[int], Lis
         "home_gd_5", "away_gd_5", "home_gd_10", "away_gd_10",
         "season_progress",
     ]
+    # Shots/shots-on-target/corners/cards rolling averages — 0 for rows
+    # sourced from leagues/seasons without football-data.co.uk coverage.
+    match_stat_cols = [
+        "home_shots_avg", "home_shots_against_avg", "home_sot_avg", "home_sot_against_avg",
+        "home_corners_avg", "home_corners_against_avg", "home_cards_avg", "home_cards_against_avg",
+        "away_shots_avg", "away_shots_against_avg", "away_sot_avg", "away_sot_against_avg",
+        "away_corners_avg", "away_corners_against_avg", "away_cards_avg", "away_cards_against_avg",
+    ]
     elo_cols = ["home_elo", "away_elo", "elo_diff"]
-    feature_cols = base_form_cols + advanced_form_cols + elo_cols
+    dc_cols = ["dc_home_exp_goals", "dc_away_exp_goals", "dc_home_prob", "dc_draw_prob", "dc_away_prob"]
+    feature_cols = base_form_cols + advanced_form_cols + match_stat_cols + elo_cols + dc_cols
 
     X = []
     y = []
@@ -408,8 +473,25 @@ def prepare_prediction_features(home_team: str, away_team: str,
         home.get("gd_10", 0), away.get("gd_10", 0),
         home.get("season_progress", 0),
     ]
+    match_stat_features = [
+        home.get("shots_avg", 0), home.get("shots_against_avg", 0),
+        home.get("sot_avg", 0), home.get("sot_against_avg", 0),
+        home.get("corners_avg", 0), home.get("corners_against_avg", 0),
+        home.get("cards_avg", 0), home.get("cards_against_avg", 0),
+        away.get("shots_avg", 0), away.get("shots_against_avg", 0),
+        away.get("sot_avg", 0), away.get("sot_against_avg", 0),
+        away.get("corners_avg", 0), away.get("corners_against_avg", 0),
+        away.get("cards_avg", 0), away.get("cards_against_avg", 0),
+    ]
     elo_features = [home_elo, away_elo, home_elo - away_elo]
-    return base_features + elo_features
+
+    dc_p_home, dc_p_draw, dc_p_away, dc_exp_home, dc_exp_away = dixon_coles.match_probabilities(
+        home.get("dc_attack", dixon_coles.DC_START), home.get("dc_defense", dixon_coles.DC_START),
+        away.get("dc_attack", dixon_coles.DC_START), away.get("dc_defense", dixon_coles.DC_START),
+    )
+    dc_features = [dc_exp_home, dc_exp_away, dc_p_home, dc_p_draw, dc_p_away]
+
+    return base_features + match_stat_features + elo_features + dc_features
 
 
 def compute_team_stats(rows: list) -> dict:
@@ -425,6 +507,9 @@ def compute_team_stats(rows: list) -> dict:
         "streak": 0, "cs_rate_5": 0, "cs_rate_10": 0, "btts_rate_5": 0, "o25_rate_5": 0,
         "home_ppf_10": 0, "away_ppf_10": 0, "sos": ELO_START,
         "gd_5": 0, "gd_10": 0, "season_progress": 0,
+        "shots_avg": 0, "shots_against_avg": 0, "sot_avg": 0, "sot_against_avg": 0,
+        "corners_avg": 0, "corners_against_avg": 0, "cards_avg": 0, "cards_against_avg": 0,
+        "dc_attack": dixon_coles.DC_START, "dc_defense": dixon_coles.DC_START,
     })
 
     # Map team_stats keys to row prefixes
@@ -439,6 +524,10 @@ def compute_team_stats(rows: list) -> dict:
         "btts_rate_5": "btts_rate_5", "o25_rate_5": "o25_rate_5",
         "home_ppf_10": "home_ppf_10", "away_ppf_10": "away_ppf_10",
         "sos": "sos", "gd_5": "gd_5", "gd_10": "gd_10", "season_progress": "season_progress",
+        "shots_avg": "shots_avg", "shots_against_avg": "shots_against_avg",
+        "sot_avg": "sot_avg", "sot_against_avg": "sot_against_avg",
+        "corners_avg": "corners_avg", "corners_against_avg": "corners_against_avg",
+        "cards_avg": "cards_avg", "cards_against_avg": "cards_against_avg",
     }
 
     for row in reversed(rows):
@@ -450,6 +539,8 @@ def compute_team_stats(rows: list) -> dict:
                 if row_key in row:
                     team_stats[home][key] = row[row_key]
             team_stats[home]["elo"] = row.get("home_elo_post", ELO_START)
+            team_stats[home]["dc_attack"] = row.get("home_dc_attack_post", dixon_coles.DC_START)
+            team_stats[home]["dc_defense"] = row.get("home_dc_defense_post", dixon_coles.DC_START)
             team_stats[home]["league"] = row.get("competition", "")
         if team_stats[away]["matches_played"] == 0:
             for key, base in prefix_map.items():
@@ -457,6 +548,8 @@ def compute_team_stats(rows: list) -> dict:
                 if row_key in row:
                     team_stats[away][key] = row[row_key]
             team_stats[away]["elo"] = row.get("away_elo_post", ELO_START)
+            team_stats[away]["dc_attack"] = row.get("away_dc_attack_post", dixon_coles.DC_START)
+            team_stats[away]["dc_defense"] = row.get("away_dc_defense_post", dixon_coles.DC_START)
             team_stats[away]["league"] = row.get("competition", "")
         if all(team_stats[t]["matches_played"] > 0 for t in [home, away]):
             pass

@@ -1,72 +1,78 @@
 # Predict-XI
 
-Soccer match-outcome predictor. Rates every team with a running **Elo** and predicts
-**Home Win / Draw / Away Win** with a calibrated **sklearn ensemble**
-(RandomForest + HistGradientBoosting + LogisticRegression).
+Soccer match-outcome predictor. Rates every team with a running **Elo** and a rolling
+**Dixon-Coles** attack/defense model, and predicts **Home Win / Draw / Away Win** with a
+calibrated **sklearn ensemble** (RandomForest + HistGradientBoosting + LogisticRegression).
 
-Trained on **46,800+ matches** across six seasons and 29 divisions.
+Trained on **62,000+ matches** across seven seasons (through 2025-26) and 29 divisions.
 
 ---
 
-## Model (v4)
+## Model (v5)
 
 | Metric | Value | Notes |
 |---|---|---|
-| Accuracy | **46.3%** | temporal, purged time-series CV |
-| Baseline | 42.8% | always-predict-home |
-| Macro F1 | **0.425** | up from 0.36 — see note below |
-| Log-loss | 1.013 | below uniform (1.099) → still calibrated |
-| Brier score | 0.202 | multiclass |
-| Draw recall | **19.1%** | up from 0.7% before the class-balancing fix |
-| Training matches | 46,803 | 29 leagues × up to 6 seasons |
-| Teams rated | 640 | by Elo |
+| Accuracy | **45.6%** | temporal, purged time-series CV |
+| Baseline | 43.0% | always-predict-home |
+| Macro F1 | **0.430** | balances all three classes, not just accuracy |
+| Log-loss | 1.018 | below uniform (1.099) → still calibrated |
+| Brier score | 0.204 | multiclass |
+| Draw recall | **24.6%** | up from 0.7% pre-class-balancing, 19.1% last round |
+| Training matches | 62,131 | 29 leagues × up to 7 seasons (2019-20 → 2025-26) |
+| Teams rated | 669 | by Elo + Dixon-Coles |
+| Shipped model size | 64 MB | (`model.joblib`, via Git LFS) |
 
-> **Why accuracy went down but the model got better:** the previous version scored 48.0%
-> accuracy by essentially never predicting a draw (0.7% draw recall) — always guessing
-> home/away is a cheap way to inflate accuracy when draws are ~26% of matches. This version
-> trains with balanced sample weights and picks hyperparameters/voting-weights by **macro-F1**
-> instead of raw accuracy, so draw recall is now 19.1% — a real, usable signal — at the cost of
-> a small amount of headline accuracy. Log-loss/Brier are still comfortably below the
-> uninformative-uniform baseline, so probabilities stay meaningful.
+> **Why not higher accuracy?** This isn't a bug — it's close to the ceiling for this problem.
+> Football outcomes depend on things no pre-match feature set captures (a deflected shot, a red
+> card, a bad refereeing call), and even bookmakers — with far more inputs than we have — land in
+> the 50-55% range on this exact 3-way problem. 45-46% with genuine draw recall is a believable,
+> honest number; anything claiming much higher on this task is usually leaking future information.
 
-**RandomForest vs HistGB vs ensemble** — evaluated during hyperparameter tuning (purged CV,
-macro-F1, on a recency-capped subsample):
+**Ensemble vs stacking** — trained head-to-head on identical data (purged 5-fold CV, full
+62,131-match dataset):
 
-| Model | CV macro-F1 |
-|---|---|
-| RandomForest (tuned alone) | 0.434 |
-| Ensemble (tuned voting weights) | 0.433 |
-| LogisticRegression (tuned alone) | 0.425 |
-| HistGradientBoosting (tuned alone) | 0.413 |
+| Model | Macro F1 | Log-loss | Brier | Draw recall |
+|---|---|---|---|---|
+| Ensemble (soft-voting, shipped) | 0.430 | **1.018** | **0.204** | 24.6% |
+| Stacking (logistic meta-learner) | **0.430** | 1.023 | 0.205 | 24.6% |
 
-Plain **RandomForest is essentially tied with the full ensemble** — the extra HistGB/LR legs
-buy almost nothing here. The shipped default stays `ensemble` for now (its calibration is more
-robust and the gap is within noise), but `--model-type rf` is a legitimate, simpler alternative
-worth trying if you want faster training.
+Stacking edged out ensemble on macro-F1 by 0.002 — within the ~0.005-0.006 CV noise both models
+showed, i.e. not a real difference. Ensemble's log-loss/Brier were consistently better, so it
+ships as the default: the UI displays probabilities directly, and a noise-level classification
+edge isn't worth worse-calibrated confidence numbers. `--model-type stacking` is available if
+you want to try it yourself.
 
 **How it works**
 - **Elo ratings** — every team starts from the same 1500 anchor (no hand-picked per-league or
   per-club bonuses) and moves purely on results, with a margin-of-victory multiplier (bigger
   wins move the rating further, per the [World Football Elo Ratings](https://www.eloratings.net/about)
   method) on top of the standard home-edge (+65) and K-factor (24) update.
+- **Dixon-Coles attack/defense** (`dixon_coles.py`) — a rolling, incremental approximation of the
+  [Dixon & Coles (1997)](https://en.wikipedia.org/wiki/Dixon%E2%80%93Coles_model) Poisson goal
+  model: each team carries an attack/defense strength nudged by the surprise in each result (same
+  idea as Elo, applied to goals), feeding a Poisson scoreline grid with the low-score correlation
+  adjustment. Its derived Home/Draw/Away probabilities are themselves top-3 most important
+  features — this is specifically what pushed draw recall up this round.
 - **Form features** — rolling 5/10/20-match form, EWMA form, win/loss streaks, clean-sheet and
-  BTTS rates, strength of schedule, goals scored/conceded (home / away / overall), head-to-head
-  history, and rest days — 52 features in total.
+  BTTS rates, strength of schedule, goals scored/conceded, head-to-head history, rest days, plus
+  rolling shots/shots-on-target/corners/cards (for leagues football-data.co.uk covers) — 73
+  features in total.
 - **sklearn ensemble** — soft-voting `RandomForestClassifier` + `HistGradientBoostingClassifier`
   + calibrated `LogisticRegression`, all three legs individually probability-calibrated
   (`CalibratedClassifierCV`, isotonic) and trained with balanced sample weights so the model
-  doesn't just learn to ignore draws. Hyperparameters and voting weights are picked by a small
-  search scored on **macro-F1** (not accuracy) over purged time-series cross-validation, so the
-  search can't "win" by starving the minority draw class.
-- Alternative models (`rf`, `histgb`, `nb`, `logreg`) are selectable with `--model-type`; the
-  shipped default is whichever scores best on held-out macro-F1 (see the dashboard for the
-  current comparison).
+  doesn't just learn to ignore draws. Hyperparameters and voting weights are picked by a search
+  scored on **macro-F1** (not accuracy) over purged time-series cross-validation, so the search
+  can't "win" by starving the minority draw class. A `stacking` model type (logistic-regression
+  meta-learner instead of fixed voting weights) is also available — see comparison above.
+- Alternative models (`rf`, `histgb`, `stacking`, `nb`, `logreg`) are selectable with
+  `--model-type`.
 
 > **Note on Elo across leagues:** teams only ever play within their own league in the training
 > data, so Elo is calibrated *within* a league, not across leagues — comparing Arsenal to Celtic
 > by raw Elo isn't meaningful, and we no longer fake it with manual per-league offsets. Cross-league
-> signal instead comes from separate features (schedule strength, league identity) the model
-> learns from directly.
+> signal instead comes from separate features (schedule strength, league identity, Dixon-Coles)
+> the model learns from directly — which is what makes matching up any two teams from any two
+> leagues in the Predict page meaningful rather than just a raw Elo comparison.
 
 ---
 
@@ -107,10 +113,10 @@ python app.py
 
 Open **http://localhost:5000**. The app ships with a pre-trained model, so it works immediately:
 
-- **Dashboard** — live model performance stats, a confusion-matrix heatmap, and the top
-  predictive features.
-- **Predict a matchup** — pick a league first, then choose the two teams inside it (no more
-  scrolling a single 600+ team dropdown), and get calibrated Home/Draw/Away probabilities.
+- **Dashboard** — live model performance stats.
+- **Predict a matchup** — pick a league and team independently on each side (any two teams, any
+  two leagues — no shared-league constraint) instead of scrolling a single 600+ team dropdown,
+  and get calibrated Home/Draw/Away probabilities.
 - **Browse live fixtures** — pick a league to pull upcoming fixtures from football-data.org
   (needs an API token) and predict any of them in one click.
 
@@ -131,8 +137,11 @@ python main.py --source csv \
   --train eng.1 es.1 de.1 it.1 fr.1 nl.1 pt.1 be.1 tr.1 sco.1 at.1 ch.1 \
   --seasons 2019-20 2020-21 2021-22 2022-23 2023-24
 
+# Retrain on everything, including the current 2025-26 season
+python main.py --all-seasons --all-leagues --force-retrain
+
 # Try a different model
-python main.py --model-type nb --train eng.1 es.1 de.1 it.1 fr.1
+python main.py --model-type stacking --train eng.1 es.1 de.1 it.1 fr.1
 
 # List available leagues / seasons
 python main.py --list-leagues
@@ -151,22 +160,30 @@ Training prints accuracy, lift, log-loss, Brier, a confusion matrix, and per-cla
 | `app.py` | Flask web UI (routes only — templates live under `templates/`) |
 | `templates/*.html` | Jinja2 page templates (dashboard, predict, fixtures, training) |
 | `static/style.css` | Shared design system |
-| `model_trainer.py` | Production sklearn ensemble (RF + HistGB + calibrated LogReg), plus the original from-scratch Naive Bayes/softmax kept for tests |
-| `data_processor.py` | Feature engineering: form, H2H, rest days, **Elo** |
-| `csv_data_loader.py` | Loads historical CSVs from footballcsv/cache.footballdata |
+| `model_trainer.py` | Production sklearn ensemble (RF + HistGB + calibrated LogReg, plus a stacking option), plus the original from-scratch Naive Bayes/softmax kept for tests |
+| `data_processor.py` | Feature engineering: form, H2H, rest days, match stats, **Elo** |
+| `dixon_coles.py` | Rolling Dixon-Coles attack/defense ratings |
+| `csv_data_loader.py` | Loads historical CSVs from football-data.co.uk (primary) and footballcsv/cache.footballdata (fallback) |
 | `api_client.py` | football-data.org live-fixtures client |
 | `config.py` | API token loading + league codes |
-| `model.json` / `model.joblib` | Shipped trained model (metadata + sklearn pipeline) |
+| `model.json` / `model.joblib` | Shipped trained model (metadata + sklearn pipeline, via Git LFS) |
 | `model_metrics.json` | Metrics shown on the dashboard |
-| `team_stats.json` | Latest per-team stats/Elo for predictions |
+| `model_comparison.json` | Ensemble vs stacking head-to-head, from the most recent full retrain |
+| `team_stats.json` | Latest per-team stats/Elo/Dixon-Coles ratings for predictions |
 | `tests/` | Unit tests (`python -m pytest`) |
 
 ## Data sources
 
-- **Training:** [footballcsv/cache.footballdata](https://github.com/footballcsv/cache.footballdata) — historical results, no key needed.
+- **Training:** [football-data.co.uk](https://www.football-data.co.uk/) — actively maintained,
+  covers most major European leagues through the current season, with richer per-match stats.
+  Falls back to [footballcsv/cache.footballdata](https://github.com/footballcsv/cache.footballdata)
+  for leagues it doesn't carry (Russia, Poland, Austria, Switzerland, Denmark, Romania, Mexico) —
+  no key needed for either.
 - **Live fixtures:** [football-data.org](https://www.football-data.org/) — free API key required.
 
 ## Requirements
 
 - Python 3.8+
 - Flask (web UI only)
+- scikit-learn, numpy, pandas, joblib, threadpoolctl (see `requirements.txt`)
+- [Git LFS](https://git-lfs.com/) to clone `model.joblib` (64 MB)

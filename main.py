@@ -285,9 +285,9 @@ def main():
     )
     parser.add_argument(
         "--model-type",
-        choices=["logreg", "nb", "histgb", "rf", "ensemble"],
+        choices=["logreg", "nb", "histgb", "rf", "ensemble", "stacking"],
         default="ensemble",
-        help="Model: 'ensemble' (best), 'histgb', 'rf', 'logreg', 'nb' (legacy). Default: ensemble",
+        help="Model: 'ensemble' (default), 'stacking', 'histgb', 'rf', 'logreg', 'nb' (legacy).",
     )
     parser.add_argument(
         "--force-retrain",

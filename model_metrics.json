@@ -1,66 +1,59 @@
 {
-  "accuracy": 0.4626,
-  "baseline_accuracy": 0.4282,
-  "log_loss": 1.0127,
-  "brier": 0.2024,
+  "accuracy": 0.4558,
+  "baseline_accuracy": 0.4296,
+  "log_loss": 1.0182,
+  "brier": 0.2037,
   "eval_method": "temporal",
   "classification_report": {
     "-1": {
-      "precision": 0.433,
-      "recall": 0.542,
-      "f1-score": 0.481,
-      "support": 14459
+      "precision": 0.436,
+      "recall": 0.515,
+      "f1-score": 0.472,
+      "support": 19110
     },
     "0": {
-      "precision": 0.301,
-      "recall": 0.191,
-      "f1-score": 0.233,
-      "support": 12302
+      "precision": 0.296,
+      "recall": 0.246,
+      "f1-score": 0.269,
+      "support": 16329
     },
     "1": {
-      "precision": 0.549,
-      "recall": 0.572,
-      "f1-score": 0.561,
-      "support": 20042
+      "precision": 0.557,
+      "recall": 0.542,
+      "f1-score": 0.549,
+      "support": 26692
     }
   },
-  "test_samples": 9360,
-  "train_samples": 46803,
-  "cv_mean": 0.4626,
-  "cv_std": 0.0073,
-  "macro_f1": 0.4248,
+  "test_samples": 12426,
+  "train_samples": 62131,
+  "cv_mean": 0.4558,
+  "cv_std": 0.0055,
+  "macro_f1": 0.4298,
   "confusion_matrix": [
     [
-      5880,
-      1739,
-      3226
+      8210,
+      3372,
+      4372
     ],
     [
-      3634,
-      1758,
-      3836
+      5033,
+      3346,
+      5223
     ],
     [
-      4076,
-      2350,
-      8601
+      5591,
+      4586,
+      12042
     ]
   ],
   "class_distribution": {
-    "-1": 14459,
-    "0": 12302,
-    "1": 20042
+    "-1": 19110,
+    "0": 16329,
+    "1": 26692
   },
   "feature_importances": [
-    0.02053877077657403,
-    0.02502498378260543,
     0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    0.021728653756099673,
+    0.017583172688631136,
     0.0,
     0.0,
     0.0,
@@ -72,16 +65,45 @@
     0.0,
     0.0,
     0.0,
-    0.03443962555369316,
-    0.05424937516314873,
-    0.036104571659208474,
-    0.049802314204742563,
-    0.04198107944944358,
-    0.040728789042730786,
-    0.04419263839068999,
-    0.0454564243433302,
-    0.04183656995805171,
-    0.04117956561652015,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.03022774357280596,
+    0.022208033941204585,
+    0.03087491180342473,
+    0.03135460799312483,
+    0.031248864365264212,
+    0.03360382574710947,
+    0.03501208416522259,
+    0.032234290784411014,
+    0.031068027630900996,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.024246043214542528,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.020180711451394565,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.02624340916804886,
     0.0,
     0.0,
     0.0,
@@ -93,59 +115,18 @@
     0.0,
     0.0,
     0.0,
-    0.03668119848667751,
     0.0,
     0.0,
-    0.030228439141749778,
+    0.06549079224771436,
+    0.057458137955245576,
+    0.14618552384432262,
+    0.06700883857947935,
+    0.06671314972901453,
+    0.10787866856417101,
     0.0,
-    0.031027045512057063,
-    0.033335644263619936,
-    0.0,
-    0.10274173046426911,
-    0.09284196143674894,
-    0.17588061899803922
+    0.12317916255396721
   ],
-  "tuning_notes": {
-    "rf": {
-      "params": {
-        "n_estimators": 400,
-        "max_depth": 10,
-        "min_samples_split": 10,
-        "min_samples_leaf": 5,
-        "max_features": "sqrt",
-        "random_state": 42,
-        "n_jobs": 1
-      },
-      "cv_macro_f1": 0.4337
-    },
-    "histgb": {
-      "params": {
-        "max_depth": 4,
-        "max_iter": 300,
-        "learning_rate": 0.05,
-        "min_samples_leaf": 20,
-        "l2_regularization": 0.1,
-        "random_state": 42
-      },
-      "cv_macro_f1": 0.4128
-    },
-    "logreg": {
-      "params": {
-        "max_iter": 2000,
-        "C": 0.2,
-        "random_state": 42
-      },
-      "cv_macro_f1": 0.4253
-    },
-    "voting_weights": {
-      "weights": [
-        0.34,
-        0.33,
-        0.33
-      ],
-      "cv_macro_f1": 0.4328
-    }
-  },
+  "tuning_notes": {},
   "model_type": "ensemble",
   "version": "3.0.0",
   "feature_names": [
@@ -198,11 +179,32 @@
     "home_gd_10",
     "away_gd_10",
     "season_progress",
+    "home_shots_avg",
+    "home_shots_against_avg",
+    "home_sot_avg",
+    "home_sot_against_avg",
+    "home_corners_avg",
+    "home_corners_against_avg",
+    "home_cards_avg",
+    "home_cards_against_avg",
+    "away_shots_avg",
+    "away_shots_against_avg",
+    "away_sot_avg",
+    "away_sot_against_avg",
+    "away_corners_avg",
+    "away_corners_against_avg",
+    "away_cards_avg",
+    "away_cards_against_avg",
     "home_elo",
     "away_elo",
-    "elo_diff"
+    "elo_diff",
+    "dc_home_exp_goals",
+    "dc_away_exp_goals",
+    "dc_home_prob",
+    "dc_draw_prob",
+    "dc_away_prob"
   ],
-  "trained_at": "2026-07-26T01:53:52.713697Z",
-  "training_samples": 46803,
-  "n_teams": 640
+  "trained_at": "2026-07-26T06:59:38.541873Z",
+  "training_samples": 62131,
+  "n_teams": 669
 }

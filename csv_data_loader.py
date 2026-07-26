@@ -21,10 +21,52 @@ from data_processor import process_matches, add_form_features, prepare_training_
 # GitHub raw content base URL for footballcsv/cache.footballdata
 CSV_BASE_URL = "https://raw.githubusercontent.com/footballcsv/cache.footballdata/master"
 
-# Available seasons in the repository
+# football-data.co.uk: actively maintained (unlike the footballcsv mirror above,
+# which has no data past 2023-24), and carries richer per-match stats (shots,
+# corners, cards) alongside results. Preferred source for any league it covers.
+FD_COUK_BASE_URL = "https://www.football-data.co.uk/mmz4281"
+
+# Available seasons. 2024-25/2025-26 only come from football-data.co.uk —
+# the footballcsv mirror 404s on both for every league.
 AVAILABLE_SEASONS = [
-    "2019-20", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25"
+    "2019-20", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"
 ]
+
+# Our "eng.1"-style league code -> football-data.co.uk's own code. Only
+# leagues confirmed live (verified 200 OK, seasons 2019-20 through 2025-26)
+# are listed; anything not here falls back to the footballcsv mirror, which
+# caps out at 2023-24 for those leagues.
+FD_COUK_LEAGUE_MAP = {
+    "eng.1": "E0", "eng.2": "E1", "eng.3": "E2", "eng.4": "E3", "eng.5": "EC",
+    "es.1": "SP1", "es.2": "SP2",
+    "de.1": "D1", "de.2": "D2",
+    "it.1": "I1", "it.2": "I2",
+    "fr.1": "F1", "fr.2": "F2",
+    "nl.1": "N1",
+    "pt.1": "P1",
+    "be.1": "B1",
+    "tr.1": "T1",
+    "gr.1": "G1",
+    "sco.1": "SC0", "sco.2": "SC1", "sco.3": "SC2", "sco.4": "SC3",
+}
+
+# Extra per-match stat columns football-data.co.uk provides that the
+# footballcsv mirror doesn't. Rolled up into rolling averages in
+# data_processor.add_form_features the same way goals are.
+FD_COUK_STAT_COLUMNS = {
+    "home_shots": "HS", "away_shots": "AS",
+    "home_shots_on_target": "HST", "away_shots_on_target": "AST",
+    "home_corners": "HC", "away_corners": "AC",
+    "home_fouls": "HF", "away_fouls": "AF",
+    "home_yellow": "HY", "away_yellow": "AY",
+    "home_red": "HR", "away_red": "AR",
+}
+
+
+def _fd_couk_season_code(season: str) -> str:
+    """'2025-26' -> '2526' (football-data.co.uk's compact season format)."""
+    start, end = season.split("-")
+    return start[-2:] + end
 
 # League code mapping from CSV filename to standard codes.
 # Keys MUST match the actual filenames in footballcsv/cache.footballdata
@@ -150,6 +192,47 @@ def load_csv_from_cache_or_fetch(season: str, league_code: str) -> Optional[str]
     return csv_content
 
 
+def fetch_csv_from_fd_couk(season: str, fd_couk_code: str) -> Optional[str]:
+    """Fetch CSV data from football-data.co.uk (results + shots/corners/cards,
+    actively maintained through the current season, unlike the footballcsv
+    mirror above)."""
+    url = f"{FD_COUK_BASE_URL}/{_fd_couk_season_code(season)}/{fd_couk_code}.csv"
+    try:
+        req = Request(url, headers={'User-Agent': 'soccer-predictor/1.0'})
+        with urlopen(req, timeout=30) as response:
+            # football-data.co.uk CSVs are latin-1 encoded (accented referee/
+            # team names), unlike the UTF-8 footballcsv mirror.
+            return response.read().decode('latin-1')
+    except (URLError, HTTPError, UnicodeDecodeError) as e:
+        print(f"Error fetching {url}: {e}")
+        return None
+
+
+def load_fd_couk_csv_from_cache_or_fetch(season: str, league_code: str, fd_couk_code: str) -> Optional[str]:
+    """Cache wrapper for football-data.co.uk, mirroring
+    load_csv_from_cache_or_fetch. Cache key is prefixed so it can't collide
+    with a footballcsv cache file for the same league_code."""
+    ensure_cache_dir()
+    cache_path = get_cache_path(season, f"fdcouk_{league_code}")
+
+    if is_cache_valid(cache_path):
+        try:
+            with open(cache_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except (IOError, UnicodeDecodeError):
+            pass
+
+    csv_content = fetch_csv_from_fd_couk(season, fd_couk_code)
+    if csv_content:
+        try:
+            with open(cache_path, 'w', encoding='utf-8') as f:
+                f.write(csv_content)
+        except IOError:
+            pass
+
+    return csv_content
+
+
 def parse_csv_matches(csv_content: str, season: str, league_code: str) -> List[Dict[str, Any]]:
     """
     Parse CSV content into match dictionaries compatible with data_processor.
@@ -169,6 +252,7 @@ def parse_csv_matches(csv_content: str, season: str, league_code: str) -> List[D
     
     for row in reader:
         try:
+            stats = {}
             if is_footballcsv_format:
                 # Parse footballcsv format: Date,Team 1,FT,HT,Team 2
                 date_str = row.get('Date', '').strip()
@@ -224,6 +308,17 @@ def parse_csv_matches(csv_content: str, season: str, league_code: str) -> List[D
                 # Only include finished matches
                 if row.get('FTR', '').strip() not in ('H', 'A', 'D'):
                     continue
+
+                # Extra match stats (football-data.co.uk only — absent/blank
+                # on other football-data.org-shaped sources, which is fine,
+                # add_form_features treats missing stats as 0).
+                for feature_key, col in FD_COUK_STAT_COLUMNS.items():
+                    raw = row.get(col, '').strip()
+                    if raw:
+                        try:
+                            stats[feature_key] = int(raw)
+                        except ValueError:
+                            pass
             
             # Parse date (format: DD/MM/YY or DD/MM/YYYY or "Fri Aug 11 2023")
             match_date = None
@@ -251,6 +346,7 @@ def parse_csv_matches(csv_content: str, season: str, league_code: str) -> List[D
                 "competition": {"code": LEAGUE_CODE_MAP.get(league_code, league_code)},
                 "season": season,
                 "league_code": league_code,
+                "stats": stats,
             }
             matches.append(match)
             
@@ -272,10 +368,18 @@ def load_season_league_data(season: str, league_code: str) -> List[Dict[str, Any
     Returns:
         List of match dictionaries
     """
+    fd_couk_code = FD_COUK_LEAGUE_MAP.get(league_code)
+    if fd_couk_code:
+        csv_content = load_fd_couk_csv_from_cache_or_fetch(season, league_code, fd_couk_code)
+        if csv_content:
+            return parse_csv_matches(csv_content, season, league_code)
+        # football-data.co.uk had nothing for this season/league (e.g. a
+        # season before either source existed) — fall through to footballcsv.
+
     csv_content = load_csv_from_cache_or_fetch(season, league_code)
     if not csv_content:
         return []
-    
+
     return parse_csv_matches(csv_content, season, league_code)
 
 

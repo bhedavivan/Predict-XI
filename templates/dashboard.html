@@ -34,48 +34,6 @@
   {% endif %}
 </div>
 
-{% if confusion %}
-<div class="card">
-  <h2>Confusion matrix <span class="tag">actual vs predicted</span></h2>
-  <div class="cm-head">
-    <div></div>
-    {% for label in confusion.col_labels %}<div class="cm-h">{{ label }}</div>{% endfor %}
-  </div>
-  <div class="cm-table">
-    {% for row in confusion.rows %}
-    <div class="cm-row">
-      <div class="cm-label"><span class="dot" style="background:{{ row.color }}"></span>{{ row.label }}</div>
-      {% for cell in row.cells %}
-      <div class="cm-cell" style="background:{{ cell.bg }}; color:{{ cell.ink }};">
-        <div class="n">{{ cell.value }}</div>
-        <div class="p">{{ cell.pct }}% of row</div>
-      </div>
-      {% endfor %}
-    </div>
-    {% endfor %}
-  </div>
-  <p class="cm-axis">Rows = actual outcome &middot; columns = predicted outcome &middot; darker = more matches</p>
-</div>
-{% endif %}
-
-{% if top_features %}
-<div class="card">
-  <h2>Top predictive features <span class="tag">importance</span></h2>
-  <div style="display:flex; flex-direction:column; gap:.5rem;">
-  {% set top_value = top_features[0][1] %}
-  {% for name, imp in top_features %}
-    <div style="display:flex; align-items:center; gap:.7rem;">
-      <div style="width:190px; font-size:.8rem; color:var(--muted); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ name }}">{{ name }}</div>
-      <div style="flex:1; height:6px; background:var(--panel-2); border-radius:999px; overflow:hidden;">
-        <div style="height:100%; width:{{ (imp / top_value * 100)|round(1) if top_value else 0 }}%; background:var(--accent); border-radius:999px;"></div>
-      </div>
-      <div style="width:48px; text-align:right; font-size:.76rem; color:var(--faint); font-variant-numeric: tabular-nums;">{{ imp|round(3) }}</div>
-    </div>
-  {% endfor %}
-  </div>
-</div>
-{% endif %}
-
 <div class="tiles">
   <a class="tile" href="/predict">
     <div class="ico">&#127919;</div><h3>Predict a match</h3>

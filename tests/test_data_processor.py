@@ -285,7 +285,7 @@ class TestPrepareTrainingData:
         assert len(X) == 1
         assert len(y) == 1
         assert y[0] == 1
-        assert len(feature_names) == 52  # 20 base + 29 advanced + 3 Elo
+        assert len(feature_names) == 73  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles
 
 
 class TestPreparePredictionFeatures:
@@ -324,7 +324,7 @@ class TestPreparePredictionFeatures:
             },
         }
         features = prepare_prediction_features("Team A", "Team B", team_stats)
-        assert len(features) == 52  # 20 base + 29 advanced + 3 Elo
+        assert len(features) == 73  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles
         assert features[0] == 1.0  # home form
         assert features[4] == 0.5  # away form
 

@@ -30,7 +30,7 @@
         <div class="date">{{ m.date }}</div>
       </div>
       <a class="btn" style="width:auto; padding:.5rem 1rem; font-size:.86rem;"
-         href="/predict?home={{ m.home_team|urlencode }}&away={{ m.away_team|urlencode }}">Predict</a>
+         href="/predict?home={{ m.home_predict|urlencode }}&away={{ m.away_predict|urlencode }}">Predict</a>
     </div>
     {% endfor %}
   </div>

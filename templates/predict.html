@@ -2,12 +2,23 @@
 {% block title %}Predict-XI &middot; Predict{% endblock %}
 {% block content %}
 <div class="hero"><h1>Predict a match</h1>
-  <p>Pick a league first, then choose the two teams inside it.</p></div>
+  <p>Any two teams, any leagues — pick a league on each side, then the team inside it.</p></div>
 
 {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
 {% if warning %}<div class="alert warn">{{ warning }}</div>{% endif %}
 
 {% if prediction %}
+{% if not both_known %}
+{% set unknown_teams = [] %}
+{% if not home_info.known %}{% set _ = unknown_teams.append(home_team) %}{% endif %}
+{% if not away_info.known %}{% set _ = unknown_teams.append(away_team) %}{% endif %}
+<div class="alert warn">
+  <strong>{{ unknown_teams|join(' and ') }}</strong>
+  {{ 'aren\'t' if unknown_teams|length > 1 else 'isn\'t' }} in the training data under this name,
+  so this prediction falls back to neutral league-average stats — treat it as low-confidence, not
+  a real read on this matchup.
+</div>
+{% endif %}
 <div class="card" id="result">
   <div class="matchup">
     <div>
@@ -48,7 +59,7 @@
 
   <p class="muted" style="margin-top:1.1rem; font-size:.82rem;">
     Elo edge: <strong style="color:var(--text)">{{ home_team if elo_diff>=0 else away_team }}</strong>
-    by {{ elo_diff|abs|round|int }} points{% if cross_league %} &middot; cross-league matchup{% endif %}{% if not both_known %} &middot; limited data for one team{% endif %}.
+    by {{ elo_diff|abs|round|int }} points{% if cross_league %} &middot; cross-league matchup{% endif %}.
   </p>
 </div>
 {% endif %}
@@ -64,38 +75,42 @@
 {% elif teams %}
 <div class="card">
   <h2>Choose your matchup</h2>
-  <form method="GET" action="/predict" id="pform" class="select-step">
-    <div>
-      <label for="lf">1. League</label>
-      <select id="lf" required>
-        <option value="" disabled {% if not sel_league %}selected{% endif %}>Select a league&hellip;</option>
-        {% for code, lname in league_opts %}
-          <option value="{{ code }}" {% if code==sel_league %}selected{% endif %}>{{ lname }}</option>
-        {% endfor %}
-      </select>
-      <div class="step-hint">{{ teams|length }} teams across {{ league_opts|length }} leagues</div>
-    </div>
-
+  <form method="GET" action="/predict" id="pform">
     <div class="chooser">
       <div>
-        <label for="home">2. Home team</label>
+        <label for="home-league">Home league</label>
+        <select id="home-league">
+          <option value="" disabled {% if not sel_home_league %}selected{% endif %}>Select a league&hellip;</option>
+          {% for code, lname in league_opts %}
+            <option value="{{ code }}" {% if code==sel_home_league %}selected{% endif %}>{{ lname }}</option>
+          {% endfor %}
+        </select>
+        <label for="home" style="margin-top:.7rem;">Home team</label>
         <select id="home" name="home" required disabled>
           <option value="" selected>Select a league first&hellip;</option>
         </select>
         <div class="elo-badge" id="home-elo"></div>
       </div>
-      <div class="swapwrap"><button type="button" class="swap" id="swap" title="Swap" disabled>&#8646;</button></div>
+      <div class="swapwrap"><button type="button" class="swap" id="swap" title="Swap sides" disabled>&#8646;</button></div>
       <div>
-        <label for="away">3. Away team</label>
+        <label for="away-league">Away league</label>
+        <select id="away-league">
+          <option value="" disabled {% if not sel_away_league %}selected{% endif %}>Select a league&hellip;</option>
+          {% for code, lname in league_opts %}
+            <option value="{{ code }}" {% if code==sel_away_league %}selected{% endif %}>{{ lname }}</option>
+          {% endfor %}
+        </select>
+        <label for="away" style="margin-top:.7rem;">Away team</label>
         <select id="away" name="away" required disabled>
           <option value="" selected>Select a league first&hellip;</option>
         </select>
         <div class="elo-badge" id="away-elo"></div>
       </div>
     </div>
+    <div class="step-hint" style="margin-top:.8rem;">{{ teams|length }} teams across {{ league_opts|length }} leagues — leagues don't have to match on both sides.</div>
     <div class="btnrow">
       <button class="btn" type="submit" id="submit-btn" disabled>Run prediction &rarr;</button>
-      <button class="swap" type="button" id="rand" style="width:auto; padding:0 1rem;" disabled>&#127922; Random</button>
+      <button class="swap" type="button" id="rand" style="width:auto; padding:0 1rem;">&#127922; Random</button>
     </div>
   </form>
 </div>
@@ -107,9 +122,11 @@
 {% block scripts %}
 <script>
 var TEAMS = {{ teams_json|safe }};
-var lf = document.getElementById('lf'), homeSel = document.getElementById('home'), awaySel = document.getElementById('away');
+var homeLeagueSel = document.getElementById('home-league'), awayLeagueSel = document.getElementById('away-league');
+var homeSel = document.getElementById('home'), awaySel = document.getElementById('away');
 var swapBtn = document.getElementById('swap'), randBtn = document.getElementById('rand'), submitBtn = document.getElementById('submit-btn');
-var preHome = {{ sel_home|tojson }}, preAway = {{ sel_away|tojson }}, preLeague = {{ sel_league|tojson }};
+var preHome = {{ sel_home|tojson }}, preAway = {{ sel_away|tojson }};
+var preHomeLeague = {{ sel_home_league|tojson }}, preAwayLeague = {{ sel_away_league|tojson }};
 
 function findTeam(name){ for (var i=0;i<TEAMS.length;i++){ if (TEAMS[i].name===name) return TEAMS[i]; } return null; }
 
@@ -118,16 +135,19 @@ function opt(t, selected){
   if (selected) o.selected = true; return o;
 }
 
-function populateTeams(league, chosenHome, chosenAway){
+function populateSide(leagueSel, teamSel, chosenTeam){
+  var league = leagueSel.value;
   var list = TEAMS.filter(function(t){ return t.league === league; }).sort(function(a,b){ return b.elo - a.elo; });
-  [ [homeSel, chosenHome], [awaySel, chosenAway] ].forEach(function(pair){
-    var sel = pair[0], chosen = pair[1];
-    sel.innerHTML = '';
-    sel.disabled = list.length === 0;
-    list.forEach(function(t){ sel.appendChild(opt(t, t.name === chosen)); });
-  });
-  var enabled = list.length > 1;
-  swapBtn.disabled = !enabled; randBtn.disabled = !enabled; submitBtn.disabled = !enabled;
+  teamSel.innerHTML = '';
+  teamSel.disabled = list.length === 0;
+  list.forEach(function(t){ teamSel.appendChild(opt(t, t.name === chosenTeam)); });
+  return list.length > 0;
+}
+
+function updateButtons(){
+  var ready = homeSel.value && awaySel.value && homeSel.value !== awaySel.value;
+  submitBtn.disabled = !ready;
+  swapBtn.disabled = !(homeLeagueSel.value && awayLeagueSel.value);
 }
 
 function badge(sel, el){
@@ -138,35 +158,37 @@ function badge(sel, el){
 function refreshBadges(){
   badge(homeSel, document.getElementById('home-elo'));
   badge(awaySel, document.getElementById('away-elo'));
+  updateButtons();
 }
 
-if (lf) {
-  lf.addEventListener('change', function(){
-    populateTeams(lf.value, null, null);
-    refreshBadges();
-  });
+homeLeagueSel.addEventListener('change', function(){ populateSide(homeLeagueSel, homeSel, null); refreshBadges(); });
+awayLeagueSel.addEventListener('change', function(){ populateSide(awayLeagueSel, awaySel, null); refreshBadges(); });
+homeSel.addEventListener('change', refreshBadges);
+awaySel.addEventListener('change', refreshBadges);
 
-  if (preLeague) {
-    populateTeams(preLeague, preHome, preAway);
-    refreshBadges();
-  }
+if (preHomeLeague) { populateSide(homeLeagueSel, homeSel, preHome); }
+if (preAwayLeague) { populateSide(awayLeagueSel, awaySel, preAway); }
+refreshBadges();
 
-  homeSel.addEventListener('change', function(){ badge(homeSel, document.getElementById('home-elo')); });
-  awaySel.addEventListener('change', function(){ badge(awaySel, document.getElementById('away-elo')); });
+swapBtn.addEventListener('click', function(){
+  var hl = homeLeagueSel.value, al = awayLeagueSel.value;
+  var h = homeSel.value, a = awaySel.value;
+  homeLeagueSel.value = al; awayLeagueSel.value = hl;
+  populateSide(homeLeagueSel, homeSel, a);
+  populateSide(awayLeagueSel, awaySel, h);
+  refreshBadges();
+});
 
-  swapBtn.addEventListener('click', function(){
-    var h = homeSel.value; homeSel.value = awaySel.value; awaySel.value = h;
-    refreshBadges();
-  });
-
-  randBtn.addEventListener('click', function(){
-    var list = TEAMS.filter(function(t){ return t.league === lf.value; });
-    if (list.length < 2) return;
-    var i = Math.floor(Math.random()*list.length), j;
-    do { j = Math.floor(Math.random()*list.length); } while (j===i);
-    homeSel.value = list[i].name; awaySel.value = list[j].name;
-    refreshBadges();
-  });
-}
+randBtn.addEventListener('click', function(){
+  if (TEAMS.length < 2) return;
+  var i = Math.floor(Math.random() * TEAMS.length), j;
+  do { j = Math.floor(Math.random() * TEAMS.length); } while (j === i);
+  var homeTeam = TEAMS[i], awayTeam = TEAMS[j];
+  homeLeagueSel.value = homeTeam.league;
+  awayLeagueSel.value = awayTeam.league;
+  populateSide(homeLeagueSel, homeSel, homeTeam.name);
+  populateSide(awayLeagueSel, awaySel, awayTeam.name);
+  refreshBadges();
+});
 </script>
 {% endblock %}

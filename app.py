@@ -20,6 +20,7 @@ from config import LEAGUE_CODES
 from api_client import fetch_upcoming_matches, MissingTokenError
 from data_processor import prepare_prediction_features, load_data, compute_team_stats
 from model_trainer import MatchPredictorModel
+from team_aliases import resolve_team_name
 
 app = Flask(__name__)
 app.jinja_env.filters['urlencode'] = lambda s: urllib.parse.quote(str(s), safe='')
@@ -38,12 +39,6 @@ LEAGUE_NAMES = {
     "SA2": "Serie B", "FL2": "Ligue 2",
 }
 
-# Sequential single-hue ramp (light -> dark) for the confusion-matrix heatmap.
-_SEQ_RAMP = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
-_CM_LABELS = {-1: "Away Win", 0: "Draw", 1: "Home Win"}
-_CM_COLOR = {-1: "var(--away)", 0: "var(--draw)", 1: "var(--home)"}
-
-
 # ─── Helpers ──────────────────────────────────────────────────────────────
 
 def _load_json(name):
@@ -56,44 +51,6 @@ def _load_json(name):
 
 def load_metrics():
     return _load_json("model_metrics.json") or {}
-
-
-def build_confusion_view(metrics):
-    """Prepare the confusion matrix for the heatmap template: per-cell color
-    (sequential ramp keyed off the row max) and row-relative percentage."""
-    cm = metrics.get("confusion_matrix")
-    if not cm or not any(any(row) for row in cm):
-        return None
-    classes = [-1, 0, 1][:len(cm)]
-    max_val = max(max(row) for row in cm) or 1
-    rows = []
-    for i, row in enumerate(cm):
-        row_total = sum(row) or 1
-        cells = []
-        for val in row:
-            frac = val / max_val
-            step = min(int(frac * (len(_SEQ_RAMP) - 1)), len(_SEQ_RAMP) - 1)
-            cells.append({
-                "value": val,
-                "pct": round(val / row_total * 100, 1),
-                "bg": _SEQ_RAMP[step],
-                "ink": "#0b1220" if step <= 2 else "#f4f8ff",
-            })
-        rows.append({
-            "label": _CM_LABELS.get(classes[i], classes[i]),
-            "color": _CM_COLOR.get(classes[i], "var(--muted)"),
-            "cells": cells,
-        })
-    return {"rows": rows, "col_labels": [_CM_LABELS.get(c, c) for c in classes]}
-
-
-def top_feature_importances(metrics, limit=12):
-    """Top (name, importance) pairs, sorted descending, ready for the
-    template to iterate directly (Jinja has no built-in `zip` filter)."""
-    names = metrics.get("feature_names", [])
-    imps = metrics.get("feature_importances") or []
-    pairs = sorted(zip(names, imps), key=lambda t: -t[1])
-    return pairs[:limit]
 
 
 def build_team_stats():
@@ -173,8 +130,6 @@ def dashboard():
         active="dashboard",
         metrics=metrics,
         n_train_leagues=12,
-        confusion=build_confusion_view(metrics),
-        top_features=top_feature_importances(metrics),
         error=request.args.get("error", ""),
     )
 
@@ -186,22 +141,27 @@ def predict():
     home_team = request.args.get("home", "").strip()
     away_team = request.args.get("away", "").strip()
 
-    # The league picker is the required first step. If we arrived with a
-    # team already chosen (e.g. from the Fixtures "Predict" button) but no
-    # explicit league, infer it from whichever team we know about so the
-    # two-step flow still lands pre-populated instead of empty.
-    sel_league = request.args.get("league", "").strip()
-    if not sel_league:
-        if home_team and stats.get(home_team):
-            sel_league = stats[home_team].get("league", "")
-        elif away_team and stats.get(away_team):
-            sel_league = stats[away_team].get("league", "")
+    # The Fixtures page already resolves live-API names before linking here,
+    # but resolve again as a fallback (e.g. a hand-typed/bookmarked URL using
+    # an official long name) — never guess beyond the verified alias table,
+    # an unresolved team just means we predict with neutral defaults and say
+    # so clearly (see the "limited data" warning below), not a wrong team.
+    home_lookup = home_team if home_team in stats else (resolve_team_name(home_team, stats) or home_team)
+    away_lookup = away_team if away_team in stats else (resolve_team_name(away_team, stats) or away_team)
+
+    # Each side's league picker is independent (any two teams can be
+    # matched up). If we arrived with a team already chosen (e.g. from the
+    # Fixtures "Predict" button) but no explicit league, infer it from that
+    # team so the picker still lands pre-populated instead of empty.
+    sel_home_league = stats.get(home_lookup, {}).get("league", "") if home_lookup else ""
+    sel_away_league = stats.get(away_lookup, {}).get("league", "") if away_lookup else ""
 
     common = dict(
         teams=teams,
         teams_json=json.dumps(teams),
         league_opts=league_options(teams),
-        sel_home=home_team, sel_away=away_team, sel_league=sel_league,
+        sel_home=home_team, sel_away=away_team,
+        sel_home_league=sel_home_league, sel_away_league=sel_away_league,
         model_exists=model_exists(),
         error="", warning="",
     )
@@ -215,7 +175,7 @@ def predict():
         common["model_exists"] = False
         return render_template("predict.html", active="predict", prediction=None, **common)
 
-    features = prepare_prediction_features(home_team, away_team, stats)
+    features = prepare_prediction_features(home_lookup, away_lookup, stats)
     result = model.predict(features)
 
     probs = result["probabilities"]
@@ -225,8 +185,8 @@ def predict():
     top_prob = max(p_home, p_draw, p_away)
     conf = "High" if top_prob >= 0.55 else ("Moderate" if top_prob >= 0.42 else "Low")
 
-    h_info = team_info(stats, home_team)
-    a_info = team_info(stats, away_team)
+    h_info = team_info(stats, home_lookup)
+    a_info = team_info(stats, away_lookup)
 
     return render_template(
         "predict.html", active="predict", prediction=result,
@@ -261,6 +221,18 @@ def fixtures():
     except Exception as e:
         raw, error = [], f"API error: {e}"
 
+    stats = build_team_stats()
+
+    def _predict_name(team):
+        """The live API uses official long names ('Manchester United FC')
+        that don't match the training data's short names ('Man United').
+        Resolve to whichever name our stats actually recognize, trying the
+        official name then the API's shortName, so the Predict link lands on
+        real stats instead of silently falling back to neutral defaults."""
+        name = team.get("name", "")
+        resolved = resolve_team_name(name, stats) or resolve_team_name(team.get("shortName", ""), stats)
+        return resolved or name
+
     fixtures_list = []
     for m in raw:
         date_str = m.get("utcDate", "")
@@ -268,9 +240,12 @@ def fixtures():
             date_str = datetime.fromisoformat(date_str.replace("Z", "+00:00")).strftime("%b %d, %Y · %H:%M")
         except (ValueError, AttributeError):
             pass
+        home, away = m.get("homeTeam", {}), m.get("awayTeam", {})
         fixtures_list.append({
-            "home_team": m.get("homeTeam", {}).get("name", "Unknown"),
-            "away_team": m.get("awayTeam", {}).get("name", "Unknown"),
+            "home_team": home.get("name", "Unknown"),
+            "away_team": away.get("name", "Unknown"),
+            "home_predict": _predict_name(home),
+            "away_predict": _predict_name(away),
             "date": date_str,
         })
 

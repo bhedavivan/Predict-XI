@@ -140,17 +140,6 @@ option { color: var(--text); background: var(--panel-2); }
 .minibar { height:5px; border-radius:999px; background: var(--panel-2); margin-top:.45rem; overflow:hidden; }
 .minibar .fill { height:100%; transition: width .4s ease; }
 
-/* ── Confusion matrix heatmap ───────────────────────────────────────── */
-.cm-table { display:grid; gap:3px; margin-top: .3rem; }
-.cm-row { display:grid; grid-template-columns: 84px repeat(3, 1fr); gap:3px; align-items:stretch; }
-.cm-label { display:flex; align-items:center; gap:.4rem; font-size:.78rem; color: var(--muted); font-weight:600; }
-.cm-cell { border-radius:6px; padding:.6rem .4rem; text-align:center; border: 1px solid var(--border); }
-.cm-cell .n { font-size:.95rem; font-weight:700; font-variant-numeric: tabular-nums; }
-.cm-cell .p { font-size:.68rem; margin-top:.1rem; opacity:.85; }
-.cm-head { display:grid; grid-template-columns: 84px repeat(3, 1fr); gap:3px; margin-bottom:3px; }
-.cm-head .cm-h { font-size:.7rem; color: var(--faint); text-align:center; text-transform:uppercase; letter-spacing:.04em; }
-.cm-axis { font-size: .7rem; color: var(--faint); margin-top: .6rem; text-align: center; }
-
 /* ── Fixtures list ───────────────────────────────────────────────────── */
 .fixture-row { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:.85rem 1rem;
   background: var(--panel-2); border:1px solid var(--border); border-radius:8px; }
