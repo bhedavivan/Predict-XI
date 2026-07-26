@@ -1,0 +1,381 @@
+Date,Team 1,FT,HT,Team 2
+Fri Aug 21 2020,Bordeaux,0-0,0-0,Nantes
+Sat Aug 22 2020,Dijon,0-1,0-1,Angers
+Sat Aug 22 2020,Lille,1-1,1-0,Rennes
+Sun Aug 23 2020,Monaco,2-2,1-2,Reims
+Sun Aug 23 2020,Lorient,3-1,0-1,Strasbourg
+Sun Aug 23 2020,Nimes,4-0,2-0,Brest
+Sun Aug 23 2020,Nice,2-1,1-1,Lens
+Fri Aug 28 2020,Lyon,4-1,3-1,Dijon
+Sat Aug 29 2020,Rennes,2-1,1-0,Montpellier
+Sat Aug 29 2020,Strasbourg,0-2,0-1,Nice
+Sun Aug 30 2020,Reims,0-1,0-1,Lille
+Sun Aug 30 2020,Angers,0-2,0-2,Bordeaux
+Sun Aug 30 2020,Metz,0-1,0-1,Monaco
+Sun Aug 30 2020,Nantes,2-1,2-0,Nimes
+Sun Aug 30 2020,St Etienne,2-0,1-0,Lorient
+Sun Aug 30 2020,Brest,2-3,1-2,Marseille
+Thu Sep 10 2020,Lens,1-0,0-0,Paris SG
+Fri Sep 11 2020,Bordeaux,0-0,0-0,Lyon
+Sat Sep 12 2020,Montpellier,3-1,1-0,Nice
+Sat Sep 12 2020,St Etienne,2-0,0-0,Strasbourg
+Sun Sep 13 2020,Lille,1-0,0-0,Metz
+Sun Sep 13 2020,Angers,1-0,0-0,Reims
+Sun Sep 13 2020,Dijon,0-2,0-1,Brest
+Sun Sep 13 2020,Lorient,2-3,1-2,Lens
+Sun Sep 13 2020,Nimes,2-4,1-2,Rennes
+Sun Sep 13 2020,Monaco,2-1,1-0,Nantes
+Sun Sep 13 2020,Paris SG,0-1,0-1,Marseille
+Tue Sep 15 2020,Montpellier,2-1,1-0,Lyon
+Wed Sep 16 2020,Paris SG,1-0,0-0,Metz
+Thu Sep 17 2020,Marseille,0-2,0-1,St Etienne
+Fri Sep 18 2020,Lyon,0-0,0-0,Nimes
+Sat Sep 19 2020,Lens,2-1,0-0,Bordeaux
+Sat Sep 19 2020,Rennes,2-1,0-1,Monaco
+Sun Sep 20 2020,Nice,0-3,0-2,Paris SG
+Sun Sep 20 2020,Brest,3-2,2-1,Lorient
+Sun Sep 20 2020,Metz,2-1,1-1,Reims
+Sun Sep 20 2020,Montpellier,4-1,2-1,Angers
+Sun Sep 20 2020,Strasbourg,1-0,0-0,Dijon
+Sun Sep 20 2020,Nantes,2-2,0-1,St Etienne
+Sun Sep 20 2020,Marseille,1-1,0-0,Lille
+Fri Sep 25 2020,Lille,2-0,1-0,Nantes
+Sat Sep 26 2020,St Etienne,0-3,0-1,Rennes
+Sat Sep 26 2020,Marseille,1-1,0-0,Metz
+Sun Sep 27 2020,Bordeaux,0-0,0-0,Nice
+Sun Sep 27 2020,Angers,3-2,1-2,Brest
+Sun Sep 27 2020,Dijon,2-2,1-0,Montpellier
+Sun Sep 27 2020,Monaco,3-2,2-0,Strasbourg
+Sun Sep 27 2020,Nimes,1-1,0-1,Lens
+Sun Sep 27 2020,Lorient,1-1,0-0,Lyon
+Sun Sep 27 2020,Reims,0-2,0-1,Paris SG
+Fri Oct 2 2020,Paris SG,6-1,2-0,Angers
+Sat Oct 3 2020,Lens,2-0,1-0,St Etienne
+Sat Oct 3 2020,Nice,2-1,1-1,Nantes
+Sun Oct 4 2020,Montpellier,0-1,0-0,Nimes
+Sun Oct 4 2020,Bordeaux,3-0,2-0,Dijon
+Sun Oct 4 2020,Brest,1-0,1-0,Monaco
+Sun Oct 4 2020,Metz,3-1,1-1,Lorient
+Sun Oct 4 2020,Strasbourg,0-3,0-1,Lille
+Sun Oct 4 2020,Rennes,2-2,2-1,Reims
+Sun Oct 4 2020,Lyon,1-1,1-1,Marseille
+Fri Oct 16 2020,Dijon,1-1,0-1,Rennes
+Fri Oct 16 2020,Nimes,0-4,0-1,Paris SG
+Sat Oct 17 2020,Reims,1-3,1-0,Lorient
+Sat Oct 17 2020,Marseille,3-1,1-0,Bordeaux
+Sun Oct 18 2020,Strasbourg,2-3,1-3,Lyon
+Sun Oct 18 2020,Angers,1-1,1-1,Metz
+Sun Oct 18 2020,Monaco,1-1,0-0,Montpellier
+Sun Oct 18 2020,Nantes,3-1,2-0,Brest
+Sun Oct 18 2020,St Etienne,1-3,0-2,Nice
+Sun Oct 18 2020,Lille,4-0,1-0,Lens
+Fri Oct 23 2020,Rennes,1-2,1-1,Angers
+Sat Oct 24 2020,Lorient,0-1,0-0,Marseille
+Sat Oct 24 2020,Paris SG,4-0,2-0,Dijon
+Sun Oct 25 2020,Bordeaux,2-0,0-0,Nimes
+Sun Oct 25 2020,Brest,0-3,0-2,Strasbourg
+Sun Oct 25 2020,Metz,2-0,1-0,St Etienne
+Sun Oct 25 2020,Montpellier,0-4,0-3,Reims
+Sun Oct 25 2020,Nice,1-1,0-0,Lille
+Sun Oct 25 2020,Lyon,4-1,4-0,Monaco
+Sat Oct 31 2020,Rennes,2-1,0-0,Brest
+Sat Oct 31 2020,Nantes,0-3,0-0,Paris SG
+Sun Nov 1 2020,St Etienne,0-1,0-1,Montpellier
+Sun Nov 1 2020,Angers,0-3,0-2,Nice
+Sun Nov 1 2020,Dijon,0-0,0-0,Lorient
+Sun Nov 1 2020,Nimes,0-1,0-1,Metz
+Sun Nov 1 2020,Reims,2-1,2-1,Strasbourg
+Sun Nov 1 2020,Monaco,4-0,3-0,Bordeaux
+Sun Nov 1 2020,Lille,1-1,1-1,Lyon
+Fri Nov 6 2020,Strasbourg,0-1,0-0,Marseille
+Sat Nov 7 2020,Bordeaux,0-2,0-0,Montpellier
+Sat Nov 7 2020,Paris SG,3-0,2-0,Rennes
+Sun Nov 8 2020,Brest,3-2,3-1,Lille
+Sun Nov 8 2020,Lens,4-4,1-0,Reims
+Sun Nov 8 2020,Lorient,0-2,0-0,Nantes
+Sun Nov 8 2020,Metz,1-1,1-1,Dijon
+Sun Nov 8 2020,Nimes,1-5,0-2,Angers
+Sun Nov 8 2020,Nice,1-2,0-1,Monaco
+Sun Nov 8 2020,Lyon,2-1,0-1,St Etienne
+Fri Nov 20 2020,Rennes,0-1,0-1,Bordeaux
+Fri Nov 20 2020,Monaco,3-2,0-2,Paris SG
+Sat Nov 21 2020,Brest,4-1,4-1,St Etienne
+Sun Nov 22 2020,Nantes,1-1,1-1,Metz
+Sun Nov 22 2020,Dijon,0-1,0-1,Lens
+Sun Nov 22 2020,Montpellier,4-3,3-3,Strasbourg
+Sun Nov 22 2020,Reims,0-1,0-0,Nimes
+Sun Nov 22 2020,Angers,0-1,0-0,Lyon
+Sun Nov 22 2020,Lille,4-0,1-0,Lorient
+Wed Nov 25 2020,Lens,1-1,1-0,Nantes
+Fri Nov 27 2020,Strasbourg,1-1,1-0,Rennes
+Sat Nov 28 2020,Marseille,3-1,2-0,Nantes
+Sat Nov 28 2020,Paris SG,2-2,2-1,Bordeaux
+Sun Nov 29 2020,Lyon,3-0,1-0,Reims
+Sun Nov 29 2020,Lens,1-3,1-1,Angers
+Sun Nov 29 2020,Lorient,0-1,0-0,Montpellier
+Sun Nov 29 2020,Metz,0-2,0-1,Brest
+Sun Nov 29 2020,Monaco,3-0,1-0,Nimes
+Sun Nov 29 2020,Nice,1-3,0-2,Dijon
+Sun Nov 29 2020,St Etienne,1-1,1-0,Lille
+Fri Dec 4 2020,Nimes,0-2,0-0,Marseille
+Sat Dec 5 2020,Rennes,0-2,0-1,Lens
+Sat Dec 5 2020,Montpellier,1-3,1-1,Paris SG
+Sun Dec 6 2020,Lille,2-1,0-0,Monaco
+Sun Dec 6 2020,Angers,2-0,1-0,Lorient
+Sun Dec 6 2020,Bordeaux,1-0,0-0,Brest
+Sun Dec 6 2020,Dijon,0-0,0-0,St Etienne
+Sun Dec 6 2020,Nantes,0-4,0-2,Strasbourg
+Sun Dec 6 2020,Reims,0-0,0-0,Nice
+Sun Dec 6 2020,Metz,1-3,0-1,Lyon
+Fri Dec 11 2020,St Etienne,0-0,0-0,Angers
+Sat Dec 12 2020,Marseille,2-1,2-0,Monaco
+Sat Dec 12 2020,Lens,2-3,1-2,Montpellier
+Sun Dec 13 2020,Nice,0-1,0-1,Rennes
+Sun Dec 13 2020,Brest,2-1,1-0,Reims
+Sun Dec 13 2020,Lorient,3-0,2-0,Nimes
+Sun Dec 13 2020,Nantes,1-1,1-0,Dijon
+Sun Dec 13 2020,Strasbourg,2-2,0-1,Metz
+Sun Dec 13 2020,Lille,2-1,2-1,Bordeaux
+Sun Dec 13 2020,Paris SG,0-1,0-1,Lyon
+Wed Dec 16 2020,Angers,0-2,0-0,Strasbourg
+Wed Dec 16 2020,Dijon,0-2,0-1,Lille
+Wed Dec 16 2020,Montpellier,0-2,0-0,Metz
+Wed Dec 16 2020,Nimes,0-2,0-0,Nice
+Wed Dec 16 2020,Reims,3-2,0-1,Nantes
+Wed Dec 16 2020,Bordeaux,1-2,1-1,St Etienne
+Wed Dec 16 2020,Lyon,2-2,0-1,Brest
+Wed Dec 16 2020,Monaco,0-3,0-3,Lens
+Wed Dec 16 2020,Paris SG,2-0,0-0,Lorient
+Wed Dec 16 2020,Rennes,2-1,0-1,Marseille
+Sat Dec 19 2020,Metz,2-0,1-0,Lens
+Sat Dec 19 2020,Marseille,1-1,1-1,Reims
+Sat Dec 19 2020,Nice,1-4,1-2,Lyon
+Sun Dec 20 2020,Brest,2-2,0-1,Montpellier
+Sun Dec 20 2020,Dijon,0-1,0-1,Monaco
+Sun Dec 20 2020,Nantes,1-1,0-1,Angers
+Sun Dec 20 2020,St Etienne,2-2,1-1,Nimes
+Sun Dec 20 2020,Strasbourg,0-2,0-1,Bordeaux
+Sun Dec 20 2020,Lorient,0-3,0-1,Rennes
+Sun Dec 20 2020,Lille,0-0,0-0,Paris SG
+Wed Dec 23 2020,Bordeaux,1-3,0-2,Reims
+Wed Dec 23 2020,Lens,2-1,2-0,Brest
+Wed Dec 23 2020,Nice,2-2,2-0,Lorient
+Wed Dec 23 2020,Nimes,1-3,1-0,Dijon
+Wed Dec 23 2020,Rennes,1-0,0-0,Metz
+Wed Dec 23 2020,Angers,2-1,2-0,Marseille
+Wed Dec 23 2020,Lyon,3-0,3-0,Nantes
+Wed Dec 23 2020,Monaco,2-2,1-2,St Etienne
+Wed Dec 23 2020,Montpellier,2-3,0-1,Lille
+Wed Dec 23 2020,Paris SG,4-0,1-0,Strasbourg
+Wed Jan 6 2021,Brest,2-0,2-0,Nice
+Wed Jan 6 2021,Lorient,2-5,1-1,Monaco
+Wed Jan 6 2021,Metz,0-0,0-0,Bordeaux
+Wed Jan 6 2021,Nantes,0-0,0-0,Rennes
+Wed Jan 6 2021,Strasbourg,5-0,3-0,Nimes
+Wed Jan 6 2021,Lille,1-2,1-2,Angers
+Wed Jan 6 2021,Lyon,3-2,1-0,Lens
+Wed Jan 6 2021,Marseille,3-1,1-0,Montpellier
+Wed Jan 6 2021,Reims,0-0,0-0,Dijon
+Wed Jan 6 2021,St Etienne,1-1,1-1,Paris SG
+Sat Jan 9 2021,Bordeaux,2-1,2-1,Lorient
+Sat Jan 9 2021,Dijon,0-0,0-0,Marseille
+Sat Jan 9 2021,Lens,0-1,0-1,Strasbourg
+Sat Jan 9 2021,Metz,1-1,0-1,Nice
+Sat Jan 9 2021,Monaco,3-0,1-0,Angers
+Sat Jan 9 2021,Montpellier,1-1,1-0,Nantes
+Sat Jan 9 2021,Nimes,0-1,0-1,Lille
+Sat Jan 9 2021,Paris SG,3-0,1-0,Brest
+Sat Jan 9 2021,Reims,3-1,2-0,St Etienne
+Sat Jan 9 2021,Rennes,2-2,1-0,Lyon
+Fri Jan 15 2021,Montpellier,2-3,0-2,Monaco
+Sat Jan 16 2021,Marseille,1-2,0-0,Nimes
+Sat Jan 16 2021,Angers,0-1,0-0,Paris SG
+Sun Jan 17 2021,Brest,1-2,1-1,Rennes
+Sun Jan 17 2021,Nantes,1-1,1-0,Lens
+Sun Jan 17 2021,Nice,0-3,0-0,Bordeaux
+Sun Jan 17 2021,Strasbourg,1-0,1-0,St Etienne
+Sun Jan 17 2021,Lille,2-1,0-1,Reims
+Sun Jan 17 2021,Lyon,0-1,0-0,Metz
+Wed Jan 20 2021,Marseille,0-1,0-0,Lens
+Fri Jan 22 2021,Paris SG,4-0,1-0,Montpellier
+Sat Jan 23 2021,Lens,0-1,0-0,Nice
+Sat Jan 23 2021,Monaco,3-1,0-1,Marseille
+Sun Jan 24 2021,Bordeaux,2-1,2-1,Angers
+Sun Jan 24 2021,Dijon,1-1,0-0,Strasbourg
+Sun Jan 24 2021,Metz,2-0,1-0,Nantes
+Sun Jan 24 2021,Reims,1-0,1-0,Brest
+Sun Jan 24 2021,Rennes,0-1,0-1,Lille
+Sun Jan 24 2021,St Etienne,0-5,0-2,Lyon
+Wed Jan 27 2021,Lorient,3-2,1-2,Dijon
+Fri Jan 29 2021,Lyon,2-1,1-0,Bordeaux
+Sat Jan 30 2021,Montpellier,1-2,0-1,Lens
+Sun Jan 31 2021,Nice,0-1,0-0,St Etienne
+Sun Jan 31 2021,Angers,3-1,2-1,Nimes
+Sun Jan 31 2021,Brest,2-4,1-1,Metz
+Sun Jan 31 2021,Lorient,3-2,1-1,Paris SG
+Sun Jan 31 2021,Strasbourg,0-1,0-0,Reims
+Sun Jan 31 2021,Lille,1-0,1-0,Dijon
+Sun Jan 31 2021,Nantes,1-2,0-1,Monaco
+Wed Feb 3 2021,Bordeaux,0-3,0-0,Lille
+Wed Feb 3 2021,Metz,1-1,0-0,Montpellier
+Wed Feb 3 2021,Reims,0-0,0-0,Angers
+Wed Feb 3 2021,Rennes,1-1,1-0,Lorient
+Wed Feb 3 2021,Strasbourg,2-2,1-0,Brest
+Wed Feb 3 2021,Dijon,0-1,0-1,Lyon
+Wed Feb 3 2021,Lens,2-2,0-2,Marseille
+Wed Feb 3 2021,Monaco,2-1,1-0,Nice
+Wed Feb 3 2021,Paris SG,3-0,2-0,Nimes
+Wed Feb 3 2021,St Etienne,1-1,0-1,Nantes
+Sat Feb 6 2021,Lorient,1-0,0-0,Reims
+Sat Feb 6 2021,Lyon,3-0,2-0,Strasbourg
+Sat Feb 6 2021,Lens,0-0,0-0,Rennes
+Sun Feb 7 2021,Brest,2-1,0-0,Bordeaux
+Sun Feb 7 2021,Montpellier,4-2,0-1,Dijon
+Sun Feb 7 2021,Nice,3-0,2-0,Angers
+Sun Feb 7 2021,Nimes,3-4,2-2,Monaco
+Sun Feb 7 2021,St Etienne,1-0,1-0,Metz
+Sun Feb 7 2021,Nantes,0-2,0-1,Lille
+Sun Feb 7 2021,Marseille,0-2,0-2,Paris SG
+Sat Feb 13 2021,Paris SG,2-1,1-0,Nice
+Sat Feb 13 2021,Reims,1-1,1-0,Lens
+Sat Feb 13 2021,Lyon,1-2,1-1,Montpellier
+Sun Feb 14 2021,Monaco,2-2,0-1,Lorient
+Sun Feb 14 2021,Angers,1-3,1-2,Nantes
+Sun Feb 14 2021,Dijon,0-2,0-0,Nimes
+Sun Feb 14 2021,Metz,1-2,1-1,Strasbourg
+Sun Feb 14 2021,Rennes,0-2,0-1,St Etienne
+Sun Feb 14 2021,Lille,0-0,0-0,Brest
+Sun Feb 14 2021,Bordeaux,0-0,0-0,Marseille
+Wed Feb 17 2021,Marseille,3-2,2-0,Nice
+Fri Feb 19 2021,Brest,2-3,0-3,Lyon
+Sat Feb 20 2021,St Etienne,1-1,0-0,Reims
+Sat Feb 20 2021,Nantes,1-1,0-0,Marseille
+Sun Feb 21 2021,Montpellier,2-1,2-0,Rennes
+Sun Feb 21 2021,Lens,2-1,1-0,Dijon
+Sun Feb 21 2021,Nice,1-2,0-2,Metz
+Sun Feb 21 2021,Nimes,2-0,1-0,Bordeaux
+Sun Feb 21 2021,Strasbourg,0-0,0-0,Angers
+Sun Feb 21 2021,Lorient,1-4,1-2,Lille
+Sun Feb 21 2021,Paris SG,0-2,0-1,Monaco
+Wed Feb 24 2021,Nimes,1-0,0-0,Lorient
+Fri Feb 26 2021,Rennes,1-2,1-1,Nice
+Sat Feb 27 2021,Bordeaux,1-2,1-0,Metz
+Sat Feb 27 2021,Dijon,0-4,0-2,Paris SG
+Sun Feb 28 2021,Monaco,2-0,0-0,Brest
+Sun Feb 28 2021,Angers,2-2,2-1,Lens
+Sun Feb 28 2021,Lorient,2-1,0-1,St Etienne
+Sun Feb 28 2021,Nimes,1-1,0-1,Nantes
+Sun Feb 28 2021,Reims,0-0,0-0,Montpellier
+Sun Feb 28 2021,Lille,1-1,0-1,Strasbourg
+Sun Feb 28 2021,Marseille,1-1,1-1,Lyon
+Wed Mar 3 2021,Brest,3-1,3-1,Dijon
+Wed Mar 3 2021,Lyon,1-0,0-0,Rennes
+Wed Mar 3 2021,Metz,0-1,0-1,Angers
+Wed Mar 3 2021,Nice,2-1,1-0,Nimes
+Wed Mar 3 2021,St Etienne,2-3,1-2,Lens
+Wed Mar 3 2021,Bordeaux,0-1,0-1,Paris SG
+Wed Mar 3 2021,Lille,2-0,0-0,Marseille
+Wed Mar 3 2021,Montpellier,1-1,1-1,Lorient
+Wed Mar 3 2021,Nantes,1-2,1-1,Reims
+Wed Mar 3 2021,Strasbourg,1-0,0-0,Monaco
+Wed Mar 10 2021,Marseille,1-0,0-0,Rennes
+Fri Mar 12 2021,Reims,1-1,1-0,Lyon
+Sat Mar 13 2021,Angers,0-1,0-0,St Etienne
+Sat Mar 13 2021,Marseille,3-1,1-0,Brest
+Sun Mar 14 2021,Nimes,1-1,0-0,Montpellier
+Sun Mar 14 2021,Dijon,1-3,0-2,Bordeaux
+Sun Mar 14 2021,Lens,2-2,2-1,Metz
+Sun Mar 14 2021,Lorient,1-1,0-0,Nice
+Sun Mar 14 2021,Rennes,1-0,1-0,Strasbourg
+Sun Mar 14 2021,Monaco,0-0,0-0,Lille
+Sun Mar 14 2021,Paris SG,1-2,1-0,Nantes
+Fri Mar 19 2021,St Etienne,0-4,0-1,Monaco
+Sat Mar 20 2021,Metz,1-3,0-2,Rennes
+Sat Mar 20 2021,Nice,3-0,1-0,Marseille
+Sun Mar 21 2021,Strasbourg,1-2,1-2,Lens
+Sun Mar 21 2021,Brest,0-0,0-0,Angers
+Sun Mar 21 2021,Dijon,0-1,0-0,Reims
+Sun Mar 21 2021,Montpellier,3-1,1-1,Bordeaux
+Sun Mar 21 2021,Nantes,1-1,1-0,Lorient
+Sun Mar 21 2021,Lille,1-2,1-2,Nimes
+Sun Mar 21 2021,Lyon,2-4,0-2,Paris SG
+Sat Apr 3 2021,Monaco,4-0,0-0,Metz
+Sat Apr 3 2021,Paris SG,0-1,0-1,Lille
+Sat Apr 3 2021,Lens,1-1,0-0,Lyon
+Sun Apr 4 2021,Angers,1-1,0-0,Montpellier
+Sun Apr 4 2021,Bordeaux,2-3,2-3,Strasbourg
+Sun Apr 4 2021,Lorient,1-0,1-0,Brest
+Sun Apr 4 2021,Nantes,1-2,1-2,Nice
+Sun Apr 4 2021,Reims,2-2,0-0,Rennes
+Sun Apr 4 2021,Nimes,0-2,0-1,St Etienne
+Sun Apr 4 2021,Marseille,2-0,1-0,Dijon
+Fri Apr 9 2021,Metz,0-2,0-0,Lille
+Sat Apr 10 2021,Strasbourg,1-4,0-3,Paris SG
+Sat Apr 10 2021,Montpellier,3-3,1-2,Marseille
+Sun Apr 11 2021,Rennes,1-0,0-0,Nantes
+Sun Apr 11 2021,Brest,1-1,1-1,Nimes
+Sun Apr 11 2021,Lens,4-1,2-1,Lorient
+Sun Apr 11 2021,Nice,0-0,0-0,Reims
+Sun Apr 11 2021,St Etienne,4-1,2-1,Bordeaux
+Sun Apr 11 2021,Monaco,3-0,0-0,Dijon
+Sun Apr 11 2021,Lyon,3-0,2-0,Angers
+Fri Apr 16 2021,Lille,1-1,0-1,Montpellier
+Sat Apr 17 2021,Angers,0-3,0-1,Rennes
+Sat Apr 17 2021,Marseille,3-2,0-1,Lorient
+Sun Apr 18 2021,Paris SG,3-2,0-0,St Etienne
+Sun Apr 18 2021,Brest,1-1,1-0,Lens
+Sun Apr 18 2021,Dijon,2-0,0-0,Nice
+Sun Apr 18 2021,Nimes,1-1,0-0,Strasbourg
+Sun Apr 18 2021,Reims,0-0,0-0,Metz
+Sun Apr 18 2021,Bordeaux,0-3,0-1,Monaco
+Sun Apr 18 2021,Nantes,1-2,0-2,Lyon
+Fri Apr 23 2021,Reims,1-3,1-2,Marseille
+Sat Apr 24 2021,St Etienne,1-2,1-0,Brest
+Sat Apr 24 2021,Metz,1-3,0-1,Paris SG
+Sun Apr 25 2021,Nice,3-1,3-1,Montpellier
+Sun Apr 25 2021,Lens,2-1,1-0,Nimes
+Sun Apr 25 2021,Lorient,4-1,3-0,Bordeaux
+Sun Apr 25 2021,Rennes,5-1,1-1,Dijon
+Sun Apr 25 2021,Strasbourg,1-2,1-0,Nantes
+Sun Apr 25 2021,Angers,0-1,0-0,Monaco
+Sun Apr 25 2021,Lyon,2-3,2-1,Lille
+Fri Apr 30 2021,Marseille,1-1,0-0,Strasbourg
+Sat May 1 2021,Paris SG,2-1,1-0,Lens
+Sat May 1 2021,Lille,2-0,1-0,Nice
+Sun May 2 2021,Bordeaux,1-0,1-0,Rennes
+Sun May 2 2021,Brest,1-4,0-2,Nantes
+Sun May 2 2021,Dijon,1-5,0-2,Metz
+Sun May 2 2021,Lorient,2-0,1-0,Angers
+Sun May 2 2021,Nimes,2-2,0-1,Reims
+Sun May 2 2021,Montpellier,1-2,1-1,St Etienne
+Sun May 2 2021,Monaco,2-3,1-0,Lyon
+Fri May 7 2021,Lens,0-3,0-2,Lille
+Sat May 8 2021,Nantes,3-0,1-0,Bordeaux
+Sat May 8 2021,Lyon,4-1,0-0,Lorient
+Sun May 9 2021,St Etienne,1-0,1-0,Marseille
+Sun May 9 2021,Angers,3-0,1-0,Dijon
+Sun May 9 2021,Metz,0-3,0-0,Nimes
+Sun May 9 2021,Nice,3-2,1-2,Brest
+Sun May 9 2021,Strasbourg,2-3,0-1,Montpellier
+Sun May 9 2021,Reims,0-1,0-1,Monaco
+Sun May 9 2021,Rennes,1-1,0-1,Paris SG
+Sun May 16 2021,Bordeaux,3-0,1-0,Lens
+Sun May 16 2021,Dijon,0-4,0-2,Nantes
+Sun May 16 2021,Lille,0-0,0-0,St Etienne
+Sun May 16 2021,Lorient,2-1,1-0,Metz
+Sun May 16 2021,Marseille,3-2,1-0,Angers
+Sun May 16 2021,Monaco,2-1,2-0,Rennes
+Sun May 16 2021,Montpellier,0-0,0-0,Brest
+Sun May 16 2021,Nice,0-2,0-1,Strasbourg
+Sun May 16 2021,Nimes,2-5,1-3,Lyon
+Sun May 16 2021,Paris SG,4-0,2-0,Reims
+Sun May 23 2021,Angers,1-2,0-2,Lille
+Sun May 23 2021,Brest,0-2,0-1,Paris SG
+Sun May 23 2021,Lens,0-0,0-0,Monaco
+Sun May 23 2021,Lyon,2-3,2-1,Nice
+Sun May 23 2021,Metz,1-1,0-0,Marseille
+Sun May 23 2021,Nantes,1-2,1-1,Montpellier
+Sun May 23 2021,Reims,1-2,1-1,Bordeaux
+Sun May 23 2021,Rennes,2-0,1-0,Nimes
+Sun May 23 2021,St Etienne,0-1,0-1,Dijon
+Sun May 23 2021,Strasbourg,1-1,1-0,Lorient

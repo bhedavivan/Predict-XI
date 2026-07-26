@@ -1,0 +1,208 @@
+{
+  "accuracy": 0.4626,
+  "baseline_accuracy": 0.4282,
+  "log_loss": 1.0127,
+  "brier": 0.2024,
+  "eval_method": "temporal",
+  "classification_report": {
+    "-1": {
+      "precision": 0.433,
+      "recall": 0.542,
+      "f1-score": 0.481,
+      "support": 14459
+    },
+    "0": {
+      "precision": 0.301,
+      "recall": 0.191,
+      "f1-score": 0.233,
+      "support": 12302
+    },
+    "1": {
+      "precision": 0.549,
+      "recall": 0.572,
+      "f1-score": 0.561,
+      "support": 20042
+    }
+  },
+  "test_samples": 9360,
+  "train_samples": 46803,
+  "cv_mean": 0.4626,
+  "cv_std": 0.0073,
+  "macro_f1": 0.4248,
+  "confusion_matrix": [
+    [
+      5880,
+      1739,
+      3226
+    ],
+    [
+      3634,
+      1758,
+      3836
+    ],
+    [
+      4076,
+      2350,
+      8601
+    ]
+  ],
+  "class_distribution": {
+    "-1": 14459,
+    "0": 12302,
+    "1": 20042
+  },
+  "feature_importances": [
+    0.02053877077657403,
+    0.02502498378260543,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.021728653756099673,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.03443962555369316,
+    0.05424937516314873,
+    0.036104571659208474,
+    0.049802314204742563,
+    0.04198107944944358,
+    0.040728789042730786,
+    0.04419263839068999,
+    0.0454564243433302,
+    0.04183656995805171,
+    0.04117956561652015,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.03668119848667751,
+    0.0,
+    0.0,
+    0.030228439141749778,
+    0.0,
+    0.031027045512057063,
+    0.033335644263619936,
+    0.0,
+    0.10274173046426911,
+    0.09284196143674894,
+    0.17588061899803922
+  ],
+  "tuning_notes": {
+    "rf": {
+      "params": {
+        "n_estimators": 400,
+        "max_depth": 10,
+        "min_samples_split": 10,
+        "min_samples_leaf": 5,
+        "max_features": "sqrt",
+        "random_state": 42,
+        "n_jobs": 1
+      },
+      "cv_macro_f1": 0.4337
+    },
+    "histgb": {
+      "params": {
+        "max_depth": 4,
+        "max_iter": 300,
+        "learning_rate": 0.05,
+        "min_samples_leaf": 20,
+        "l2_regularization": 0.1,
+        "random_state": 42
+      },
+      "cv_macro_f1": 0.4128
+    },
+    "logreg": {
+      "params": {
+        "max_iter": 2000,
+        "C": 0.2,
+        "random_state": 42
+      },
+      "cv_macro_f1": 0.4253
+    },
+    "voting_weights": {
+      "weights": [
+        0.34,
+        0.33,
+        0.33
+      ],
+      "cv_macro_f1": 0.4328
+    }
+  },
+  "model_type": "ensemble",
+  "version": "3.0.0",
+  "feature_names": [
+    "home_form",
+    "home_goals_scored_avg",
+    "home_goals_conceded_avg",
+    "home_matches_played",
+    "away_form",
+    "away_goals_scored_avg",
+    "away_goals_conceded_avg",
+    "away_matches_played",
+    "home_overall_form",
+    "home_overall_goals_scored_avg",
+    "home_overall_goals_conceded_avg",
+    "away_overall_form",
+    "away_overall_goals_scored_avg",
+    "away_overall_goals_conceded_avg",
+    "h2h_matches",
+    "h2h_home_wins",
+    "h2h_draws",
+    "h2h_away_wins",
+    "home_rest_days",
+    "away_rest_days",
+    "home_ppf_10",
+    "home_ppf_20",
+    "away_ppf_10",
+    "away_ppf_20",
+    "home_ewma_form",
+    "away_ewma_form",
+    "home_ewma_gs",
+    "away_ewma_gs",
+    "home_ewma_gc",
+    "away_ewma_gc",
+    "home_streak",
+    "away_streak",
+    "home_cs_rate_5",
+    "away_cs_rate_5",
+    "home_cs_rate_10",
+    "away_cs_rate_10",
+    "home_btts_rate_5",
+    "away_btts_rate_5",
+    "home_o25_rate_5",
+    "away_o25_rate_5",
+    "home_home_ppf_10",
+    "away_away_ppf_10",
+    "home_sos",
+    "away_sos",
+    "home_gd_5",
+    "away_gd_5",
+    "home_gd_10",
+    "away_gd_10",
+    "season_progress",
+    "home_elo",
+    "away_elo",
+    "elo_diff"
+  ],
+  "trained_at": "2026-07-26T01:53:52.713697Z",
+  "training_samples": 46803,
+  "n_teams": 640
+}

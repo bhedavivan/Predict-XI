@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Predict-XI &middot; Dashboard{% endblock %}
+{% block content %}
+<div class="hero">
+  <h1>Predict the match <span class="accent">before it's played.</span></h1>
+  <p>An ensemble ML model (RandomForest + HistGradientBoosting + calibrated Logistic
+     Regression) rates every team with a within-league Elo and predicts Home / Draw /
+     Away outcomes, trained on {{ "{:,}".format(metrics.get('training_samples', 0)) }}
+     matches across {{ n_train_leagues }} leagues.</p>
+</div>
+
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+
+<div class="card">
+  <h2>Model performance <span class="tag">v{{ metrics.get('version','3.0') }} &middot; {{ metrics.get('model_type', 'ensemble') }}</span></h2>
+  {% if metrics %}
+  <div class="stat-grid">
+    <div class="stat"><div class="v">{{ (metrics.accuracy*100)|round(1) }}%</div>
+      <div class="l">Accuracy</div><div class="sub">{{ metrics.get('eval_method','temporal') }} CV</div></div>
+    <div class="stat"><div class="v">+{{ ((metrics.accuracy-metrics.baseline_accuracy)*100)|round(1) }}</div>
+      <div class="l">Lift vs baseline</div><div class="sub">over always-home</div></div>
+    <div class="stat"><div class="v">{{ metrics.log_loss }}</div>
+      <div class="l">Log-loss</div><div class="sub">{{ 'calibrated' if metrics.log_loss < 1.0986 else 'ok' }} (&lt;1.099)</div></div>
+    <div class="stat"><div class="v">{{ metrics.get('macro_f1', '—') }}</div>
+      <div class="l">Macro F1</div><div class="sub">rewards draw recall too</div></div>
+    <div class="stat"><div class="v">{{ "{:,}".format(metrics.training_samples) }}</div>
+      <div class="l">Matches trained</div><div class="sub">{{ "{:,}".format(metrics.get('test_samples', 0)) }} held out</div></div>
+    <div class="stat"><div class="v">{{ metrics.get('n_teams', 0) }}</div>
+      <div class="l">Teams rated</div><div class="sub">by Elo + form</div></div>
+  </div>
+  {% else %}
+  <p class="muted">No trained model found. Run
+     <code>python main.py --all-seasons --all-leagues --force-retrain</code> then refresh.</p>
+  {% endif %}
+</div>
+
+{% if confusion %}
+<div class="card">
+  <h2>Confusion matrix <span class="tag">actual vs predicted</span></h2>
+  <div class="cm-head">
+    <div></div>
+    {% for label in confusion.col_labels %}<div class="cm-h">{{ label }}</div>{% endfor %}
+  </div>
+  <div class="cm-table">
+    {% for row in confusion.rows %}
+    <div class="cm-row">
+      <div class="cm-label"><span class="dot" style="background:{{ row.color }}"></span>{{ row.label }}</div>
+      {% for cell in row.cells %}
+      <div class="cm-cell" style="background:{{ cell.bg }}; color:{{ cell.ink }};">
+        <div class="n">{{ cell.value }}</div>
+        <div class="p">{{ cell.pct }}% of row</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  <p class="cm-axis">Rows = actual outcome &middot; columns = predicted outcome &middot; darker = more matches</p>
+</div>
+{% endif %}
+
+{% if top_features %}
+<div class="card">
+  <h2>Top predictive features <span class="tag">importance</span></h2>
+  <div style="display:flex; flex-direction:column; gap:.5rem;">
+  {% set top_value = top_features[0][1] %}
+  {% for name, imp in top_features %}
+    <div style="display:flex; align-items:center; gap:.7rem;">
+      <div style="width:190px; font-size:.8rem; color:var(--muted); font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ name }}">{{ name }}</div>
+      <div style="flex:1; height:6px; background:var(--panel-2); border-radius:999px; overflow:hidden;">
+        <div style="height:100%; width:{{ (imp / top_value * 100)|round(1) if top_value else 0 }}%; background:var(--accent); border-radius:999px;"></div>
+      </div>
+      <div style="width:48px; text-align:right; font-size:.76rem; color:var(--faint); font-variant-numeric: tabular-nums;">{{ imp|round(3) }}</div>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="tiles">
+  <a class="tile" href="/predict">
+    <div class="ico">&#127919;</div><h3>Predict a match</h3>
+    <p>Pick a league, then two teams, and get calibrated Home / Draw / Away probabilities.</p>
+    <div class="go">Open predictor &rarr;</div>
+  </a>
+  <a class="tile" href="/fixtures">
+    <div class="ico">&#128197;</div><h3>Browse live fixtures</h3>
+    <p>Real upcoming matches per league, one click to predict each one.</p>
+    <div class="go">View fixtures &rarr;</div>
+  </a>
+</div>
+{% endblock %}
