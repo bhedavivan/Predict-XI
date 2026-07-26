@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Predict-XI &middot; Fixtures{% endblock %}
+{% block content %}
+<div class="hero"><h1>Live fixtures</h1>
+  <p>Upcoming matches from football-data.org. Pick a league to load its schedule.</p></div>
+
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+
+<div class="card">
+  <form method="GET" action="/fixtures">
+    <label for="league">League</label>
+    <select name="league" id="league" onchange="this.form.submit()">
+      <option value="">&mdash; choose a league &mdash;</option>
+      {% for code, name in leagues.items() %}<option value="{{ code }}" {% if code==selected %}selected{% endif %}>{{ name }} ({{ code }})</option>{% endfor %}
+    </select>
+    <noscript><button class="btn" type="submit" style="margin-top:1rem;">Load fixtures</button></noscript>
+  </form>
+  <p class="muted" style="margin-top:.7rem; font-size:.78rem;">Requires a free football-data.org token in <code>.env</code>.</p>
+</div>
+
+{% if selected %}
+<div class="card">
+  <h2>{{ league_name }} <span class="tag">{{ selected }}</span></h2>
+  {% if fixtures %}
+  <div>
+    {% for m in fixtures %}
+    <div class="fixture-row">
+      <div>
+        <div class="teams">{{ m.home_team }} <span class="muted">vs</span> {{ m.away_team }}</div>
+        <div class="date">{{ m.date }}</div>
+      </div>
+      <a class="btn" style="width:auto; padding:.5rem 1rem; font-size:.86rem;"
+         href="/predict?home={{ m.home_team|urlencode }}&away={{ m.away_team|urlencode }}">Predict</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">No upcoming fixtures found &mdash; the season may be between rounds, or the API token isn't set.</p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

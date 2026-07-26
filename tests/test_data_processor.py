@@ -9,7 +9,31 @@ from data_processor import (
     prepare_prediction_features,
     compute_team_stats,
     _days_between,
+    _elo_expected,
+    _elo_goal_diff_multiplier,
+    ELO_START,
+    ELO_HOME_ADV,
 )
+
+
+def _match_row(date, home, away, home_score, away_score):
+    if home_score > away_score:
+        result = 1
+    elif home_score < away_score:
+        result = -1
+    else:
+        result = 0
+    return {
+        "date": date,
+        "competition": "PL",
+        "home_team": home,
+        "away_team": away,
+        "home_score": home_score,
+        "away_score": away_score,
+        "result": result,
+        "total_goals": home_score + away_score,
+        "goal_diff": home_score - away_score,
+    }
 
 
 class TestProcessMatches:
@@ -152,6 +176,78 @@ class TestAddFormFeatures:
         assert result == []
 
 
+class TestElo:
+    """Tests for the Elo rating system: no hand-picked club/league bonuses,
+    every team starts from the same anchor, and margin of victory scales
+    the update."""
+
+    def test_new_teams_start_at_elo_start(self):
+        rows = [_match_row("2023-08-12T14:00:00Z", "Team A", "Team B", 1, 1)]
+        result = add_form_features(rows)
+        # A draw between two brand-new teams should barely move Elo away
+        # from the shared 1500 anchor (home advantage still applies).
+        assert result[0]["home_elo"] == ELO_START
+        assert result[0]["away_elo"] == ELO_START
+
+    def test_no_club_or_league_priors(self):
+        """Historically Elo-heavy clubs (Real Madrid, Bayern, PSG, ...) must
+        get no baked-in bonus — only match results move their rating."""
+        rows = [_match_row("2023-08-12T14:00:00Z", "Real Madrid", "Paris SG", 0, 0)]
+        result = add_form_features(rows)
+        assert result[0]["home_elo"] == ELO_START
+        assert result[0]["away_elo"] == ELO_START
+
+    def test_home_win_raises_home_elo_lowers_away_elo(self):
+        rows = [
+            _match_row("2023-08-12T14:00:00Z", "Team A", "Team B", 2, 0),
+            _match_row("2023-08-19T14:00:00Z", "Team A", "Team C", 1, 0),
+        ]
+        result = add_form_features(rows)
+        assert result[1]["home_elo"] > ELO_START
+        # Team B lost, so its post-match Elo should have dropped below start
+        first = result[0]
+        assert first["home_elo_post"] > ELO_START
+        assert first["away_elo_post"] < ELO_START
+
+    def test_larger_margin_moves_elo_further(self):
+        """A 4-0 win should move the winner's Elo further than a 1-0 win,
+        via the margin-of-victory multiplier."""
+        small_margin = [_match_row("2023-08-12T14:00:00Z", "Team A", "Team B", 1, 0)]
+        big_margin = [_match_row("2023-08-12T14:00:00Z", "Team A", "Team B", 4, 0)]
+        small_result = add_form_features(small_margin)
+        big_result = add_form_features(big_margin)
+        small_gain = small_result[0]["home_elo_post"] - ELO_START
+        big_gain = big_result[0]["home_elo_post"] - ELO_START
+        assert big_gain > small_gain > 0
+
+    def test_goal_diff_multiplier_monotonic(self):
+        assert _elo_goal_diff_multiplier(0) == 1.0
+        assert _elo_goal_diff_multiplier(1) == 1.0
+        assert _elo_goal_diff_multiplier(2) == 1.5
+        assert _elo_goal_diff_multiplier(3) > _elo_goal_diff_multiplier(2)
+        assert _elo_goal_diff_multiplier(5) > _elo_goal_diff_multiplier(3)
+
+    def test_elo_expected_home_advantage(self):
+        """Equal-rated teams should favor the home side because of
+        ELO_HOME_ADV."""
+        p_home = _elo_expected(ELO_START, ELO_START)
+        assert p_home > 0.5
+
+    def test_season_gap_regresses_toward_start(self):
+        """A team idle for more than ELO_SEASON_GAP days should regress
+        partway back toward the shared 1500 anchor, not a league-specific
+        one."""
+        rows = [
+            _match_row("2023-08-12T14:00:00Z", "Team A", "Team B", 3, 0),
+            # Team A returns 200 days later against a new opponent.
+            _match_row("2024-03-01T14:00:00Z", "Team A", "Team C", 0, 0),
+        ]
+        result = add_form_features(rows)
+        elo_after_win = result[0]["home_elo_post"]
+        elo_before_second_match = result[1]["home_elo"]
+        assert ELO_START < elo_before_second_match < elo_after_win
+
+
 class TestPrepareTrainingData:
     """Tests for prepare_training_data function."""
 
@@ -189,7 +285,7 @@ class TestPrepareTrainingData:
         assert len(X) == 1
         assert len(y) == 1
         assert y[0] == 1
-        assert len(feature_names) == 23  # 20 form/H2H/rest + 3 Elo features
+        assert len(feature_names) == 52  # 20 base + 29 advanced + 3 Elo
 
 
 class TestPreparePredictionFeatures:
@@ -228,7 +324,7 @@ class TestPreparePredictionFeatures:
             },
         }
         features = prepare_prediction_features("Team A", "Team B", team_stats)
-        assert len(features) == 23  # includes 3 Elo features (default 1500 when absent)
+        assert len(features) == 52  # 20 base + 29 advanced + 3 Elo
         assert features[0] == 1.0  # home form
         assert features[4] == 0.5  # away form
 

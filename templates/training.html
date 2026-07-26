@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Predict-XI &middot; Training{% endblock %}
+{% block content %}
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+{% if success %}
+<div class="alert ok">{{ success }}</div>
+<div class="card">
+  <h2>Training results</h2>
+  <div class="stat-grid">
+    <div class="stat"><div class="v">{{ (accuracy*100)|round(1) }}%</div><div class="l">Accuracy</div></div>
+    <div class="stat"><div class="v">{{ train_samples }}</div><div class="l">Train samples</div></div>
+    <div class="stat"><div class="v">{{ test_samples }}</div><div class="l">Test samples</div></div>
+  </div>
+</div>
+{% endif %}
+<div style="margin-top:1.2rem;"><a class="btn ghost" href="/predict" style="width:auto; padding:.65rem 1.2rem;">&larr; Back to predictor</a></div>
+{% endblock %}

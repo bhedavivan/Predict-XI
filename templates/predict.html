@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Predict-XI &middot; Predict{% endblock %}
+{% block content %}
+<div class="hero"><h1>Predict a match</h1>
+  <p>Pick a league first, then choose the two teams inside it.</p></div>
+
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+{% if warning %}<div class="alert warn">{{ warning }}</div>{% endif %}
+
+{% if prediction %}
+<div class="card" id="result">
+  <div class="matchup">
+    <div>
+      <div class="team-name">{{ home_team }}</div>
+      <div class="pill" style="margin-top:.45rem;"><span class="dot" style="background:var(--home)"></span>{{ home_info.tier }} &middot; Elo {{ home_info.elo|round|int }}</div>
+      <div class="muted" style="font-size:.74rem; margin-top:.3rem;">{{ home_info.league_name }}</div>
+    </div>
+    <div class="vs">VS</div>
+    <div>
+      <div class="team-name">{{ away_team }}</div>
+      <div class="pill" style="margin-top:.45rem;"><span class="dot" style="background:var(--away)"></span>{{ away_info.tier }} &middot; Elo {{ away_info.elo|round|int }}</div>
+      <div class="muted" style="font-size:.74rem; margin-top:.3rem;">{{ away_info.league_name }}</div>
+    </div>
+  </div>
+
+  <div class="outcome">
+    <div class="label">Predicted outcome</div>
+    <div class="value" style="color: {% if prediction.prediction=='Home Win' %}var(--home){% elif prediction.prediction=='Away Win' %}var(--away){% else %}var(--draw){% endif %};">
+      {{ prediction.prediction }}</div>
+    <span class="pill" style="margin-top:.4rem;">{{ confidence_label }} confidence &middot; {{ (top_prob*100)|round|int }}%</span>
+  </div>
+
+  <div class="prob-bar">
+    <div class="seg" style="width:{{ (p_home*100)|round(1) }}%; background:var(--home);"></div>
+    <div class="seg" style="width:{{ (p_draw*100)|round(1) }}%; background:var(--draw);"></div>
+    <div class="seg" style="width:{{ (p_away*100)|round(1) }}%; background:var(--away);"></div>
+  </div>
+
+  <div class="stat-grid">
+    {% for name, prob, col in bars %}
+    <div class="stat" style="border-color: {% if name==prediction.prediction %}{{ col }}{% else %}var(--border){% endif %};">
+      <div class="v" style="color:{{ col }};">{{ (prob*100)|round(1) }}%</div>
+      <div class="l">{{ name }}</div>
+      <div class="minibar"><div class="fill" style="width:{{ (prob*100)|round(1) }}%; background:{{ col }};"></div></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <p class="muted" style="margin-top:1.1rem; font-size:.82rem;">
+    Elo edge: <strong style="color:var(--text)">{{ home_team if elo_diff>=0 else away_team }}</strong>
+    by {{ elo_diff|abs|round|int }} points{% if cross_league %} &middot; cross-league matchup{% endif %}{% if not both_known %} &middot; limited data for one team{% endif %}.
+  </p>
+</div>
+{% endif %}
+
+{% if not model_exists %}
+<div class="card">
+  <h2>No trained model</h2>
+  <p class="muted">Train a model first, then come back to predict.</p>
+  <form method="POST" action="/train" style="margin-top:1rem;">
+    <button class="btn" type="submit" style="width:auto; padding:.65rem 1.2rem;">Train model now</button>
+  </form>
+</div>
+{% elif teams %}
+<div class="card">
+  <h2>Choose your matchup</h2>
+  <form method="GET" action="/predict" id="pform" class="select-step">
+    <div>
+      <label for="lf">1. League</label>
+      <select id="lf" required>
+        <option value="" disabled {% if not sel_league %}selected{% endif %}>Select a league&hellip;</option>
+        {% for code, lname in league_opts %}
+          <option value="{{ code }}" {% if code==sel_league %}selected{% endif %}>{{ lname }}</option>
+        {% endfor %}
+      </select>
+      <div class="step-hint">{{ teams|length }} teams across {{ league_opts|length }} leagues</div>
+    </div>
+
+    <div class="chooser">
+      <div>
+        <label for="home">2. Home team</label>
+        <select id="home" name="home" required disabled>
+          <option value="" selected>Select a league first&hellip;</option>
+        </select>
+        <div class="elo-badge" id="home-elo"></div>
+      </div>
+      <div class="swapwrap"><button type="button" class="swap" id="swap" title="Swap" disabled>&#8646;</button></div>
+      <div>
+        <label for="away">3. Away team</label>
+        <select id="away" name="away" required disabled>
+          <option value="" selected>Select a league first&hellip;</option>
+        </select>
+        <div class="elo-badge" id="away-elo"></div>
+      </div>
+    </div>
+    <div class="btnrow">
+      <button class="btn" type="submit" id="submit-btn" disabled>Run prediction &rarr;</button>
+      <button class="swap" type="button" id="rand" style="width:auto; padding:0 1rem;" disabled>&#127922; Random</button>
+    </div>
+  </form>
+</div>
+{% else %}
+<div class="card"><p class="muted">Team ratings load once a model is trained.</p></div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+var TEAMS = {{ teams_json|safe }};
+var lf = document.getElementById('lf'), homeSel = document.getElementById('home'), awaySel = document.getElementById('away');
+var swapBtn = document.getElementById('swap'), randBtn = document.getElementById('rand'), submitBtn = document.getElementById('submit-btn');
+var preHome = {{ sel_home|tojson }}, preAway = {{ sel_away|tojson }}, preLeague = {{ sel_league|tojson }};
+
+function findTeam(name){ for (var i=0;i<TEAMS.length;i++){ if (TEAMS[i].name===name) return TEAMS[i]; } return null; }
+
+function opt(t, selected){
+  var o = document.createElement('option'); o.value = t.name; o.textContent = t.name + ' (Elo ' + Math.round(t.elo) + ')';
+  if (selected) o.selected = true; return o;
+}
+
+function populateTeams(league, chosenHome, chosenAway){
+  var list = TEAMS.filter(function(t){ return t.league === league; }).sort(function(a,b){ return b.elo - a.elo; });
+  [ [homeSel, chosenHome], [awaySel, chosenAway] ].forEach(function(pair){
+    var sel = pair[0], chosen = pair[1];
+    sel.innerHTML = '';
+    sel.disabled = list.length === 0;
+    list.forEach(function(t){ sel.appendChild(opt(t, t.name === chosen)); });
+  });
+  var enabled = list.length > 1;
+  swapBtn.disabled = !enabled; randBtn.disabled = !enabled; submitBtn.disabled = !enabled;
+}
+
+function badge(sel, el){
+  var t = findTeam(sel.value);
+  el.textContent = t ? (t.tier + ' · Elo ' + Math.round(t.elo) + ' · ' + t.league_name) : '';
+}
+
+function refreshBadges(){
+  badge(homeSel, document.getElementById('home-elo'));
+  badge(awaySel, document.getElementById('away-elo'));
+}
+
+if (lf) {
+  lf.addEventListener('change', function(){
+    populateTeams(lf.value, null, null);
+    refreshBadges();
+  });
+
+  if (preLeague) {
+    populateTeams(preLeague, preHome, preAway);
+    refreshBadges();
+  }
+
+  homeSel.addEventListener('change', function(){ badge(homeSel, document.getElementById('home-elo')); });
+  awaySel.addEventListener('change', function(){ badge(awaySel, document.getElementById('away-elo')); });
+
+  swapBtn.addEventListener('click', function(){
+    var h = homeSel.value; homeSel.value = awaySel.value; awaySel.value = h;
+    refreshBadges();
+  });
+
+  randBtn.addEventListener('click', function(){
+    var list = TEAMS.filter(function(t){ return t.league === lf.value; });
+    if (list.length < 2) return;
+    var i = Math.floor(Math.random()*list.length), j;
+    do { j = Math.floor(Math.random()*list.length); } while (j===i);
+    homeSel.value = list[i].name; awaySel.value = list[j].name;
+    refreshBadges();
+  });
+}
+</script>
+{% endblock %}

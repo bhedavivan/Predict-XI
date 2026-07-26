@@ -15,6 +15,8 @@ __pycache__/
 processed_data.json
 # matches_data.json = API-path processed cache
 matches_data.json
+# data_cache/ = downloaded CSV cache, regenerated on demand by csv_data_loader
+data_cache/
 
 # Committed on purpose so the app works out-of-the-box:
-#   model.json, model_metrics.json, team_stats.json
+#   model.json, model_metrics.json, team_stats.json, model.joblib (via Git LFS)

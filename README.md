@@ -1,38 +1,72 @@
 # Predict-XI
 
 Soccer match-outcome predictor. Rates every team with a running **Elo** and predicts
-**Home Win / Draw / Away Win** with a **multinomial softmax-regression** model —
-both built from scratch using only the Python standard library (no scikit-learn, no numpy).
+**Home Win / Draw / Away Win** with a calibrated **sklearn ensemble**
+(RandomForest + HistGradientBoosting + LogisticRegression).
 
-Trained on **18,000+ matches** across five seasons of Europe's top divisions.
+Trained on **46,800+ matches** across six seasons and 29 divisions.
 
 ---
 
-## Model (v2)
+## Model (v4)
 
 | Metric | Value | Notes |
 |---|---|---|
-| Accuracy | **52.4%** | temporal hold-out (tested only on matches *after* training) |
-| Baseline | 43.5% | always-predict-home |
-| **Lift** | **+8.9 pts** | over the baseline |
-| Log-loss | **1.048** | below uniform (1.099) → probabilities are calibrated |
-| Brier score | 0.617 | multiclass |
-| Training matches | 18,256 | 12 leagues × 5 seasons |
-| Teams rated | 280 | by Elo |
+| Accuracy | **46.3%** | temporal, purged time-series CV |
+| Baseline | 42.8% | always-predict-home |
+| Macro F1 | **0.425** | up from 0.36 — see note below |
+| Log-loss | 1.013 | below uniform (1.099) → still calibrated |
+| Brier score | 0.202 | multiclass |
+| Draw recall | **19.1%** | up from 0.7% before the class-balancing fix |
+| Training matches | 46,803 | 29 leagues × up to 6 seasons |
+| Teams rated | 640 | by Elo |
+
+> **Why accuracy went down but the model got better:** the previous version scored 48.0%
+> accuracy by essentially never predicting a draw (0.7% draw recall) — always guessing
+> home/away is a cheap way to inflate accuracy when draws are ~26% of matches. This version
+> trains with balanced sample weights and picks hyperparameters/voting-weights by **macro-F1**
+> instead of raw accuracy, so draw recall is now 19.1% — a real, usable signal — at the cost of
+> a small amount of headline accuracy. Log-loss/Brier are still comfortably below the
+> uninformative-uniform baseline, so probabilities stay meaningful.
+
+**RandomForest vs HistGB vs ensemble** — evaluated during hyperparameter tuning (purged CV,
+macro-F1, on a recency-capped subsample):
+
+| Model | CV macro-F1 |
+|---|---|
+| RandomForest (tuned alone) | 0.434 |
+| Ensemble (tuned voting weights) | 0.433 |
+| LogisticRegression (tuned alone) | 0.425 |
+| HistGradientBoosting (tuned alone) | 0.413 |
+
+Plain **RandomForest is essentially tied with the full ensemble** — the extra HistGB/LR legs
+buy almost nothing here. The shipped default stays `ensemble` for now (its calibration is more
+robust and the gap is within noise), but `--model-type rf` is a legitimate, simpler alternative
+worth trying if you want faster training.
 
 **How it works**
-- **Elo ratings** — every team carries a running strength rating (start 1500, home edge +65,
-  K-factor 24), updated after each match. This is the single strongest feature.
-- **Form features** — rolling 5-match form, goals scored/conceded (home / away / overall),
-  head-to-head history, and rest days.
-- **Softmax regression** — a 3-class logistic model trained with mini-batch gradient descent,
-  feature standardization, and L2 regularization. Unlike Naive Bayes it doesn't assume features
-  are independent, so its probabilities stay well-calibrated.
-- Alternative models (`nb`, `ensemble`) are selectable with `--model-type`.
+- **Elo ratings** — every team starts from the same 1500 anchor (no hand-picked per-league or
+  per-club bonuses) and moves purely on results, with a margin-of-victory multiplier (bigger
+  wins move the rating further, per the [World Football Elo Ratings](https://www.eloratings.net/about)
+  method) on top of the standard home-edge (+65) and K-factor (24) update.
+- **Form features** — rolling 5/10/20-match form, EWMA form, win/loss streaks, clean-sheet and
+  BTTS rates, strength of schedule, goals scored/conceded (home / away / overall), head-to-head
+  history, and rest days — 52 features in total.
+- **sklearn ensemble** — soft-voting `RandomForestClassifier` + `HistGradientBoostingClassifier`
+  + calibrated `LogisticRegression`, all three legs individually probability-calibrated
+  (`CalibratedClassifierCV`, isotonic) and trained with balanced sample weights so the model
+  doesn't just learn to ignore draws. Hyperparameters and voting weights are picked by a small
+  search scored on **macro-F1** (not accuracy) over purged time-series cross-validation, so the
+  search can't "win" by starving the minority draw class.
+- Alternative models (`rf`, `histgb`, `nb`, `logreg`) are selectable with `--model-type`; the
+  shipped default is whichever scores best on held-out macro-F1 (see the dashboard for the
+  current comparison).
 
 > **Note on Elo across leagues:** teams only ever play within their own league in the training
-> data, so Elo is calibrated *within* a league, not across leagues. Compare Arsenal to Chelsea,
-> not Arsenal to Celtic.
+> data, so Elo is calibrated *within* a league, not across leagues — comparing Arsenal to Celtic
+> by raw Elo isn't meaningful, and we no longer fake it with manual per-league offsets. Cross-league
+> signal instead comes from separate features (schedule strength, league identity) the model
+> learns from directly.
 
 ---
 
@@ -73,11 +107,15 @@ python app.py
 
 Open **http://localhost:5000**. The app ships with a pre-trained model, so it works immediately:
 
-- **Dashboard** — live model performance stats.
-- **Predict a matchup** — type any two teams (autocomplete lists all 280 rated teams with their
-  Elo) and get calibrated Home/Draw/Away probabilities with an animated breakdown.
+- **Dashboard** — live model performance stats, a confusion-matrix heatmap, and the top
+  predictive features.
+- **Predict a matchup** — pick a league first, then choose the two teams inside it (no more
+  scrolling a single 600+ team dropdown), and get calibrated Home/Draw/Away probabilities.
 - **Browse live fixtures** — pick a league to pull upcoming fixtures from football-data.org
   (needs an API token) and predict any of them in one click.
+
+The UI is deliberately plain: flat panels, one accent color, no gradients or blur — templates
+live in `templates/*.html` with shared styling in `static/style.css`, not inlined in Python.
 
 ## CLI
 
@@ -110,13 +148,15 @@ Training prints accuracy, lift, log-loss, Brier, a confusion matrix, and per-cla
 | File | Purpose |
 |------|---------|
 | `main.py` | CLI: train, predict, interactive |
-| `app.py` | Flask web UI |
-| `model_trainer.py` | Gaussian Naive Bayes **and** softmax regression, both from scratch |
+| `app.py` | Flask web UI (routes only — templates live under `templates/`) |
+| `templates/*.html` | Jinja2 page templates (dashboard, predict, fixtures, training) |
+| `static/style.css` | Shared design system |
+| `model_trainer.py` | Production sklearn ensemble (RF + HistGB + calibrated LogReg), plus the original from-scratch Naive Bayes/softmax kept for tests |
 | `data_processor.py` | Feature engineering: form, H2H, rest days, **Elo** |
 | `csv_data_loader.py` | Loads historical CSVs from footballcsv/cache.footballdata |
 | `api_client.py` | football-data.org live-fixtures client |
 | `config.py` | API token loading + league codes |
-| `model.json` | Shipped trained model |
+| `model.json` / `model.joblib` | Shipped trained model (metadata + sklearn pipeline) |
 | `model_metrics.json` | Metrics shown on the dashboard |
 | `team_stats.json` | Latest per-team stats/Elo for predictions |
 | `tests/` | Unit tests (`python -m pytest`) |

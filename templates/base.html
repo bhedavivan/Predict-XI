@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;750&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<title>{% block title %}Predict-XI{% endblock %}</title>
+</head>
+<body>
+<div class="wrap">
+  <div class="nav">
+    <a class="brand" href="/">
+      <span class="logo">&#9917;</span>
+      <span>Predict-XI<br><small>match outcome engine</small></span>
+    </a>
+    <div class="nav-links">
+      <a href="/"{{ ' class="active"'|safe if active == 'dashboard' else '' }}>Dashboard</a>
+      <a href="/predict"{{ ' class="active"'|safe if active == 'predict' else '' }}>Predict</a>
+      <a href="/fixtures"{{ ' class="active"'|safe if active == 'fixtures' else '' }}>Fixtures</a>
+    </div>
+  </div>
+
+  {% block content %}{% endblock %}
+
+  <div class="foot">
+    Predict-XI &middot; sklearn ensemble + within-league Elo<br>
+    Data: <code>football-data.org</code> (live fixtures) &middot; <code>footballcsv</code> (training)
+  </div>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>
