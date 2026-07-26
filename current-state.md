@@ -1,69 +1,94 @@
 # Current State — Predict-XI
 
-**Status:** Version 5 complete — recent-season data, Dixon-Coles features, stacking option,
-independent cross-league matchups, leaner dashboard.
+**Status:** Version 6 complete — full league coverage, honest failure reporting,
+a tested-and-rejected Dixon-Coles blending idea, documented freshness process.
 
-## Done (v5)
-- **New primary data source**: `football-data.co.uk` (`csv_data_loader.py`) — actively
-  maintained, unlike the footballcsv mirror which has no data past 2023-24 (verified 404s on
-  every league). Brings in **2024-25 and 2025-26** (both complete seasons in this timeline) for
-  every league it covers, plus richer per-match stats (shots, shots-on-target, corners, fouls,
-  cards) across its *entire* history, not just the new seasons. Falls back to footballcsv only
-  for leagues it doesn't carry (Russia, Poland, Austria, Switzerland, Denmark, Romania, Mexico).
-  Dataset grew from 46,803 → **62,131 matches**, 640 → **669 teams**.
-- **16 new rolling-average features** from the richer match stats (shots/SOT/corners/cards, for
-  and against), same rolling-window pattern as the existing goals features.
-- **Dixon-Coles attack/defense ratings** (new `dixon_coles.py`): a rolling, incremental
-  approximation of the Dixon & Coles (1997) Poisson goal model, updated match-by-match with the
-  same no-lookahead discipline as Elo. Feeds 5 new features (expected goals, Home/Draw/Away
-  probabilities from the Poisson scoreline grid with low-score correlation adjustment) — these
-  landed in the **top 3 most important features**, right behind `elo_diff`, and are the main
-  reason draw recall improved again this round.
-- **Stacking meta-learner** (`model_trainer.py`, `model_type="stacking"`): logistic-regression
-  meta-learner over the same three calibrated base legs, replacing fixed voting weights with a
-  learned combination. Benchmarked head-to-head against the voting ensemble on identical data.
-- **Independent per-side matchups** (`templates/predict.html`): Predict page now has a separate
-  league + team picker for home and away — any two teams, any two leagues, not constrained to a
-  shared league like last round.
-- **Leaner dashboard**: removed the confusion-matrix heatmap and top-features panels added last
-  round (user didn't want them) and their supporting dead code in `app.py`/`static/style.css`.
-- **Caught and fixed a real model-size bug**: the tuning search's winning RF candidate used
-  `max_depth=None` (unbounded), which combined with `CalibratedClassifierCV(cv=3)` — storing 3
-  full copies of the model — produced a **557MB** `model.joblib`. Traced it to the RF leg
-  specifically, capped `max_depth` in `_RF_GRID`, and resized down to 300 trees/depth 10, landing
-  at a shippable **64MB** with equivalent macro-F1 and 2x faster training. `_RF_GRID` now carries
-  a comment explaining why unbounded depth is off the table.
-- Added a `tree_params_override`/`voting_weights_override` path to `MatchPredictorModel.train()`
-  — lets you re-fit with an already-known-good config without re-paying for the tuning search
-  (used repeatedly this round to iterate on the RF-size fix in ~10-20 min instead of ~35+ min
-  each time).
+## Done (v6)
+- **Backfilled the last 7 stale leagues** (Russia, Poland, Austria,
+  Switzerland, Denmark, Romania, Mexico): found football-data.co.uk has a
+  *second* feed (`football-data.co.uk/new/{CODE}.csv`, one file per country
+  covering 2012/13 through 2025/26) that covers exactly the leagues the main
+  feed doesn't. Added `FD_COUK_NEW_LEAGUE_MAP`, a fetch/cache pair, and a new
+  parser branch to `csv_data_loader.py`; wired in as a third rung on the
+  fallback chain (main football-data.co.uk feed → new-leagues feed →
+  footballcsv). Every one of the 29 training leagues is now on either the
+  richest feed or this one — none are still capped at 2023-24.
+- **Extended the team-alias audit** beyond the 8 leagues covered last round.
+  Findings, each handled differently on purpose:
+  - 9 more leagues (FL2, PD2, BL2, ELC2, ELC3, SA2, PPL2, DED2) either 403
+    (not on the free football-data.org tier — confirmed via direct API
+    calls, same failure as FL2/BL2 last round) or currently have zero
+    scheduled fixtures to audit against. Not an alias problem; nothing to
+    fix without a paid API tier.
+  - EC/WC (Euros, World Cup) are **national-team** tournaments — there's no
+    club-level training data to resolve against by definition, not a bug.
+  - CL (Champions League) *is* a club competition and does work on the free
+    tier — audited its full 36-team roster (not just a fixture snapshot) via
+    `/competitions/CL/teams`, found and fixed 4 real mismatches (Benfica,
+    Sporting Lisbon, Union SG, FC Copenhagen). The other 5 CL mismatches are
+    clubs from leagues we don't train on (Norway, Azerbaijan, Czech
+    Republic, Kazakhstan, Cyprus) — same "no training data" class as BSA,
+    not an alias problem either.
+  - BSA/BSA2 (Brazil) still has zero training data — unchanged from last
+    round, still honestly shows the "unknown team" warning.
+- **QA pass** (scoped to two concrete findings, not an open-ended hunt):
+  - `model_trainer.py::_fit_sklearn`'s holdout log-loss/Brier computation
+    used to fail silently into the initialized `0.0` — which reads as a
+    *suspiciously perfect* score, the same failure shape as the team-alias
+    bug. Now fails into `None`/"unavailable", both in `get_metrics()` and
+    the dashboard template, with a test that forces the failure path.
+  - Tightened a bare `except:` in `csv_data_loader.py` to the specific
+    expected exceptions, matching the pattern already used elsewhere in
+    that file.
+- **Dixon-Coles probability blending — tested, rejected, documented.**
+  Hypothesis was that blending DC's own Home/Draw/Away probabilities with
+  the ensemble's output (not just feeding them in as input features) might
+  help further, mirroring literature on combining a generative Poisson
+  model with a discriminative classifier. Ran the actual experiment
+  post-hoc (no retrain needed — reused the trained pipeline + held-out
+  slice): macro-F1 **drops** monotonically as blend weight increases (0.458
+  at w=0 down to 0.397 at w=0.5) even though log-loss/Brier improve
+  marginally. The classifier already extracts DC's signal better through
+  the input features than a naive output-level blend can — blending redilutes
+  the ensemble's more nuanced prediction with a much simpler standalone
+  signal. `predict()` unchanged; full grid in `dc_blend_analysis.json`.
+- **Freshness — documented, not automated**, per explicit choice: a
+  "Keeping the model fresh" section in `README.md` states the retrain
+  command and cadence (once per European close season) as a manual,
+  reviewed step by design — no scheduled job pushes model updates on its
+  own.
+- Retrained on the now-fully-current dataset: 62,131 → **65,759 matches**,
+  669 → **677 teams**, reusing round 2's proven, size-safe ensemble config
+  (skips re-tuning, which also means no risk of re-discovering another
+  oversized RF candidate). No regression: macro-F1 held flat at 0.430,
+  draw recall 24.5% (was 24.6%) — expected, since the 7 backfilled leagues
+  mostly extend *coverage*, not aggregate signal.
 
-## Model comparison (temporal, purged 5-fold CV, 62,131 matches)
-| Model | Macro F1 | Log-loss | Brier | Draw recall |
-|---|---|---|---|---|
-| **Ensemble (shipped)** | 0.430 | **1.018** | **0.204** | 24.6% |
-| Stacking | 0.430 | 1.023 | 0.205 | 24.6% |
-
-Stacking edged ensemble on macro-F1 by 0.002 — within CV noise (~0.005-0.006 std on both) — but
-ensemble's log-loss/Brier were consistently better, so it shipped as the default. Full numbers
-in `model_comparison.json`.
+## Model numbers (temporal, purged 5-fold CV, 65,759 matches)
+- Accuracy 45.6% · baseline 43.0% · macro-F1 0.430 · log-loss 1.024 ·
+  Brier 0.205 · draw recall 24.5%. Essentially unchanged from round 2
+  (0.430 / 24.6%) — the backfill's value is coverage, not aggregate lift.
+- `model.joblib`: 65.3 MB (round 2 was 64.3 MB — stayed safely sized).
 
 ## Known limitations
-- Russia, Poland, Austria, Switzerland, Denmark, Romania, and Mexico still cap out at 2023-24 —
-  football-data.co.uk doesn't cover them and footballcsv has nothing more recent.
-- Player-level data (squads, injuries, live form) was explicitly scoped **out** this round: free
-  API tiers (~100 requests/day) can't backfill historical player data across 62k+ matches — that
-  ceiling is a live/current-lookup budget, not a bulk-historical one. Live-prediction-time
-  enrichment (a handful of calls per single fixture) remains a viable future idea; retroactively
-  training on it does not.
-- Draw recall at 24.6% is real, sustained progress across two rounds now (0.7% → 19.1% → 24.6%)
-  but remains the hardest class — inherent to the problem, not obviously more fixable by more
-  features alone.
+- Brazil (BSA/BSA2) has no training data at all — would need a new data
+  source investigated from scratch, not just an alias fix.
+- FL2, BL2, PD2, ELC2, ELC3, SA2, PPL2, DED2 aren't reachable via the free
+  football-data.org tier for live fixtures — Fixtures page will error or
+  come back empty for these regardless of training-data coverage.
+- Dixon-Coles blending doesn't help beyond its existing role as input
+  features — confirmed, not just untried (see `dc_blend_analysis.json`).
+- Draw recall (24.5%) has plateaued across the last two rounds despite
+  meaningfully different work (new features, new data, Dixon-Coles) —
+  worth treating as close to this feature set's ceiling rather than
+  assuming the next tweak will move it further.
 
 ## Next ideas
-- A calibration/reliability chart, if the dashboard direction changes again (dropped last round
-  and not re-added this round per explicit request).
-- Blending Dixon-Coles' own outcome probabilities with the ensemble's at the probability level
-  (not just as input features) — considered this round, deferred as an extra tuning axis on top
-  of an already-large scope.
-- Live-prediction-time player/injury enrichment via a rate-limited free API (see limitations).
+- A genuinely different data source for Brazil, if that league matters to
+  you specifically.
+- SHAP-based explainability for individual predictions (mentioned since
+  v3, still not done).
+- If draw recall is worth pushing further, it likely needs a different
+  lever than more features on the same architecture — e.g. an explicit
+  draw-vs-decisive two-stage classifier, or reconsidering the loss
+  function directly rather than macro-F1-driven hyperparameter selection.

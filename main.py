@@ -155,8 +155,10 @@ def print_metrics(metrics: dict):
     if "baseline_accuracy" in metrics:
         lift = metrics["accuracy"] - metrics["baseline_accuracy"]
         print(f"Majority-class baseline: {metrics['baseline_accuracy']:.3f}  (lift: {lift:+.3f})")
-    if "log_loss" in metrics:
+    if metrics.get("log_loss") is not None:
         print(f"Log-loss: {metrics['log_loss']:.3f}   Brier: {metrics['brier']:.3f}  (lower is better)")
+    elif "log_loss" in metrics:
+        print("Log-loss/Brier: unavailable (holdout probability computation failed)")
     print(f"Train samples: {metrics.get('train_samples', 0)}")
     if "cv_mean" in metrics:
         print(f"CV accuracy: {metrics['cv_mean']:.3f} (+/- {metrics['cv_std']:.3f})")

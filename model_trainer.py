@@ -478,8 +478,11 @@ class MatchPredictorModel:
         self.feature_importances_: Optional[List[float]] = None
         self.baseline_accuracy: float = 0.0
         self.accuracy_: float = 0.0
-        self.log_loss_: float = 0.0
-        self.brier_: float = 0.0
+        # None means "not computed" (e.g. the holdout prob-metrics step
+        # failed) -- must stay distinguishable from a real 0.0, which would
+        # read as a suspiciously perfect score rather than a missing one.
+        self.log_loss_: Optional[float] = None
+        self.brier_: Optional[float] = None
         self.test_samples: int = 0
         self.tuning_notes: Dict[str, Any] = {}
 
@@ -604,8 +607,11 @@ class MatchPredictorModel:
             try:
                 proba = pipe.predict_proba(Xte)
                 self._compute_prob_metrics(yte, proba)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"WARNING: holdout log-loss/Brier computation failed ({e}); "
+                      f"reporting them as unavailable rather than a misleading 0.0.")
+                self.log_loss_ = None
+                self.brier_ = None
 
         return cv_res
 
@@ -816,8 +822,8 @@ class MatchPredictorModel:
         return {
             "accuracy": round(self.accuracy_, 4),
             "baseline_accuracy": round(self.baseline_accuracy, 4),
-            "log_loss": round(self.log_loss_, 4),
-            "brier": round(self.brier_, 4),
+            "log_loss": round(self.log_loss_, 4) if self.log_loss_ is not None else None,
+            "brier": round(self.brier_, 4) if self.brier_ is not None else None,
             "eval_method": self.eval_method,
             "classification_report": report,
             # test_samples is the tail slice held out for log-loss/Brier
@@ -924,8 +930,10 @@ class MatchPredictorModel:
         self.classes = [int(c) if not isinstance(c, int) else c for c in data.get("classes", [])]
         self.baseline_accuracy = data.get("baseline_accuracy", 0.0)
         self.accuracy_ = data.get("accuracy", 0.0)
-        self.log_loss_ = data.get("log_loss", 0.0)
-        self.brier_ = data.get("brier", 0.0)
+        # No default here on purpose: a missing/null value means "not
+        # computed", which must stay distinguishable from a real 0.0.
+        self.log_loss_ = data.get("log_loss")
+        self.brier_ = data.get("brier")
         self.cv_mean = data.get("cv_mean", 0.0)
         self.cv_std = data.get("cv_std", 0.0)
         self.eval_method = data.get("eval_method", "temporal")

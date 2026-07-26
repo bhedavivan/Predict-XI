@@ -77,6 +77,16 @@ TEAM_NAME_ALIASES = {
     # Serie A
     "como 1907": "Como",
     "venezia fc": "Venezia",
+    # Champions League (club names differ from the domestic-league fixture
+    # feed's name/shortName for these four; audited against the CL team
+    # roster via /competitions/CL/teams, not a fixture-window snapshot).
+    # Note: strip_accents drops non-decomposing letters like o-with-stroke
+    # (o/o) rather than transliterating them, so "Kobenhavn" here really is
+    # what "Kobenhavn" normalizes to, not a typo.
+    "sport lisboa e benfica": "Benfica", "sl benfica": "Benfica",
+    "sporting clube de portugal": "Sp Lisbon", "sporting cp": "Sp Lisbon",
+    "royale union saint-gilloise": "St. Gilloise", "union sg": "St. Gilloise",
+    "fc kbenhavn": "FC Copenhagen", "kbenhavn": "FC Copenhagen",
 }
 
 

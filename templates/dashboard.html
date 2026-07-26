@@ -19,8 +19,9 @@
       <div class="l">Accuracy</div><div class="sub">{{ metrics.get('eval_method','temporal') }} CV</div></div>
     <div class="stat"><div class="v">+{{ ((metrics.accuracy-metrics.baseline_accuracy)*100)|round(1) }}</div>
       <div class="l">Lift vs baseline</div><div class="sub">over always-home</div></div>
-    <div class="stat"><div class="v">{{ metrics.log_loss }}</div>
-      <div class="l">Log-loss</div><div class="sub">{{ 'calibrated' if metrics.log_loss < 1.0986 else 'ok' }} (&lt;1.099)</div></div>
+    <div class="stat"><div class="v">{{ metrics.log_loss if metrics.log_loss is not none else '—' }}</div>
+      <div class="l">Log-loss</div>
+      <div class="sub">{% if metrics.log_loss is none %}unavailable{% elif metrics.log_loss < 1.0986 %}calibrated{% else %}ok{% endif %} (&lt;1.099)</div></div>
     <div class="stat"><div class="v">{{ metrics.get('macro_f1', '—') }}</div>
       <div class="l">Macro F1</div><div class="sub">rewards draw recall too</div></div>
     <div class="stat"><div class="v">{{ "{:,}".format(metrics.training_samples) }}</div>

@@ -4,23 +4,24 @@ Soccer match-outcome predictor. Rates every team with a running **Elo** and a ro
 **Dixon-Coles** attack/defense model, and predicts **Home Win / Draw / Away Win** with a
 calibrated **sklearn ensemble** (RandomForest + HistGradientBoosting + LogisticRegression).
 
-Trained on **62,000+ matches** across seven seasons (through 2025-26) and 29 divisions.
+Trained on **65,700+ matches** across seven seasons (through 2025-26) and **all 29** divisions —
+none still stuck on stale data.
 
 ---
 
-## Model (v5)
+## Model (v6)
 
 | Metric | Value | Notes |
 |---|---|---|
 | Accuracy | **45.6%** | temporal, purged time-series CV |
 | Baseline | 43.0% | always-predict-home |
 | Macro F1 | **0.430** | balances all three classes, not just accuracy |
-| Log-loss | 1.018 | below uniform (1.099) → still calibrated |
-| Brier score | 0.204 | multiclass |
-| Draw recall | **24.6%** | up from 0.7% pre-class-balancing, 19.1% last round |
-| Training matches | 62,131 | 29 leagues × up to 7 seasons (2019-20 → 2025-26) |
-| Teams rated | 669 | by Elo + Dixon-Coles |
-| Shipped model size | 64 MB | (`model.joblib`, via Git LFS) |
+| Log-loss | 1.024 | below uniform (1.099) → still calibrated |
+| Brier score | 0.205 | multiclass |
+| Draw recall | **24.5%** | up from 0.7% pre-class-balancing, 19.1%/24.6% in prior rounds |
+| Training matches | 65,759 | 29 leagues × up to 7 seasons (2019-20 → 2025-26) |
+| Teams rated | 677 | by Elo + Dixon-Coles |
+| Shipped model size | 65 MB | (`model.joblib`, via Git LFS) |
 
 > **Why not higher accuracy?** This isn't a bug — it's close to the ceiling for this problem.
 > Football outcomes depend on things no pre-match feature set captures (a deflected shot, a red
@@ -28,8 +29,8 @@ Trained on **62,000+ matches** across seven seasons (through 2025-26) and 29 div
 > the 50-55% range on this exact 3-way problem. 45-46% with genuine draw recall is a believable,
 > honest number; anything claiming much higher on this task is usually leaking future information.
 
-**Ensemble vs stacking** — trained head-to-head on identical data (purged 5-fold CV, full
-62,131-match dataset):
+**Ensemble vs stacking** — trained head-to-head on identical data (purged 5-fold CV, prior
+round's 62,131-match dataset; re-validated on the current 65,759-match set as ensemble only):
 
 | Model | Macro F1 | Log-loss | Brier | Draw recall |
 |---|---|---|---|---|
@@ -41,6 +42,13 @@ showed, i.e. not a real difference. Ensemble's log-loss/Brier were consistently 
 ships as the default: the UI displays probabilities directly, and a noise-level classification
 edge isn't worth worse-calibrated confidence numbers. `--model-type stacking` is available if
 you want to try it yourself.
+
+**Dixon-Coles output blending — tried, didn't help.** Beyond feeding DC's probabilities in as
+input features (already in place), blending them with the ensemble's output probabilities at
+prediction time was tested directly: macro-F1 on a held-out slice *drops* monotonically as the
+blend weight increases (0.458 at 0% DC weight down to 0.397 at 50%), even though log-loss/Brier
+improve marginally. The classifier already extracts DC's signal better through the input features
+than a naive output blend can. No code change — full grid in `dc_blend_analysis.json`.
 
 **How it works**
 - **Elo ratings** — every team starts from the same 1500 anchor (no hand-picked per-league or
@@ -152,6 +160,24 @@ Training prints accuracy, lift, log-loss, Brier, a confusion matrix, and per-cla
 
 ---
 
+## Keeping the model fresh
+
+The shipped model is a snapshot — training data doesn't update itself. To pull in new results:
+
+```bash
+python main.py --all-seasons --all-leagues --force-retrain
+```
+
+This is a **manual, on-purpose step**, not automated. European domestic seasons run roughly
+August-May, so re-running this once each close season (early summer) captures a full new
+season's worth of finished matches. There's no scheduled job pushing model updates on its own —
+every retrain is something you run and review before it ships, same as any other change to this
+repo. A full retrain takes a while (tens of minutes) since it re-fetches/re-engineers features
+across ~65k+ matches; football-data.co.uk responses are cached locally in `data_cache/` for 24h,
+so re-running it again soon after (e.g. to try a different `--model-type`) is much faster.
+
+---
+
 ## Project structure
 
 | File | Purpose |
@@ -175,11 +201,16 @@ Training prints accuracy, lift, log-loss, Brier, a confusion matrix, and per-cla
 ## Data sources
 
 - **Training:** [football-data.co.uk](https://www.football-data.co.uk/) — actively maintained,
-  covers most major European leagues through the current season, with richer per-match stats.
-  Falls back to [footballcsv/cache.footballdata](https://github.com/footballcsv/cache.footballdata)
-  for leagues it doesn't carry (Russia, Poland, Austria, Switzerland, Denmark, Romania, Mexico) —
-  no key needed for either.
+  through the current season, no key needed. Two feeds: the main one (most major European
+  leagues, richer per-match stats — shots/corners/cards) and a second "new leagues" feed (Russia,
+  Poland, Austria, Switzerland, Denmark, Romania, Mexico — results only, no extra stats). Falls
+  back to [footballcsv/cache.footballdata](https://github.com/footballcsv/cache.footballdata) only
+  if a league/season is missing from both. As of this round, every training league is on one of
+  the two football-data.co.uk feeds — footballcsv is a safety net, not load-bearing.
 - **Live fixtures:** [football-data.org](https://www.football-data.org/) — free API key required.
+  Note: the free tier doesn't cover every competition in `LEAGUE_CODES` (confirmed 403 on FL2,
+  BL2, PD2, ELC2, ELC3, SA2, PPL2, DED2) — those will error or return empty on the Fixtures page
+  regardless of training-data coverage.
 
 ## Requirements
 

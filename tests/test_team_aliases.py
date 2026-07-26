@@ -8,6 +8,7 @@ from team_aliases import resolve_team_name, strip_accents, TEAM_NAME_ALIASES
 FAKE_STATS = {
     "Man United": {}, "Hull": {}, "Paris SG": {}, "Rennes": {},
     "Bayern Munich": {}, "Barcelona": {},
+    "Benfica": {}, "Sp Lisbon": {}, "St. Gilloise": {}, "FC Copenhagen": {},
 }
 
 
@@ -38,6 +39,25 @@ class TestResolveTeamName:
 
     def test_unresolvable_returns_none_not_a_guess(self):
         assert resolve_team_name("Some Totally Unknown FC", FAKE_STATS) is None
+
+    def test_resolves_champions_league_official_names(self):
+        """Audited against /competitions/CL/teams, not a fixture snapshot —
+        these four have long-form names that differ from both the domestic
+        fixture feed's name and the training data's short name."""
+        assert resolve_team_name("Sport Lisboa e Benfica", FAKE_STATS) == "Benfica"
+        assert resolve_team_name("SL Benfica", FAKE_STATS) == "Benfica"
+        assert resolve_team_name("Sporting Clube de Portugal", FAKE_STATS) == "Sp Lisbon"
+        assert resolve_team_name("Sporting CP", FAKE_STATS) == "Sp Lisbon"
+        assert resolve_team_name("Royale Union Saint-Gilloise", FAKE_STATS) == "St. Gilloise"
+        assert resolve_team_name("Union SG", FAKE_STATS) == "St. Gilloise"
+        assert resolve_team_name("FC København", FAKE_STATS) == "FC Copenhagen"
+        assert resolve_team_name("København", FAKE_STATS) == "FC Copenhagen"
+
+    def test_strip_accents_drops_non_decomposing_letters(self):
+        """o-with-stroke (Danish/Norwegian o) has no canonical decomposition
+        under NFKD, so it's dropped rather than transliterated to 'o' —
+        document this explicitly so it isn't mistaken for a bug later."""
+        assert strip_accents("København") == "Kbenhavn"
 
     def test_empty_name_returns_none(self):
         assert resolve_team_name("", FAKE_STATS) is None

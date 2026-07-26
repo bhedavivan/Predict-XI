@@ -68,6 +68,26 @@ def _fd_couk_season_code(season: str) -> str:
     start, end = season.split("-")
     return start[-2:] + end
 
+
+# football-data.co.uk's "new leagues" feed — a second, differently-shaped
+# feed covering leagues the main mmz4281 feed above doesn't (verified 200 OK
+# for all seven). One CSV per country covering *every* season since 2012/13
+# (not split per-season like the main feed), with a simpler column set
+# (results only, no shots/corners/cards — add_form_features already treats
+# those as optional/zero, so that's fine).
+FD_COUK_NEW_BASE_URL = "https://www.football-data.co.uk/new"
+
+FD_COUK_NEW_LEAGUE_MAP = {
+    "ru.1": "RUS", "pl.1": "POL", "at.1": "AUT", "ch.1": "SWZ",
+    "dk.1": "DNK", "ro.1": "ROU", "mx.1": "MEX",
+}
+
+
+def _fd_couk_new_season_label(season: str) -> str:
+    """'2025-26' -> '2025/2026' (this feed's Season column format)."""
+    start, end = season.split("-")
+    return f"{start}/{start[:2]}{end}"
+
 # League code mapping from CSV filename to standard codes.
 # Keys MUST match the actual filenames in footballcsv/cache.footballdata
 # (verified against the repo — e.g. Spain is "es.1" not "esp.1",
@@ -233,6 +253,100 @@ def load_fd_couk_csv_from_cache_or_fetch(season: str, league_code: str, fd_couk_
     return csv_content
 
 
+def fetch_csv_from_fd_couk_new(country_code: str) -> Optional[str]:
+    """Fetch the whole-history CSV from football-data.co.uk's 'new leagues'
+    feed (one file per country, all seasons since 2012/13 — not split per
+    season like the main mmz4281 feed)."""
+    url = f"{FD_COUK_NEW_BASE_URL}/{country_code}.csv"
+    try:
+        req = Request(url, headers={'User-Agent': 'soccer-predictor/1.0'})
+        with urlopen(req, timeout=30) as response:
+            return response.read().decode('latin-1')
+    except (URLError, HTTPError, UnicodeDecodeError) as e:
+        print(f"Error fetching {url}: {e}")
+        return None
+
+
+def load_fd_couk_new_csv_from_cache_or_fetch(league_code: str, country_code: str) -> Optional[str]:
+    """Cache wrapper for the 'new leagues' feed. Cached under a season-less
+    key ('all') since one file covers every season for that country."""
+    ensure_cache_dir()
+    cache_path = get_cache_path("all", f"fdcouk_new_{league_code}")
+
+    if is_cache_valid(cache_path):
+        try:
+            with open(cache_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except (IOError, UnicodeDecodeError):
+            pass
+
+    csv_content = fetch_csv_from_fd_couk_new(country_code)
+    if csv_content:
+        try:
+            with open(cache_path, 'w', encoding='utf-8') as f:
+                f.write(csv_content)
+        except IOError:
+            pass
+
+    return csv_content
+
+
+def parse_fd_couk_new_csv(csv_content: str, season: str, league_code: str) -> List[Dict[str, Any]]:
+    """Parse the 'new leagues' feed's shape:
+    Country,League,Season,Date,Time,Home,Away,HG,AG,Res,...odds...
+    Filters to the requested season before converting to the same match-dict
+    shape parse_csv_matches produces (no per-match stats in this feed)."""
+    matches = []
+    reader = csv.DictReader(io.StringIO(csv_content))
+    season_label = _fd_couk_new_season_label(season)
+
+    for row in reader:
+        try:
+            if row.get('Season', '').strip() != season_label:
+                continue
+
+            date_str = row.get('Date', '').strip()
+            home_team = row.get('Home', '').strip()
+            away_team = row.get('Away', '').strip()
+            if not date_str or not home_team or not away_team:
+                continue
+
+            try:
+                home_score = int(row.get('HG', '') or '')
+                away_score = int(row.get('AG', '') or '')
+            except ValueError:
+                continue
+
+            if row.get('Res', '').strip() not in ('H', 'A', 'D'):
+                continue
+
+            match_date = None
+            for fmt in ('%d/%m/%Y', '%d/%m/%y'):
+                try:
+                    match_date = datetime.strptime(date_str, fmt).date().isoformat()
+                    break
+                except ValueError:
+                    continue
+            if not match_date:
+                continue
+
+            matches.append({
+                "utcDate": match_date,
+                "status": "FINISHED",
+                "homeTeam": {"name": home_team},
+                "awayTeam": {"name": away_team},
+                "score": {"fullTime": {"home": home_score, "away": away_score}},
+                "competition": {"code": LEAGUE_CODE_MAP.get(league_code, league_code)},
+                "season": season,
+                "league_code": league_code,
+                "stats": {},
+            })
+        except Exception:
+            continue
+
+    return matches
+
+
 def parse_csv_matches(csv_content: str, season: str, league_code: str) -> List[Dict[str, Any]]:
     """
     Parse CSV content into match dictionaries compatible with data_processor.
@@ -374,7 +488,17 @@ def load_season_league_data(season: str, league_code: str) -> List[Dict[str, Any
         if csv_content:
             return parse_csv_matches(csv_content, season, league_code)
         # football-data.co.uk had nothing for this season/league (e.g. a
-        # season before either source existed) — fall through to footballcsv.
+        # season before either source existed) — fall through.
+
+    new_country_code = FD_COUK_NEW_LEAGUE_MAP.get(league_code)
+    if new_country_code:
+        csv_content = load_fd_couk_new_csv_from_cache_or_fetch(league_code, new_country_code)
+        if csv_content:
+            matches = parse_fd_couk_new_csv(csv_content, season, league_code)
+            if matches:
+                return matches
+        # Nothing for this season in the new-leagues feed either — fall
+        # through to the stale-but-still-useful footballcsv mirror.
 
     csv_content = load_csv_from_cache_or_fetch(season, league_code)
     if not csv_content:
@@ -428,7 +552,7 @@ def get_available_leagues_for_season(season: str) -> List[str]:
             with urlopen(req, timeout=10) as response:
                 if response.status == 200:
                     available.append(league_code)
-        except:
+        except (URLError, HTTPError, TimeoutError):
             pass
     return available
 

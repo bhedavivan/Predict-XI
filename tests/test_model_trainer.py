@@ -228,6 +228,30 @@ class TestMatchPredictorModel:
         assert len(cm) == 3  # 3 classes
         assert all(len(row) == 3 for row in cm)
 
+    def test_prob_metrics_failure_reports_honestly(self, monkeypatch):
+        """If holdout log-loss/Brier computation fails, they must come back
+        as None/unavailable -- not a misleadingly perfect 0.0 (a silent
+        fallback that reads as legitimate is exactly the bug class this
+        guards against)."""
+        X = [
+            [1.0, 2.0], [2.0, 3.0], [3.0, 4.0], [4.0, 5.0],
+            [5.0, 6.0], [6.0, 7.0], [7.0, 8.0], [8.0, 9.0],
+            [9.0, 10.0], [10.0, 11.0], [11.0, 12.0], [12.0, 13.0],
+        ]
+        y = [-1, -1, -1, -1, 0, 0, 0, 0, 1, 1, 1, 1]
+
+        model = MatchPredictorModel()
+        monkeypatch.setattr(
+            model, "_compute_prob_metrics",
+            lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("forced failure")),
+        )
+        metrics = model.train(X, y)
+
+        assert metrics["log_loss"] is None
+        assert metrics["brier"] is None
+        assert model.log_loss_ is None
+        assert model.brier_ is None
+
     def test_class_distribution(self):
         """Test class distribution tracking."""
         # Use more samples to ensure all classes appear in training set
