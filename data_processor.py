@@ -56,14 +56,27 @@ def process_matches(matches: list) -> list:
 # to the ML model itself, which already has schedule-strength (`home_sos` /
 # `away_sos`) and league identity as separate features.
 ELO_START = 1500.0
-ELO_K = 24.0
+# ELO_K and ELO_SEASON_REGRESS were tuned against downstream purged-CV
+# performance (see rating_constants_tuning.json), not hand-picked. The
+# previous values (24.0 / 0.30) were too conservative: ratings adapted too
+# slowly and were pulled too far back to the mean between seasons. Moving to
+# 40.0 / 0.10 gained +0.017 macro-F1 and +0.011 accuracy on the probe.
+# K=55 was also tested and scored WORSE than 40, so this is a real optimum
+# rather than "faster is always better".
+ELO_K = 40.0
 ELO_HOME_ADV = 65.0
 ELO_SEASON_GAP = 45
-ELO_SEASON_REGRESS = 0.30
+ELO_SEASON_REGRESS = 0.10
+
+# Matches a competition must accumulate before its own measured goal
+# baselines replace the global defaults. Below this the sample is too thin to
+# beat the prior, so the global constants stay in use.
+LEAGUE_BASELINE_MIN_MATCHES = 200
 
 
-def _elo_expected(home_elo: float, away_elo: float) -> float:
-    return 1.0 / (1.0 + 10 ** ((away_elo - (home_elo + ELO_HOME_ADV)) / 400.0))
+def _elo_expected(home_elo: float, away_elo: float, home_adv: float = None) -> float:
+    adv = ELO_HOME_ADV if home_adv is None else home_adv
+    return 1.0 / (1.0 + 10 ** ((away_elo - (home_elo + adv)) / 400.0))
 
 
 def _elo_goal_diff_multiplier(goal_diff: int) -> float:
@@ -87,16 +100,38 @@ def _days_between(date1: str, date2: str) -> int:
         return 7
 
 
-def add_form_features(rows: list, n_matches: int = 5) -> list:
-    """Add rolling form features for each team (home/away specific), plus Elo."""
+def add_form_features(rows: list, n_matches: int = 5,
+                       elo_k: float = None, elo_home_adv: float = None,
+                       elo_season_regress: float = None,
+                       dc_k: float = None, dc_rho: float = None) -> list:
+    """Add rolling form features for each team (home/away specific), plus Elo.
+
+    The rating constants are overridable so they can be tuned against actual
+    predictive performance instead of staying hand-picked. They generate the
+    model's most important features (elo_diff and the dc_* family), so their
+    values matter as much as any classifier hyperparameter. Defaults are the
+    module-level constants, keeping existing callers unchanged.
+    """
     if not rows:
         return rows
+
+    elo_k = ELO_K if elo_k is None else elo_k
+    elo_home_adv = ELO_HOME_ADV if elo_home_adv is None else elo_home_adv
+    elo_season_regress = ELO_SEASON_REGRESS if elo_season_regress is None else elo_season_regress
+    dc_k = dixon_coles.DC_K if dc_k is None else dc_k
+    dc_rho = dixon_coles.DC_RHO if dc_rho is None else dc_rho
 
     team_home_history = defaultdict(list)
     team_away_history = defaultdict(list)
     team_overall_history = defaultdict(list)
     team_elo = {}
-    dc_ratings = dixon_coles.DixonColesRatings()
+    dc_ratings = dixon_coles.DixonColesRatings(k=dc_k, rho=dc_rho)
+    # Per-league goal baselines, accumulated as matches stream past rather
+    # than precomputed over the whole file — using a full-dataset average
+    # would leak later results into the features of earlier matches. Same
+    # no-lookahead discipline as Elo and the Dixon-Coles ratings themselves.
+    # [n_matches, home_goals, away_goals] per competition.
+    league_goals = defaultdict(lambda: [0, 0.0, 0.0])
     team_season_matches = defaultdict(int)
     result_rows = []
 
@@ -257,12 +292,24 @@ def add_form_features(rows: list, n_matches: int = 5) -> list:
             ):
                 stat_features[f"{side}_{label}_avg"] = _stat_avg(hist, key)
 
+        # League-specific goal baselines from matches seen SO FAR (never the
+        # whole dataset — that would be lookahead). Falls back to the global
+        # constants until the competition has enough history to beat them.
+        comp = row.get("competition", "")
+        lg_n, lg_hg, lg_ag = league_goals[comp]
+        if lg_n >= LEAGUE_BASELINE_MIN_MATCHES:
+            base_home_goals = lg_hg / lg_n
+            base_away_goals = lg_ag / lg_n
+        else:
+            base_home_goals = dixon_coles.LEAGUE_AVG_HOME_GOALS
+            base_away_goals = dixon_coles.LEAGUE_AVG_AWAY_GOALS
+
         # Elo
         for team, last_date in ((home, home_last_date), (away, away_last_date)):
             if team not in team_elo:
                 team_elo[team] = ELO_START
             elif last_date and _days_between(last_date, match_date) > ELO_SEASON_GAP:
-                team_elo[team] = ELO_START + (team_elo[team] - ELO_START) * (1 - ELO_SEASON_REGRESS)
+                team_elo[team] = ELO_START + (team_elo[team] - ELO_START) * (1 - elo_season_regress)
         home_earned = team_elo[home]
         away_earned = team_elo[away]
         home_elo = home_earned
@@ -270,7 +317,8 @@ def add_form_features(rows: list, n_matches: int = 5) -> list:
 
         # Dixon-Coles attack/defense derived probabilities (pre-match ratings
         # only — no lookahead, same discipline as Elo above).
-        dc_p_home, dc_p_draw, dc_p_away, dc_exp_home, dc_exp_away = dc_ratings.predict(home, away)
+        dc_p_home, dc_p_draw, dc_p_away, dc_exp_home, dc_exp_away = dc_ratings.predict(
+            home, away, base_home_goals, base_away_goals)
 
         new_row = dict(row)
         new_row.update({
@@ -332,24 +380,48 @@ def add_form_features(rows: list, n_matches: int = 5) -> list:
             "dc_home_prob": dc_p_home,
             "dc_draw_prob": dc_p_draw,
             "dc_away_prob": dc_p_away,
+            # "Evenness" features. A draw is the outcome of two closely
+            # matched sides, but every strength feature above is *signed*
+            # (elo_diff, goal-difference gaps), so "evenly matched" lives near
+            # zero and a tree needs two splits to isolate it. These state
+            # closeness directly, aimed at the model's weakest class
+            # (draw recall was 24.6% at v6).
+            "abs_elo_diff": abs(home_elo - away_elo),
+            "abs_dc_exp_goals_diff": abs(dc_exp_home - dc_exp_away),
+            "abs_form_diff": abs(home_overall_form - away_overall_form),
+            "abs_ppf_10_diff": abs(home_ppf_10 - away_ppf_10),
+            # Carried so compute_team_stats can hand the same baselines to
+            # prepare_prediction_features — training and serving must build
+            # dc_* from identical assumptions or the vectors silently skew.
+            "league_base_home_goals": base_home_goals,
+            "league_base_away_goals": base_away_goals,
         })
         new_row.update(stat_features)
         result_rows.append(new_row)
 
+        # Fold this match into its league's running goal baseline. Done only
+        # AFTER its features were computed above, so a match never
+        # contributes to the baseline used to predict itself.
+        league_goals[comp][0] += 1
+        league_goals[comp][1] += row["home_score"]
+        league_goals[comp][2] += row["away_score"]
+
         # Update Dixon-Coles ratings from the real result, then persist the
         # post-match attack/defense so compute_team_stats can carry it
         # forward for predicting brand-new (untrained) matchups.
-        dc_ratings.update(home, away, row["home_score"], row["away_score"])
+        dc_ratings.update(home, away, row["home_score"], row["away_score"],
+                           base_home_goals, base_away_goals)
         new_row["home_dc_attack_post"] = dc_ratings.attack[home]
         new_row["home_dc_defense_post"] = dc_ratings.defense[home]
         new_row["away_dc_attack_post"] = dc_ratings.attack[away]
         new_row["away_dc_defense_post"] = dc_ratings.defense[away]
 
         # Update Elo (margin-of-victory scaled)
-        exp_home = _elo_expected(home_earned, away_earned)
+        league_home_adv = elo_home_adv * (base_home_goals / max(dixon_coles.LEAGUE_AVG_HOME_GOALS, 1e-6))
+        exp_home = _elo_expected(home_earned, away_earned, league_home_adv)
         actual_home = 1.0 if result == 1 else (0.5 if result == 0 else 0.0)
         mov = _elo_goal_diff_multiplier(row["goal_diff"])
-        elo_delta = ELO_K * mov * (actual_home - exp_home)
+        elo_delta = elo_k * mov * (actual_home - exp_home)
         team_elo[home] = home_earned + elo_delta
         team_elo[away] = away_earned - elo_delta
         new_row["home_elo_post"] = team_elo[home]
@@ -426,7 +498,10 @@ def prepare_training_data(rows: list) -> Tuple[List[List[float]], List[int], Lis
     ]
     elo_cols = ["home_elo", "away_elo", "elo_diff"]
     dc_cols = ["dc_home_exp_goals", "dc_away_exp_goals", "dc_home_prob", "dc_draw_prob", "dc_away_prob"]
-    feature_cols = base_form_cols + advanced_form_cols + match_stat_cols + elo_cols + dc_cols
+    # Closeness features — see add_form_features; targeted at draw recall.
+    evenness_cols = ["abs_elo_diff", "abs_dc_exp_goals_diff", "abs_form_diff", "abs_ppf_10_diff"]
+    feature_cols = (base_form_cols + advanced_form_cols + match_stat_cols
+                    + elo_cols + dc_cols + evenness_cols)
 
     X = []
     y = []
@@ -485,13 +560,28 @@ def prepare_prediction_features(home_team: str, away_team: str,
     ]
     elo_features = [home_elo, away_elo, home_elo - away_elo]
 
+    # Use the HOME team's league baselines — the match is played in their
+    # competition, and these are the same values training used for that
+    # league (carried through compute_team_stats). Falls back to the globals
+    # for teams predating this field or from an unmeasured league.
     dc_p_home, dc_p_draw, dc_p_away, dc_exp_home, dc_exp_away = dixon_coles.match_probabilities(
         home.get("dc_attack", dixon_coles.DC_START), home.get("dc_defense", dixon_coles.DC_START),
         away.get("dc_attack", dixon_coles.DC_START), away.get("dc_defense", dixon_coles.DC_START),
+        home.get("league_base_home_goals", dixon_coles.LEAGUE_AVG_HOME_GOALS),
+        home.get("league_base_away_goals", dixon_coles.LEAGUE_AVG_AWAY_GOALS),
     )
     dc_features = [dc_exp_home, dc_exp_away, dc_p_home, dc_p_draw, dc_p_away]
 
-    return base_features + match_stat_features + elo_features + dc_features
+    # Must mirror evenness_cols in prepare_training_data, same order.
+    evenness_features = [
+        abs(home_elo - away_elo),
+        abs(dc_exp_home - dc_exp_away),
+        abs(home.get("overall_form", 0) - away.get("overall_form", 0)),
+        abs(home.get("ppf_10", 0) - away.get("ppf_10", 0)),
+    ]
+
+    return (base_features + match_stat_features + elo_features
+            + dc_features + evenness_features)
 
 
 def compute_team_stats(rows: list) -> dict:
@@ -503,6 +593,8 @@ def compute_team_stats(rows: list) -> dict:
         "overall_form": 0, "overall_goals_scored_avg": 0, "overall_goals_conceded_avg": 0,
         "h2h_matches": 0, "h2h_home_wins": 0, "h2h_draws": 0, "h2h_away_wins": 0,
         "rest_days": 7, "elo": ELO_START, "league": "",
+        "league_base_home_goals": dixon_coles.LEAGUE_AVG_HOME_GOALS,
+        "league_base_away_goals": dixon_coles.LEAGUE_AVG_AWAY_GOALS,
         "ppf_10": 0, "ppf_20": 0, "ewma_form": 0, "ewma_gs": 0, "ewma_gc": 0,
         "streak": 0, "cs_rate_5": 0, "cs_rate_10": 0, "btts_rate_5": 0, "o25_rate_5": 0,
         "home_ppf_10": 0, "away_ppf_10": 0, "sos": ELO_START,
@@ -542,6 +634,10 @@ def compute_team_stats(rows: list) -> dict:
             team_stats[home]["dc_attack"] = row.get("home_dc_attack_post", dixon_coles.DC_START)
             team_stats[home]["dc_defense"] = row.get("home_dc_defense_post", dixon_coles.DC_START)
             team_stats[home]["league"] = row.get("competition", "")
+            team_stats[home]["league_base_home_goals"] = row.get(
+                "league_base_home_goals", dixon_coles.LEAGUE_AVG_HOME_GOALS)
+            team_stats[home]["league_base_away_goals"] = row.get(
+                "league_base_away_goals", dixon_coles.LEAGUE_AVG_AWAY_GOALS)
         if team_stats[away]["matches_played"] == 0:
             for key, base in prefix_map.items():
                 row_key = f"away_{base}"
@@ -551,6 +647,10 @@ def compute_team_stats(rows: list) -> dict:
             team_stats[away]["dc_attack"] = row.get("away_dc_attack_post", dixon_coles.DC_START)
             team_stats[away]["dc_defense"] = row.get("away_dc_defense_post", dixon_coles.DC_START)
             team_stats[away]["league"] = row.get("competition", "")
+            team_stats[away]["league_base_home_goals"] = row.get(
+                "league_base_home_goals", dixon_coles.LEAGUE_AVG_HOME_GOALS)
+            team_stats[away]["league_base_away_goals"] = row.get(
+                "league_base_away_goals", dixon_coles.LEAGUE_AVG_AWAY_GOALS)
         if all(team_stats[t]["matches_played"] > 0 for t in [home, away]):
             pass
 

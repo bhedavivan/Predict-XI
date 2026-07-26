@@ -63,21 +63,33 @@ def _tau(i: int, j: int, lam_home: float, lam_away: float, rho: float) -> float:
 
 
 def expected_goals(home_attack: float, home_defense: float,
-                    away_attack: float, away_defense: float) -> tuple:
-    exp_home = LEAGUE_AVG_HOME_GOALS * home_attack * away_defense
-    exp_away = LEAGUE_AVG_AWAY_GOALS * away_attack * home_defense
+                    away_attack: float, away_defense: float,
+                    base_home: float = None, base_away: float = None) -> tuple:
+    """`base_home`/`base_away` override the global goal baselines with
+    league-specific ones (home advantage genuinely varies by competition —
+    measured home-win rate spans 38.9%-46.7% across the leagues trained on).
+    Defaults preserve the original global-constant behaviour."""
+    bh = LEAGUE_AVG_HOME_GOALS if base_home is None else base_home
+    ba = LEAGUE_AVG_AWAY_GOALS if base_away is None else base_away
+    exp_home = bh * home_attack * away_defense
+    exp_away = ba * away_attack * home_defense
     return exp_home, exp_away
 
 
 def match_probabilities(home_attack: float, home_defense: float,
-                         away_attack: float, away_defense: float) -> tuple:
+                         away_attack: float, away_defense: float,
+                         base_home: float = None, base_away: float = None,
+                         rho: float = None) -> tuple:
     """Return (p_home, p_draw, p_away, exp_home_goals, exp_away_goals)."""
-    exp_home, exp_away = expected_goals(home_attack, home_defense, away_attack, away_defense)
+    exp_home, exp_away = expected_goals(home_attack, home_defense,
+                                        away_attack, away_defense,
+                                        base_home, base_away)
     p_home = p_draw = p_away = 0.0
     for i in range(MAX_GOALS + 1):
         pi = _poisson_pmf(i, exp_home)
         for j in range(MAX_GOALS + 1):
-            p = pi * _poisson_pmf(j, exp_away) * _tau(i, j, exp_home, exp_away, DC_RHO)
+            p = pi * _poisson_pmf(j, exp_away) * _tau(i, j, exp_home, exp_away,
+                                                       DC_RHO if rho is None else rho)
             p = max(p, 0.0)
             if i > j:
                 p_home += p
@@ -92,30 +104,44 @@ def match_probabilities(home_attack: float, home_defense: float,
 
 
 class DixonColesRatings:
-    """Rolling attack/defense strength per team, updated match by match."""
+    """Rolling attack/defense strength per team, updated match by match.
 
-    def __init__(self):
+    `k` (learning rate) and `rho` (low-score correlation) default to the
+    module constants but are overridable so they can be tuned against
+    downstream predictive performance rather than staying hand-picked."""
+
+    def __init__(self, k: float = None, rho: float = None):
         self.attack = defaultdict(lambda: DC_START)
         self.defense = defaultdict(lambda: DC_START)
+        self.k = DC_K if k is None else k
+        self.rho = DC_RHO if rho is None else rho
 
-    def predict(self, home: str, away: str) -> tuple:
+    def predict(self, home: str, away: str,
+                 base_home: float = None, base_away: float = None) -> tuple:
         return match_probabilities(
             self.attack[home], self.defense[home],
             self.attack[away], self.defense[away],
+            base_home, base_away, self.rho,
         )
 
-    def update(self, home: str, away: str, home_goals: int, away_goals: int):
+    def update(self, home: str, away: str, home_goals: int, away_goals: int,
+                base_home: float = None, base_away: float = None):
+        bh = LEAGUE_AVG_HOME_GOALS if base_home is None else base_home
+        ba = LEAGUE_AVG_AWAY_GOALS if base_away is None else base_away
         exp_home, exp_away = expected_goals(
             self.attack[home], self.defense[home],
             self.attack[away], self.defense[away],
+            bh, ba,
         )
         # Home attack and away defense both move on the home-goals surprise
         # (a big home win means home attack understated it or away defense
         # overstated it — same evidence, two ratings); symmetric for away.
-        home_surprise = (home_goals - exp_home) / LEAGUE_AVG_HOME_GOALS
-        away_surprise = (away_goals - exp_away) / LEAGUE_AVG_AWAY_GOALS
+        # Normalising by the same baseline used to form the expectation keeps
+        # the surprise scale consistent across leagues.
+        home_surprise = (home_goals - exp_home) / max(bh, 1e-6)
+        away_surprise = (away_goals - exp_away) / max(ba, 1e-6)
 
-        self.attack[home] = _clip(self.attack[home] + DC_K * home_surprise)
-        self.defense[away] = _clip(self.defense[away] + DC_K * home_surprise)
-        self.attack[away] = _clip(self.attack[away] + DC_K * away_surprise)
-        self.defense[home] = _clip(self.defense[home] + DC_K * away_surprise)
+        self.attack[home] = _clip(self.attack[home] + self.k * home_surprise)
+        self.defense[away] = _clip(self.defense[away] + self.k * home_surprise)
+        self.attack[away] = _clip(self.attack[away] + self.k * away_surprise)
+        self.defense[home] = _clip(self.defense[home] + self.k * away_surprise)

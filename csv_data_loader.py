@@ -79,13 +79,24 @@ FD_COUK_NEW_BASE_URL = "https://www.football-data.co.uk/new"
 
 FD_COUK_NEW_LEAGUE_MAP = {
     "ru.1": "RUS", "pl.1": "POL", "at.1": "AUT", "ch.1": "SWZ",
-    "dk.1": "DNK", "ro.1": "ROU", "mx.1": "MEX",
+    "dk.1": "DNK", "ro.1": "ROU", "mx.1": "MEX", "br.1": "BRA",
 }
 
+# Leagues played on a calendar-year season (Feb-Dec) rather than Europe's
+# split Aug-May year, so this feed labels them "2026" not "2025/2026".
+CALENDAR_YEAR_LEAGUES = {"br.1"}
 
-def _fd_couk_new_season_label(season: str) -> str:
-    """'2025-26' -> '2025/2026' (this feed's Season column format)."""
+
+def _fd_couk_new_season_label(season: str, league_code: str = "") -> str:
+    """'2025-26' -> '2025/2026' (this feed's Season column format), or
+    -> '2026' for calendar-year leagues like Brazil.
+
+    For a calendar-year league the label is the *end* year: our "2025-26"
+    season spans Aug 2025-May 2026 in Europe, and the Brazilian campaign
+    running inside that window is the one played across 2026."""
     start, end = season.split("-")
+    if league_code in CALENDAR_YEAR_LEAGUES:
+        return f"{start[:2]}{end}"
     return f"{start}/{start[:2]}{end}"
 
 # League code mapping from CSV filename to standard codes.
@@ -124,6 +135,7 @@ LEAGUE_CODE_MAP = {
     "dk.1": "DEN1",     # Danish Superliga
     "ro.1": "ROU1",     # Romanian Liga I
     "mx.1": "MEX1",     # Liga MX
+    "br.1": "BSA",      # Campeonato Brasileiro Serie A (calendar-year season)
     # Scotland
     "sco.1": "SCO1",    # Scottish Premiership
     "sco.2": "SCO2",    # Scottish Championship
@@ -298,7 +310,7 @@ def parse_fd_couk_new_csv(csv_content: str, season: str, league_code: str) -> Li
     shape parse_csv_matches produces (no per-match stats in this feed)."""
     matches = []
     reader = csv.DictReader(io.StringIO(csv_content))
-    season_label = _fd_couk_new_season_label(season)
+    season_label = _fd_couk_new_season_label(season, league_code)
 
     for row in reader:
         try:

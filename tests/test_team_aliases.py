@@ -76,6 +76,30 @@ class TestResolveTeamName:
         assert resolve_team_name("RCD Espanyol de Barcelona", stats) is None
         assert resolve_team_name("Rayo Vallecano de Madrid", stats) is None
 
+    def test_three_brazilian_atleticos_stay_distinct(self):
+        """Brazil has three unrelated "Atletico" clubs in the training data.
+        Each API name must land on its own club, and a bare "Atletico" must
+        resolve to none of them rather than picking one arbitrarily."""
+        stats = {"Atletico-MG": {}, "Athletico-PR": {}, "Atletico GO": {}}
+        assert resolve_team_name("CA Mineiro", stats) == "Atletico-MG"
+        assert resolve_team_name("CA Paranaense", stats) == "Athletico-PR"
+        assert resolve_team_name("Atletico", stats) is None
+        assert resolve_team_name("Atlético", stats) is None
+
+    def test_brazilian_clubs_resolve(self):
+        stats = {
+            "Botafogo RJ": {}, "Flamengo RJ": {}, "Vasco": {}, "Sao Paulo": {},
+            "Gremio": {}, "Vitoria": {}, "Chapecoense-SC": {}, "Remo": {},
+        }
+        assert resolve_team_name("Botafogo FR", stats) == "Botafogo RJ"
+        assert resolve_team_name("CR Flamengo", stats) == "Flamengo RJ"
+        assert resolve_team_name("CR Vasco da Gama", stats) == "Vasco"
+        assert resolve_team_name("São Paulo FC", stats) == "Sao Paulo"
+        assert resolve_team_name("Grêmio FBPA", stats) == "Gremio"
+        assert resolve_team_name("EC Vitória", stats) == "Vitoria"
+        assert resolve_team_name("Chapecoense AF", stats) == "Chapecoense-SC"
+        assert resolve_team_name("Clube do Remo", stats) == "Remo"
+
 
 class TestAliasTableIntegrity:
     def test_all_keys_are_normalized(self):

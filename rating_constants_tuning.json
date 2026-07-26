@@ -1,0 +1,105 @@
+{
+  "note": "Chosen by macro-F1 among candidates that do not reduce accuracy below the hand-picked defaults. Round 1's raw macro-F1 winner ('slower dc') was rejected for exactly that reason.",
+  "tuning_rows": 20000,
+  "probe_model": "histgb (select_k=None)",
+  "results": [
+    {
+      "name": "faster elo + less regress",
+      "params": {
+        "elo_k": 40.0,
+        "elo_home_adv": 65.0,
+        "elo_season_regress": 0.1,
+        "dc_k": 0.08,
+        "dc_rho": -0.1
+      },
+      "macro_f1": 0.40132,
+      "accuracy": 0.4395
+    },
+    {
+      "name": "faster elo + less regress + home90",
+      "params": {
+        "elo_k": 40.0,
+        "elo_home_adv": 90.0,
+        "elo_season_regress": 0.1,
+        "dc_k": 0.08,
+        "dc_rho": -0.1
+      },
+      "macro_f1": 0.39802,
+      "accuracy": 0.4293
+    },
+    {
+      "name": "faster elo + less regress + slower dc",
+      "params": {
+        "elo_k": 40.0,
+        "elo_home_adv": 65.0,
+        "elo_season_regress": 0.1,
+        "dc_k": 0.04,
+        "dc_rho": -0.1
+      },
+      "macro_f1": 0.39642,
+      "accuracy": 0.4299
+    },
+    {
+      "name": "faster elo (r1 best acc)",
+      "params": {
+        "elo_k": 40.0,
+        "elo_home_adv": 65.0,
+        "elo_season_regress": 0.3,
+        "dc_k": 0.08,
+        "dc_rho": -0.1
+      },
+      "macro_f1": 0.39392,
+      "accuracy": 0.43516
+    },
+    {
+      "name": "even faster elo + less regress",
+      "params": {
+        "elo_k": 55.0,
+        "elo_home_adv": 65.0,
+        "elo_season_regress": 0.1,
+        "dc_k": 0.08,
+        "dc_rho": -0.1
+      },
+      "macro_f1": 0.38874,
+      "accuracy": 0.42616
+    },
+    {
+      "name": "defaults",
+      "params": {
+        "elo_k": 24.0,
+        "elo_home_adv": 65.0,
+        "elo_season_regress": 0.3,
+        "dc_k": 0.08,
+        "dc_rho": -0.1
+      },
+      "macro_f1": 0.38428,
+      "accuracy": 0.42823
+    }
+  ],
+  "defaults": {
+    "name": "defaults",
+    "params": {
+      "elo_k": 24.0,
+      "elo_home_adv": 65.0,
+      "elo_season_regress": 0.3,
+      "dc_k": 0.08,
+      "dc_rho": -0.1
+    },
+    "macro_f1": 0.38428,
+    "accuracy": 0.42823
+  },
+  "chosen": {
+    "name": "faster elo + less regress",
+    "params": {
+      "elo_k": 40.0,
+      "elo_home_adv": 65.0,
+      "elo_season_regress": 0.1,
+      "dc_k": 0.08,
+      "dc_rho": -0.1
+    },
+    "macro_f1": 0.40132,
+    "accuracy": 0.4395
+  },
+  "macro_f1_gain": 0.01704,
+  "accuracy_gain": 0.01127
+}

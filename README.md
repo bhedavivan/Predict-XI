@@ -9,19 +9,26 @@ none still stuck on stale data.
 
 ---
 
-## Model (v6)
+## Model (v7)
 
 | Metric | Value | Notes |
 |---|---|---|
-| Accuracy | **45.6%** | temporal, purged time-series CV |
-| Baseline | 43.0% | always-predict-home |
-| Macro F1 | **0.430** | balances all three classes, not just accuracy |
-| Log-loss | 1.024 | below uniform (1.099) → still calibrated |
-| Brier score | 0.205 | multiclass |
-| Draw recall | **24.5%** | up from 0.7% pre-class-balancing, 19.1%/24.6% in prior rounds |
-| Training matches | 65,759 | 29 leagues × up to 7 seasons (2019-20 → 2025-26) |
-| Teams rated | 677 | by Elo + Dixon-Coles |
-| Shipped model size | 65 MB | (`model.joblib`, via Git LFS) |
+| Accuracy | **46.0%** | temporal, purged time-series CV |
+| Baseline | 43.2% | always-predict-home |
+| Macro F1 | **0.431** | balances all three classes, not just accuracy |
+| Log-loss | 1.018 | below uniform (1.099) → still calibrated |
+| Brier score | 0.204 | multiclass |
+| Draw recall | **23.3%** | up from 0.7% pre-class-balancing |
+| Training matches | 68,228 | 30 leagues × up to 7 seasons (2019-20 → 2025-26) |
+| Teams rated | 707 | by Elo + Dixon-Coles |
+| Features | 77 | 50 selected by tuned `SelectKBest` |
+| Shipped model size | **26 MB** | (`model.joblib`, via Git LFS) — was 65 MB |
+
+> **On reading the accuracy number.** An earlier version of this project reported 48%, which
+> looks better than today's 46.0% but was not a better model: it predicted draws **0.7%** of the
+> time, effectively ignoring a third of all possible outcomes to farm the majority classes.
+> Today's model predicts draws at 23.3% recall. Compare macro-F1 (which weights all three classes
+> equally) rather than raw accuracy when judging progress here.
 
 > **Why not higher accuracy?** This isn't a bug — it's close to the ceiling for this problem.
 > Football outcomes depend on things no pre-match feature set captures (a deflected shot, a red
@@ -29,8 +36,9 @@ none still stuck on stale data.
 > the 50-55% range on this exact 3-way problem. 45-46% with genuine draw recall is a believable,
 > honest number; anything claiming much higher on this task is usually leaking future information.
 
-**Ensemble vs stacking** — trained head-to-head on identical data (purged 5-fold CV, prior
-round's 62,131-match dataset; re-validated on the current 65,759-match set as ensemble only):
+**Ensemble vs stacking** — trained head-to-head on identical data (purged 5-fold CV, on the
+62,131-match dataset of the round they were compared in; ensemble has been carried forward and
+re-validated on every dataset since):
 
 | Model | Macro F1 | Log-loss | Brier | Draw recall |
 |---|---|---|---|---|
@@ -217,4 +225,4 @@ so re-running it again soon after (e.g. to try a different `--model-type`) is mu
 - Python 3.8+
 - Flask (web UI only)
 - scikit-learn, numpy, pandas, joblib, threadpoolctl (see `requirements.txt`)
-- [Git LFS](https://git-lfs.com/) to clone `model.joblib` (64 MB)
+- [Git LFS](https://git-lfs.com/) to clone `model.joblib` (26 MB)

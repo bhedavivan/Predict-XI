@@ -87,6 +87,30 @@ TEAM_NAME_ALIASES = {
     "sporting clube de portugal": "Sp Lisbon", "sporting cp": "Sp Lisbon",
     "royale union saint-gilloise": "St. Gilloise", "union sg": "St. Gilloise",
     "fc kbenhavn": "FC Copenhagen", "kbenhavn": "FC Copenhagen",
+    # Brazil Serie A. DANGER: Brazil has three distinct "Atletico" clubs in
+    # the training data — Mineiro (Atletico-MG), Paranaense (Athletico-PR)
+    # and Goianiense (Atletico GO). They are different clubs; only ever map
+    # the full disambiguated name, never a bare "atletico".
+    "botafogo fr": "Botafogo RJ", "botafogo": "Botafogo RJ",
+    "ca mineiro": "Atletico-MG", "mineiro": "Atletico-MG",
+    "ca paranaense": "Athletico-PR", "paranaense": "Athletico-PR",
+    "cr flamengo": "Flamengo RJ", "flamengo": "Flamengo RJ",
+    "cr vasco da gama": "Vasco", "vasco da gama": "Vasco",
+    "chapecoense af": "Chapecoense-SC", "chapecoense": "Chapecoense-SC",
+    "clube do remo": "Remo",
+    "coritiba fbc": "Coritiba",
+    "cruzeiro ec": "Cruzeiro",
+    "ec bahia": "Bahia",
+    "ec vitoria": "Vitoria", "vitoria": "Vitoria",
+    "fluminense fc": "Fluminense",
+    "gremio fbpa": "Gremio", "gremio": "Gremio",
+    "mirassol fc": "Mirassol",
+    "rb bragantino": "Bragantino",
+    "sc corinthians paulista": "Corinthians",
+    "sc internacional": "Internacional",
+    "se palmeiras": "Palmeiras",
+    "santos fc": "Santos",
+    "sao paulo fc": "Sao Paulo", "sao paulo": "Sao Paulo",
 }
 
 

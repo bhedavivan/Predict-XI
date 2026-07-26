@@ -41,5 +41,8 @@ LEAGUE_CODES = {
     "SA2": "Serie B",
     "PPL2": "Liga Portugal 2",
     "DED2": "Eerste Divisie",
-    "BSA2": "Campeonato Brasileiro Série B",
+    # NOTE: Brazilian Serie B (BSA2) is deliberately absent. The
+    # football-data.co.uk BRA feed carries Serie A only, so there is no
+    # training data for Serie B — listing it would offer fixtures the model
+    # can only answer with neutral defaults. Serie A (BSA) is supported.
 }

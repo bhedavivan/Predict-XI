@@ -13,7 +13,9 @@ from data_processor import (
     _elo_goal_diff_multiplier,
     ELO_START,
     ELO_HOME_ADV,
+    LEAGUE_BASELINE_MIN_MATCHES,
 )
+import dixon_coles
 
 
 def _match_row(date, home, away, home_score, away_score):
@@ -285,7 +287,7 @@ class TestPrepareTrainingData:
         assert len(X) == 1
         assert len(y) == 1
         assert y[0] == 1
-        assert len(feature_names) == 73  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles
+        assert len(feature_names) == 77  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles + 4 evenness
 
 
 class TestPreparePredictionFeatures:
@@ -324,7 +326,7 @@ class TestPreparePredictionFeatures:
             },
         }
         features = prepare_prediction_features("Team A", "Team B", team_stats)
-        assert len(features) == 73  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles
+        assert len(features) == 77  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles + 4 evenness
         assert features[0] == 1.0  # home form
         assert features[4] == 0.5  # away form
 
@@ -366,6 +368,100 @@ class TestComputeTeamStats:
         assert "Team B" in stats
         assert stats["Team A"]["form"] == 1.0
         assert stats["Team B"]["form"] == 0.5
+
+
+class TestLeagueBaselinesNoLookahead:
+    """Per-league goal baselines are accumulated as matches stream past. If
+    they were ever computed over the whole dataset, every early match would
+    carry information from results that hadn't happened yet — inflating
+    offline scores while doing nothing for real predictions."""
+
+    def test_early_matches_use_global_defaults(self):
+        """Before a league reaches LEAGUE_BASELINE_MIN_MATCHES there isn't
+        enough history, so the global constants must still be in force."""
+        rows = [_match_row(f"2023-08-{d:02d}T14:00:00Z", f"T{d}", f"U{d}", 5, 0)
+                for d in range(1, 11)]
+        result = add_form_features(rows)
+        for r in result:
+            assert r["league_base_home_goals"] == dixon_coles.LEAGUE_AVG_HOME_GOALS
+            assert r["league_base_away_goals"] == dixon_coles.LEAGUE_AVG_AWAY_GOALS
+
+    def test_baseline_ignores_the_match_it_describes(self):
+        """A match must never contribute to the baseline used to predict it.
+        Feeding a long run of identical lopsided scores, the baseline seen by
+        match N must reflect only matches 1..N-1."""
+        n = LEAGUE_BASELINE_MIN_MATCHES + 50
+        rows = [_match_row("2023-08-12T14:00:00Z", f"H{i}", f"A{i}", 3, 0) for i in range(n)]
+        result = add_form_features(rows)
+        # Once past the threshold the measured baseline should converge
+        # toward the actual 3-0 pattern, but never reach it instantly at the
+        # boundary — it only sees prior matches.
+        at_threshold = result[LEAGUE_BASELINE_MIN_MATCHES]
+        assert at_threshold["league_base_home_goals"] == pytest.approx(3.0, abs=0.01)
+        assert at_threshold["league_base_away_goals"] == pytest.approx(0.0, abs=0.01)
+        # The match just before the threshold still had too little history.
+        just_before = result[LEAGUE_BASELINE_MIN_MATCHES - 1]
+        assert just_before["league_base_home_goals"] == dixon_coles.LEAGUE_AVG_HOME_GOALS
+
+
+class TestTrainPredictFeatureAlignment:
+    """prepare_training_data and prepare_prediction_features must build the
+    SAME feature vector layout. If they drift, every prediction is silently
+    computed against misaligned columns — the model still returns confident
+    probabilities, they're just wrong. Nothing else in the codebase catches
+    that, so it's guarded here."""
+
+    def _built_rows(self):
+        rows = [
+            _match_row("2023-08-12T14:00:00Z", "Team A", "Team B", 2, 1),
+            _match_row("2023-08-19T14:00:00Z", "Team A", "Team C", 1, 1),
+            _match_row("2023-08-26T14:00:00Z", "Team B", "Team C", 0, 3),
+            _match_row("2023-09-02T14:00:00Z", "Team C", "Team A", 2, 2),
+        ]
+        return add_form_features(rows)
+
+    def test_vector_lengths_match(self):
+        rows = self._built_rows()
+        _, _, feature_names = prepare_training_data(rows)
+        stats = compute_team_stats(rows)
+        features = prepare_prediction_features("Team A", "Team B", stats)
+        assert len(features) == len(feature_names), (
+            f"training builds {len(feature_names)} features but prediction "
+            f"builds {len(features)} — the two paths have drifted apart"
+        )
+
+    def test_evenness_features_are_non_negative(self):
+        """Every abs_* feature is a magnitude; a negative one means a signed
+        value leaked into an evenness slot."""
+        rows = self._built_rows()
+        _, _, feature_names = prepare_training_data(rows)
+        stats = compute_team_stats(rows)
+        features = prepare_prediction_features("Team A", "Team B", stats)
+        for name, value in zip(feature_names, features):
+            if name.startswith("abs_"):
+                assert value >= 0, f"{name} is negative ({value})"
+
+    def test_venue_independent_evenness_is_symmetric_under_swap(self):
+        """Closeness measured from venue-independent quantities (Elo, form,
+        points-per-fixture) must not change when the two teams swap sides.
+
+        `abs_dc_exp_goals_diff` is deliberately excluded: it's derived from
+        Dixon-Coles *expected goals*, which apply the home-advantage baseline
+        (LEAGUE_AVG_HOME_GOALS vs LEAGUE_AVG_AWAY_GOALS) to whichever side is
+        at home. Its gap genuinely depends on venue, so asymmetry there is
+        correct behaviour rather than a leak."""
+        venue_independent = {"abs_elo_diff", "abs_form_diff", "abs_ppf_10_diff"}
+        rows = self._built_rows()
+        _, _, feature_names = prepare_training_data(rows)
+        stats = compute_team_stats(rows)
+        forward = prepare_prediction_features("Team A", "Team B", stats)
+        reverse = prepare_prediction_features("Team B", "Team A", stats)
+        checked = 0
+        for name, fwd, rev in zip(feature_names, forward, reverse):
+            if name in venue_independent:
+                assert fwd == pytest.approx(rev), f"{name} changed under swap"
+                checked += 1
+        assert checked == len(venue_independent), "an evenness feature went missing"
 
 
 if __name__ == "__main__":

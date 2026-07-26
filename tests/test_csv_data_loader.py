@@ -81,11 +81,24 @@ class TestNewLeaguesSeasonLabel:
         assert _fd_couk_new_season_label("2019-20") == "2019/2020"
         assert _fd_couk_new_season_label("2023-24") == "2023/2024"
 
+    def test_calendar_year_leagues_use_single_year(self):
+        """Brazil plays Feb-Dec, so this feed labels its seasons with a
+        single year. Passing the split-year label would silently match zero
+        rows and look like "no data" rather than a mapping bug."""
+        assert _fd_couk_new_season_label("2025-26", "br.1") == "2026"
+        assert _fd_couk_new_season_label("2019-20", "br.1") == "2020"
+
+    def test_european_leagues_unaffected_by_league_arg(self):
+        assert _fd_couk_new_season_label("2025-26", "pl.1") == "2025/2026"
+
 
 class TestNewLeaguesMap:
     def test_previously_stale_leagues_now_covered(self):
         for code in ("ru.1", "pl.1", "at.1", "ch.1", "dk.1", "ro.1", "mx.1"):
             assert code in FD_COUK_NEW_LEAGUE_MAP
+
+    def test_brazil_covered(self):
+        assert FD_COUK_NEW_LEAGUE_MAP.get("br.1") == "BRA"
 
     def test_no_overlap_with_main_feed_map(self):
         """A league should never be in both maps -- the main feed is

@@ -217,7 +217,7 @@ def _purged_time_series_split(n_samples: int, n_folds: int = 5, purge_gap: int =
 # pipeline, so this stays a light search rather than an unbounded sweep.
 
 _DEFAULT_RF_PARAMS = dict(n_estimators=400, max_depth=10, min_samples_split=10,
-                           min_samples_leaf=5, max_features="sqrt", random_state=42, n_jobs=1)
+                           min_samples_leaf=5, max_features="sqrt", random_state=42, n_jobs=-1)
 _DEFAULT_HISTGB_PARAMS = dict(max_depth=4, max_iter=300, learning_rate=0.05,
                                min_samples_leaf=20, l2_regularization=0.1, random_state=42)
 _DEFAULT_LR_PARAMS = dict(max_iter=2000, C=0.5, random_state=42)
@@ -237,11 +237,11 @@ _RF_GRID = [
     # these smaller candidates — not worth it for a model that has to be
     # distributable via Git LFS.
     dict(n_estimators=300, max_depth=10, min_samples_split=10, min_samples_leaf=10,
-         max_features="sqrt", random_state=42, n_jobs=1),
+         max_features="sqrt", random_state=42, n_jobs=-1),
     dict(n_estimators=400, max_depth=10, min_samples_split=10, min_samples_leaf=5,
-         max_features="sqrt", random_state=42, n_jobs=1),
+         max_features="sqrt", random_state=42, n_jobs=-1),
     dict(n_estimators=350, max_depth=12, min_samples_split=15, min_samples_leaf=8,
-         max_features="log2", random_state=42, n_jobs=1),
+         max_features="log2", random_state=42, n_jobs=-1),
 ]
 _HISTGB_GRID = [
     dict(max_depth=4, max_iter=300, learning_rate=0.05, min_samples_leaf=20,
@@ -265,9 +265,15 @@ _VOTING_WEIGHT_GRID = [
     [0.25, 0.45, 0.3],
 ]
 
+# How many features to keep. `None` = keep all and let the tree models do
+# their own selection at split time, which is the hypothesis this grid exists
+# to test against the old hardcoded k=20 (see _build_sklearn_pipeline).
+_SELECT_K_GRID = [None, 50, 35, 20]
+
 
 def _build_sklearn_pipeline(model_type: str, n_features: int, use_feature_selection: bool = True,
-                             tree_params: Optional[dict] = None, voting_weights: Optional[list] = None):
+                             tree_params: Optional[dict] = None, voting_weights: Optional[list] = None,
+                             select_k: Optional[int] = None):
     """Build a sklearn Pipeline for the given model_type.
 
     `tree_params` overrides the underlying estimator's constructor kwargs
@@ -279,9 +285,20 @@ def _build_sklearn_pipeline(model_type: str, n_features: int, use_feature_select
     if not SKLEARN_AVAILABLE:
         raise RuntimeError("scikit-learn is not installed.")
 
+    # Feature selection is OPT-IN by k, not a fixed cap. It used to be
+    # hardcoded to k=20, written when the feature set was much smaller; by the
+    # time there were 73 features that silently discarded 53 of them —
+    # including dc_draw_prob (built specifically to predict draws),
+    # home_sos/away_sos (the cross-league comparison signal), and 15 of the 16
+    # shot/corner/card features. mutual_info_classif is a *univariate* filter,
+    # so features that only carry signal in combination (H2H, shots relative
+    # to the opponent, schedule strength) score low individually even though
+    # the tree models can exploit them at split time. select_k=None means
+    # "keep everything and let the trees choose", which is a candidate in
+    # _SELECT_K_GRID rather than an assumption.
     steps = []
-    if use_feature_selection and n_features > 10:
-        steps.append(("select", SelectKBest(mutual_info_classif, k=min(n_features, 20))))
+    if use_feature_selection and select_k is not None and 0 < select_k < n_features:
+        steps.append(("select", SelectKBest(mutual_info_classif, k=select_k)))
     steps.append(("scaler", StandardScaler()))
 
     def _rf(overrides=None):
@@ -294,7 +311,11 @@ def _build_sklearn_pipeline(model_type: str, n_features: int, use_feature_select
         return LogisticRegression(**{**_DEFAULT_LR_PARAMS, **(overrides or {})})
 
     def _calibrated(estimator):
-        return CalibratedClassifierCV(estimator, method="isotonic", cv=3)
+        # ensemble=False fits ONE base estimator (using cross_val_predict for
+        # unbiased calibration targets) instead of storing `cv` full copies.
+        # With cv=3 the default was tripling the size of every leg — the
+        # dominant term in a model.joblib that has to ship via Git LFS.
+        return CalibratedClassifierCV(estimator, method="isotonic", cv=3, ensemble=False)
 
     if model_type == "histgb":
         steps.append(("clf", _calibrated(_histgb(tree_params))))
@@ -485,9 +506,11 @@ class MatchPredictorModel:
         self.brier_: Optional[float] = None
         self.test_samples: int = 0
         self.tuning_notes: Dict[str, Any] = {}
+        self.select_k_: Optional[int] = None
 
     def _fit_sklearn(self, X, y, feature_names, cv_folds=5, purge_gap=0,
-                      tree_params_override=None, voting_weights_override=None):
+                      tree_params_override=None, voting_weights_override=None,
+                      select_k_override=-1):
         """Fit sklearn pipeline with time-series CV."""
         X_arr, y_arr = _to_numpy(X, y)
         n_features = X_arr.shape[1]
@@ -513,43 +536,73 @@ class MatchPredictorModel:
         else:
             Xt, yt = X_arr, y_arr
 
-        if tree_params_override is not None:
+        # `select_k_override=-1` is the "not specified" sentinel, since None
+        # is itself a meaningful value here (= keep all features).
+        select_k = select_k_override if select_k_override != -1 else None
+        skip_search = tree_params_override is not None or select_k_override != -1
+
+        if skip_search:
             pass
-        elif len(X_arr) >= 500 and actual_model_type in ("rf", "histgb", "logreg"):
-            grid = {"rf": _RF_GRID, "histgb": _HISTGB_GRID, "logreg": _LR_GRID}[actual_model_type]
-            tree_params, score = _select_best(
-                grid, lambda p: _build_sklearn_pipeline(actual_model_type, n_features, tree_params=p),
+        elif len(X_arr) >= 500:
+            # Greedy coordinate search (not exhaustive — each candidate
+            # retrains a full pipeline): pick the feature-count first with
+            # default estimators, then tune estimators at that width, then
+            # the combiner. Scored throughout by macro-F1 so the search can't
+            # win by ignoring draws.
+            probe_type = actual_model_type if actual_model_type in ("rf", "histgb", "logreg") else "histgb"
+            select_k, k_score = _select_best(
+                _SELECT_K_GRID,
+                lambda k: _build_sklearn_pipeline(probe_type, n_features, select_k=k),
                 Xt, yt, tuning_folds, purge_gap)
-            self.tuning_notes[actual_model_type] = {"params": tree_params, "cv_macro_f1": round(score, 4)}
-        elif len(X_arr) >= 500 and actual_model_type in ("ensemble", "stacking"):
-            # Both combiners (fixed-weight voting and the stacking
-            # meta-learner) reuse the same tuned rf/histgb/lr base legs —
-            # only how they're combined differs.
-            best_rf, rf_score = _select_best(
-                _RF_GRID, lambda p: _build_sklearn_pipeline("rf", n_features, tree_params=p),
-                Xt, yt, tuning_folds, purge_gap)
-            best_histgb, histgb_score = _select_best(
-                _HISTGB_GRID, lambda p: _build_sklearn_pipeline("histgb", n_features, tree_params=p),
-                Xt, yt, tuning_folds, purge_gap)
-            best_lr, lr_score = _select_best(
-                _LR_GRID, lambda p: _build_sklearn_pipeline("logreg", n_features, tree_params=p),
-                Xt, yt, tuning_folds, purge_gap)
-            tree_params = {"rf": best_rf, "histgb": best_histgb, "lr": best_lr}
-            self.tuning_notes = {
-                "rf": {"params": best_rf, "cv_macro_f1": round(rf_score, 4)},
-                "histgb": {"params": best_histgb, "cv_macro_f1": round(histgb_score, 4)},
-                "logreg": {"params": best_lr, "cv_macro_f1": round(lr_score, 4)},
+            self.tuning_notes["select_k"] = {
+                "k": select_k if select_k is not None else "all",
+                "n_features": int(n_features),
+                "cv_macro_f1": round(k_score, 4),
             }
-            if actual_model_type == "ensemble":
-                voting_weights, weight_score = _select_best(
-                    _VOTING_WEIGHT_GRID,
-                    lambda w: _build_sklearn_pipeline("ensemble", n_features, tree_params=tree_params, voting_weights=w),
+
+            if actual_model_type in ("rf", "histgb", "logreg"):
+                grid = {"rf": _RF_GRID, "histgb": _HISTGB_GRID, "logreg": _LR_GRID}[actual_model_type]
+                tree_params, score = _select_best(
+                    grid,
+                    lambda p: _build_sklearn_pipeline(actual_model_type, n_features, tree_params=p, select_k=select_k),
                     Xt, yt, tuning_folds, purge_gap)
-                self.tuning_notes["voting_weights"] = {"weights": voting_weights, "cv_macro_f1": round(weight_score, 4)}
+                self.tuning_notes[actual_model_type] = {"params": tree_params, "cv_macro_f1": round(score, 4)}
+            elif actual_model_type in ("ensemble", "stacking"):
+                # Both combiners (fixed-weight voting and the stacking
+                # meta-learner) reuse the same tuned rf/histgb/lr base legs —
+                # only how they're combined differs.
+                best_rf, rf_score = _select_best(
+                    _RF_GRID,
+                    lambda p: _build_sklearn_pipeline("rf", n_features, tree_params=p, select_k=select_k),
+                    Xt, yt, tuning_folds, purge_gap)
+                best_histgb, histgb_score = _select_best(
+                    _HISTGB_GRID,
+                    lambda p: _build_sklearn_pipeline("histgb", n_features, tree_params=p, select_k=select_k),
+                    Xt, yt, tuning_folds, purge_gap)
+                best_lr, lr_score = _select_best(
+                    _LR_GRID,
+                    lambda p: _build_sklearn_pipeline("logreg", n_features, tree_params=p, select_k=select_k),
+                    Xt, yt, tuning_folds, purge_gap)
+                tree_params = {"rf": best_rf, "histgb": best_histgb, "lr": best_lr}
+                self.tuning_notes.update({
+                    "rf": {"params": best_rf, "cv_macro_f1": round(rf_score, 4)},
+                    "histgb": {"params": best_histgb, "cv_macro_f1": round(histgb_score, 4)},
+                    "logreg": {"params": best_lr, "cv_macro_f1": round(lr_score, 4)},
+                })
+                if actual_model_type == "ensemble":
+                    voting_weights, weight_score = _select_best(
+                        _VOTING_WEIGHT_GRID,
+                        lambda w: _build_sklearn_pipeline("ensemble", n_features, tree_params=tree_params,
+                                                          voting_weights=w, select_k=select_k),
+                        Xt, yt, tuning_folds, purge_gap)
+                    self.tuning_notes["voting_weights"] = {"weights": voting_weights, "cv_macro_f1": round(weight_score, 4)}
+
+        self.select_k_ = select_k
 
         # Build the winning pipeline
         pipe = _build_sklearn_pipeline(actual_model_type, n_features,
-                                        tree_params=tree_params, voting_weights=voting_weights)
+                                        tree_params=tree_params, voting_weights=voting_weights,
+                                        select_k=select_k)
 
         # Evaluate on the full dataset (balanced sample weights applied inside)
         cv_res = _evaluate_pipeline(pipe, X_arr, y_arr, n_folds=cv_folds, purge_gap=purge_gap)
@@ -774,11 +827,13 @@ class MatchPredictorModel:
     def train(self, X, y, feature_names: Optional[List[str]] = None,
               cv_folds: int = 5, temporal: bool = True,
               tree_params_override: Optional[dict] = None,
-              voting_weights_override: Optional[list] = None):
+              voting_weights_override: Optional[list] = None,
+              select_k_override: int = -1):
         """`*_override` skip the hyperparameter/voting-weight search and fit
         directly with the given config (e.g. re-using a config a previous
         tuning run already found) — same final evaluate+refit, just without
-        re-paying for the search."""
+        re-paying for the search. `select_k_override` uses -1 as its
+        "unspecified" sentinel because None means "keep all features"."""
         self.feature_names = feature_names or [f"feature_{i}" for i in range(len(X[0]) if X else 0)]
 
         purge_gap = 0
@@ -791,7 +846,8 @@ class MatchPredictorModel:
         else:
             cv_res = self._fit_sklearn(X, y, self.feature_names, cv_folds=cv_folds, purge_gap=purge_gap,
                                         tree_params_override=tree_params_override,
-                                        voting_weights_override=voting_weights_override)
+                                        voting_weights_override=voting_weights_override,
+                                        select_k_override=select_k_override)
             self.eval_method = "temporal" if temporal else "shuffled"
             self.training_samples = len(X)
             self.class_distribution = {c: int(y.count(c)) for c in self.classes}
