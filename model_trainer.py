@@ -510,6 +510,14 @@ class MatchPredictorModel:
         # Decision-rule threshold for the Draw class. Predict Draw when
         # P(draw) >= this, instead of taking the plain argmax. See predict().
         self.draw_threshold: Optional[float] = None
+        # Post-hoc probability recalibration (multinomial Platt scaling over
+        # log-probabilities). The pipeline is trained with balanced class
+        # weights to rescue draw recall, which systematically deflates
+        # home-win probability: measured on held-out matches, "74%" actually
+        # won 94% of the time. This maps raw outputs back onto reality so a
+        # stated probability means what it says.
+        self.calibrator = None
+        self.class_prior_ = None
 
     def _fit_sklearn(self, X, y, feature_names, cv_folds=5, purge_gap=0,
                       tree_params_override=None, voting_weights_override=None,
@@ -911,6 +919,7 @@ class MatchPredictorModel:
         if self.pipeline is not None:
             X = np.asarray([features], dtype=np.float64)
             proba = self.pipeline.predict_proba(X)[0]
+            proba = self.apply_calibration(proba.reshape(1, -1))[0]
             cls_probs = {self.classes[i]: float(proba[i]) for i in range(len(self.classes))}
         elif hasattr(self, "nb_model") and self.nb_model:
             proba_dicts = self._proba_list_legacy([features])
@@ -961,6 +970,44 @@ class MatchPredictorModel:
             "argmax_prediction": self.label_map.get(argmax_pred, str(argmax_pred)),
         }
 
+    # Weight kept on the empirical class prior when shrinking calibrated
+    # probabilities. The calibrator is well behaved on average but a linear
+    # map over log-probabilities extrapolates without bound at the tails,
+    # producing things like a 0.1% or 100% draw chance. No real football match
+    # is that certain, so a small amount of the base rate is mixed back in.
+    CALIBRATION_SHRINKAGE = 0.06
+
+    def apply_calibration(self, proba):
+        """Map raw pipeline probabilities onto calibrated ones. Identity when
+        no calibrator has been fitted, so older models still load and run."""
+        if self.calibrator is None:
+            return proba
+        logp = np.log(np.clip(proba, 1e-9, 1.0))
+        out = self.calibrator.predict_proba(logp)
+        prior = getattr(self, "class_prior_", None)
+        if prior is not None:
+            w = self.CALIBRATION_SHRINKAGE
+            out = (1.0 - w) * out + w * np.asarray(prior)
+            out = out / out.sum(axis=1, keepdims=True)
+        return out
+
+    def fit_calibration(self, X_holdout, y_holdout):
+        """Fit recalibration on matches held out from this call.
+
+        Deliberately a separate step rather than part of train(): it must see
+        data the caller controls, and keeping it explicit makes it obvious
+        that skipping it leaves the model uncalibrated rather than silently
+        half-configured.
+        """
+        if self.pipeline is None:
+            return None
+        raw = self.pipeline.predict_proba(np.asarray(X_holdout, dtype=np.float64))
+        logp = np.log(np.clip(raw, 1e-9, 1.0))
+        y_arr = np.asarray(y_holdout)
+        self.calibrator = LogisticRegression(max_iter=2000).fit(logp, y_arr)
+        self.class_prior_ = [float((y_arr == c).mean()) for c in self.classes]
+        return self.calibrator
+
     def save(self, path: str = None):
         if path is None:
             path = os.path.join(_SCRIPT_DIR, "model.json")
@@ -984,6 +1031,7 @@ class MatchPredictorModel:
             "feature_importances": self.feature_importances_,
             "label_map": self.label_map,
             "draw_threshold": self.draw_threshold,
+            "class_prior": getattr(self, "class_prior_", None),
         }
         
         with open(path, "w") as f:
@@ -994,6 +1042,11 @@ class MatchPredictorModel:
             joblib_path = path.replace(".json", ".joblib") if path.endswith(".json") else path + ".joblib"
             try:
                 joblib.dump(self.pipeline, joblib_path)
+            except Exception:
+                pass
+        if self.calibrator is not None:
+            try:
+                joblib.dump(self.calibrator, joblib_path.replace(".joblib", ".calib.joblib"))
             except Exception:
                 pass
         
@@ -1035,6 +1088,7 @@ class MatchPredictorModel:
         
         raw_label_map = data.get("label_map", {-1: "Away Win", 0: "Draw", 1: "Home Win"})
         self.draw_threshold = data.get("draw_threshold")
+        self.class_prior_ = data.get("class_prior")
         self.label_map = {}
         for k, v in raw_label_map.items():
             try:
@@ -1058,6 +1112,12 @@ class MatchPredictorModel:
                 self.pipeline = None
         
         if self.pipeline is not None:
+            calib_path = joblib_path.replace(".joblib", ".calib.joblib")
+            if os.path.exists(calib_path):
+                try:
+                    self.calibrator = joblib.load(calib_path)
+                except Exception:
+                    self.calibrator = None
             self.trained = True
             return True
         
