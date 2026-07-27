@@ -100,10 +100,55 @@ def _days_between(date1: str, date2: str) -> int:
         return 7
 
 
+# Squad market value is heavily right-skewed (a €1.4bn Real Madrid against a
+# €15m promoted side), so raw euros would let a handful of superclubs dominate
+# any distance-based split. Log-space keeps the ratio meaningful across the
+# whole range.
+_SQUAD_VALUE_SCALE = 1_000_000.0  # work in EUR millions
+
+
+def _log_value(value: Optional[float]) -> float:
+    if not value or value <= 0:
+        return 0.0
+    return math.log1p(value / _SQUAD_VALUE_SCALE)
+
+
+def squad_value_feature_dict(home_value: Optional[float], away_value: Optional[float]) -> dict:
+    """Build the squad-value feature block from two raw EUR values.
+
+    Shared by the training path (add_form_features) and the prediction path
+    (prepare_prediction_features) so the two cannot silently disagree — the
+    same reason the evenness features are covered by an alignment test.
+
+    `has_squad_value` is 0 unless BOTH sides are known: a comparison where
+    only one value exists is worse than none, since the model would read the
+    missing side as an infinitely weak squad.
+    """
+    both = bool(home_value) and bool(away_value)
+    h, a = _log_value(home_value), _log_value(away_value)
+    return {
+        "home_squad_value": h if both else 0.0,
+        "away_squad_value": a if both else 0.0,
+        "squad_value_diff": (h - a) if both else 0.0,
+        "abs_squad_value_diff": abs(h - a) if both else 0.0,
+        "has_squad_value": 1.0 if both else 0.0,
+    }
+
+
+def _squad_value_features(home: str, away: str, match_date: str,
+                           squad_values, club_map: Optional[dict]) -> dict:
+    if squad_values is None or not club_map:
+        return squad_value_feature_dict(None, None)
+    hv = squad_values.value_at(club_map.get(home, ""), match_date)
+    av = squad_values.value_at(club_map.get(away, ""), match_date)
+    return squad_value_feature_dict(hv, av)
+
+
 def add_form_features(rows: list, n_matches: int = 5,
                        elo_k: float = None, elo_home_adv: float = None,
                        elo_season_regress: float = None,
-                       dc_k: float = None, dc_rho: float = None) -> list:
+                       dc_k: float = None, dc_rho: float = None,
+                       squad_values=None, club_map: dict = None) -> list:
     """Add rolling form features for each team (home/away specific), plus Elo.
 
     The rating constants are overridable so they can be tuned against actual
@@ -111,6 +156,14 @@ def add_form_features(rows: list, n_matches: int = 5,
     model's most important features (elo_diff and the dc_* family), so their
     values matter as much as any classifier hyperparameter. Defaults are the
     module-level constants, keeping existing callers unchanged.
+
+    `squad_values` (a transfermarkt_data.SquadValueIndex) and `club_map`
+    ({our_team_name: transfermarkt_club_id}) are optional. When supplied,
+    each match gets its two clubs' squad market value AS OF that match date.
+    When absent — or for the ~11 leagues and 33 clubs Transfermarkt doesn't
+    cover — the features fall back to 0 alongside a `has_squad_value` flag,
+    so the model can learn to disregard them rather than treat 0 as "worthless
+    squad".
     """
     if not rows:
         return rows
@@ -397,6 +450,7 @@ def add_form_features(rows: list, n_matches: int = 5,
             "league_base_away_goals": base_away_goals,
         })
         new_row.update(stat_features)
+        new_row.update(_squad_value_features(home, away, match_date, squad_values, club_map))
         result_rows.append(new_row)
 
         # Fold this match into its league's running goal baseline. Done only
@@ -467,7 +521,7 @@ def add_form_features(rows: list, n_matches: int = 5,
     return result_rows
 
 
-def prepare_training_data(rows: list) -> Tuple[List[List[float]], List[int], List[str]]:
+def prepare_training_data(rows: list, return_meta: bool = False):
     base_form_cols = [
         "home_form", "home_goals_scored_avg", "home_goals_conceded_avg", "home_matches_played",
         "away_form", "away_goals_scored_avg", "away_goals_conceded_avg", "away_matches_played",
@@ -500,11 +554,16 @@ def prepare_training_data(rows: list) -> Tuple[List[List[float]], List[int], Lis
     dc_cols = ["dc_home_exp_goals", "dc_away_exp_goals", "dc_home_prob", "dc_draw_prob", "dc_away_prob"]
     # Closeness features — see add_form_features; targeted at draw recall.
     evenness_cols = ["abs_elo_diff", "abs_dc_exp_goals_diff", "abs_form_diff", "abs_ppf_10_diff"]
+    # Squad market value (Transfermarkt). 0 + has_squad_value=0 where the
+    # league or club isn't covered — see squad_value_feature_dict.
+    squad_cols = ["home_squad_value", "away_squad_value", "squad_value_diff",
+                  "abs_squad_value_diff", "has_squad_value"]
     feature_cols = (base_form_cols + advanced_form_cols + match_stat_cols
-                    + elo_cols + dc_cols + evenness_cols)
+                    + elo_cols + dc_cols + evenness_cols + squad_cols)
 
     X = []
     y = []
+    meta = []
     for row in rows:
         if any(row.get(col) is None for col in base_form_cols + elo_cols):
             continue
@@ -512,7 +571,13 @@ def prepare_training_data(rows: list) -> Tuple[List[List[float]], List[int], Lis
             continue
         X.append([row.get(col, 0) for col in feature_cols])
         y.append(row["result"])
+        # Kept parallel to X so downstream evaluation can slice results by
+        # competition. Rows are filtered above, so leagues must be collected
+        # here rather than reconstructed later.
+        meta.append({"league": row.get("competition", ""), "date": row.get("date", "")})
 
+    if return_meta:
+        return X, y, feature_cols, meta
     return X, y, feature_cols
 
 
@@ -580,11 +645,31 @@ def prepare_prediction_features(home_team: str, away_team: str,
         abs(home.get("ppf_10", 0) - away.get("ppf_10", 0)),
     ]
 
+    # Squad value uses each team's CURRENT value (carried onto team_stats by
+    # compute_team_stats), which is what lets new signings move a prediction:
+    # a club that just bought five players has a higher current squad value,
+    # and the model already learned from history what that is worth. Order
+    # must match squad_cols in prepare_training_data — the alignment test
+    # covers this.
+    squad_block = squad_value_feature_dict(
+        home.get("squad_value_eur"), away.get("squad_value_eur"))
+    squad_features = [squad_block["home_squad_value"], squad_block["away_squad_value"],
+                      squad_block["squad_value_diff"], squad_block["abs_squad_value_diff"],
+                      squad_block["has_squad_value"]]
+
     return (base_features + match_stat_features + elo_features
-            + dc_features + evenness_features)
+            + dc_features + evenness_features + squad_features)
 
 
-def compute_team_stats(rows: list) -> dict:
+def compute_team_stats(rows: list, squad_values=None, club_map: dict = None) -> dict:
+    """Latest per-team state for predictions.
+
+    `squad_values`/`club_map` attach each team's CURRENT squad market value
+    (not the point-in-time value used for training rows). That is what makes
+    a transfer window visible to the UI: sign five players and the club's
+    current value rises, so the next prediction differs — for a weight the
+    model learned from history rather than a hand-set adjustment.
+    """
     if not rows:
         return {}
 
@@ -592,7 +677,7 @@ def compute_team_stats(rows: list) -> dict:
         "form": 0, "goals_scored_avg": 0, "goals_conceded_avg": 0, "matches_played": 0,
         "overall_form": 0, "overall_goals_scored_avg": 0, "overall_goals_conceded_avg": 0,
         "h2h_matches": 0, "h2h_home_wins": 0, "h2h_draws": 0, "h2h_away_wins": 0,
-        "rest_days": 7, "elo": ELO_START, "league": "",
+        "rest_days": 7, "elo": ELO_START, "league": "", "squad_value_eur": None,
         "league_base_home_goals": dixon_coles.LEAGUE_AVG_HOME_GOALS,
         "league_base_away_goals": dixon_coles.LEAGUE_AVG_AWAY_GOALS,
         "ppf_10": 0, "ppf_20": 0, "ewma_form": 0, "ewma_gs": 0, "ewma_gc": 0,
@@ -654,7 +739,13 @@ def compute_team_stats(rows: list) -> dict:
         if all(team_stats[t]["matches_played"] > 0 for t in [home, away]):
             pass
 
-    return dict(team_stats)
+    out = dict(team_stats)
+    if squad_values is not None and club_map:
+        for team, info in out.items():
+            club_id = club_map.get(team)
+            if club_id:
+                info["squad_value_eur"] = squad_values.current_value(club_id)
+    return out
 
 
 def save_data(rows: list, path: str = "matches_data.json"):

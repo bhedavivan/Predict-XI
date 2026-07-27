@@ -4,37 +4,86 @@ Soccer match-outcome predictor. Rates every team with a running **Elo** and a ro
 **Dixon-Coles** attack/defense model, and predicts **Home Win / Draw / Away Win** with a
 calibrated **sklearn ensemble** (RandomForest + HistGradientBoosting + LogisticRegression).
 
-Trained on **65,700+ matches** across seven seasons (through 2025-26) and **all 29** divisions —
-none still stuck on stale data.
+Trained on **68,228 matches** across seven seasons (through 2025-26) and **all 30** divisions,
+enriched with squad market values so transfer activity moves predictions.
 
 ---
 
-## Model (v7)
+## Model (v8)
+
+Two numbers matter here, and they measure different things:
 
 | Metric | Value | Notes |
 |---|---|---|
-| Accuracy | **46.0%** | temporal, purged time-series CV |
+| **Accuracy (shipped rule)** | **53.2%** | held-out matches, draw-threshold decision rule |
+| **Draw recall (shipped rule)** | **62.6%** | was 32.4% under plain argmax |
+| Macro F1 (shipped rule) | **0.528** | balances all three classes |
+| Accuracy (argmax) | 49.8% | same model, largest-probability rule |
+| Accuracy (purged CV) | 46.1% | averaged over earlier folds too — a harder slice |
 | Baseline | 43.2% | always-predict-home |
-| Macro F1 | **0.431** | balances all three classes, not just accuracy |
-| Log-loss | 1.018 | below uniform (1.099) → still calibrated |
-| Brier score | 0.204 | multiclass |
-| Draw recall | **23.3%** | up from 0.7% pre-class-balancing |
+| Log-loss | 1.005 | below uniform (1.099) → calibrated |
+| Brier score | 0.201 | multiclass |
 | Training matches | 68,228 | 30 leagues × up to 7 seasons (2019-20 → 2025-26) |
-| Teams rated | 707 | by Elo + Dixon-Coles |
-| Features | 77 | 50 selected by tuned `SelectKBest` |
-| Shipped model size | **26 MB** | (`model.joblib`, via Git LFS) — was 65 MB |
+| Teams rated | 707 | by Elo + Dixon-Coles + squad value |
+| Features | 82 | all retained; tuned `SelectKBest` chose "keep all" |
+| Shipped model size | 40 MB | (`model.joblib`, via Git LFS) |
 
-> **On reading the accuracy number.** An earlier version of this project reported 48%, which
-> looks better than today's 46.0% but was not a better model: it predicted draws **0.7%** of the
-> time, effectively ignoring a third of all possible outcomes to farm the majority classes.
-> Today's model predicts draws at 23.3% recall. Compare macro-F1 (which weights all three classes
-> equally) rather than raw accuracy when judging progress here.
+> **Why two accuracy numbers?** The purged-CV figure (46.1%) averages over earlier time folds,
+> where Elo/Dixon-Coles ratings are still warming up and squad-value coverage is thinner. The
+> held-out figure (53.2%) is the most recent 20% of matches — the regime the app actually runs in.
+> Both are reported because quoting only the flattering one would be dishonest.
 
-> **Why not higher accuracy?** This isn't a bug — it's close to the ceiling for this problem.
-> Football outcomes depend on things no pre-match feature set captures (a deflected shot, a red
-> card, a bad refereeing call), and even bookmakers — with far more inputs than we have — land in
-> the 50-55% range on this exact 3-way problem. 45-46% with genuine draw recall is a believable,
-> honest number; anything claiming much higher on this task is usually leaking future information.
+### The draw decision rule
+
+The single biggest win in v8 was not a new feature — it was noticing that **argmax is the wrong
+decision rule here**. P(draw) never exceeds ~0.48 in practice, because a draw is rarely the most
+likely *single* outcome even when it's the best call. So taking the largest probability
+systematically under-predicts draws no matter how well calibrated the probabilities are.
+
+Predicting Draw once P(draw) clears a threshold (0.35) fixes this:
+
+| Rule | Accuracy | Macro F1 | Draw recall |
+|---|---|---|---|
+| Argmax (largest probability) | 49.8% | 0.477 | 32.4% |
+| **Draw threshold ≥ 0.35 (shipped)** | **53.2%** | **0.528** | **62.6%** |
+
+Validated across 5 disjoint folds of held-out data — **every fold improved**, mean +3.3 points of
+accuracy. The threshold is tuned on data disjoint from where it is scored, because tuning and
+scoring on the same slice inflated the apparent gain by ~3.6 points of pure selection bias. The
+displayed probabilities are left untouched: they are well calibrated, and rescaling them to force
+argmax agreement would corrupt honest numbers to paper over a decision-rule problem.
+
+> **Why not higher still?** Football outcomes depend on things no pre-match feature set captures
+> (a deflected shot, a red card, a bad refereeing call). Bookmakers — with far more inputs than we
+> have — land in the 50-55% range on this exact 3-way problem, so this is now in credible company.
+> Anything claiming much higher on this task is usually leaking future information.
+
+> **On the older 48% figure.** An early version reported 48%, which looks close to today's number
+> but was not a comparable model: it predicted draws **0.7%** of the time, effectively ignoring a
+> third of all possible outcomes to farm the majority classes.
+
+### Squad market value
+
+Teams carry their squad's Transfermarkt market value, so transfer activity moves predictions —
+sign five players and a club's value rises, shifting its forecasts. Crucially the *weight* on that
+signal is learned from history rather than hand-set, which is what separates it from the invented
+`CLUB_PRIOR` bonuses deleted back in v3.
+
+- Source: [`dcaribou/transfermarkt-datasets`](https://github.com/dcaribou/transfermarkt-datasets)
+  (CC0-1.0, refreshed weekly) — a published dataset, not scraped.
+- Values are point-in-time: a match only ever sees valuations published **before** it.
+- `squad_value_diff` landed as the **5th most important feature** in the model.
+- Coverage is 48% of training matches (Transfermarkt covers first tiers; our lower divisions have
+  no counterpart). Uncovered matches get an explicit `has_squad_value=0` flag so the model learns
+  to disregard the block rather than reading 0 as "worthless squad".
+- Latency: Transfermarkt revalues squads a few times a year, so a signing shows up within weeks,
+  not the same day.
+
+### Where the model actually works
+
+A single global accuracy averages over very different competitions. On held-out matches it ranges
+from **61.9% (Bundesliga)** down to **~40% (Scottish Championship)** — the dashboard shows the full
+per-league table plus a calibration curve. Run `python evaluate.py` to regenerate it.
 
 **Ensemble vs stacking** — trained head-to-head on identical data (purged 5-fold CV, on the
 62,131-match dataset of the round they were compared in; ensemble has been carried forward and

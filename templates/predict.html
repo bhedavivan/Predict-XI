@@ -39,6 +39,14 @@
     <div class="value" style="color: {% if prediction.prediction=='Home Win' %}var(--home){% elif prediction.prediction=='Away Win' %}var(--away){% else %}var(--draw){% endif %};">
       {{ prediction.prediction }}</div>
     <span class="pill" style="margin-top:.4rem;">{{ confidence_label }} confidence &middot; {{ (top_prob*100)|round|int }}%</span>
+    {% if prediction.threshold_applied %}
+    <p class="rule-note">
+      Highest single probability is <strong>{{ prediction.argmax_prediction }}</strong>, but a draw is
+      rarely the most likely <em>single</em> outcome even when it's the best call — so the pick uses a
+      calibrated draw threshold rather than simply taking the largest number. On held-out matches this
+      rule is right more often (+3.3 points of accuracy) than picking the maximum.
+    </p>
+    {% endif %}
   </div>
 
   <div class="prob-bar">

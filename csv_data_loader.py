@@ -602,17 +602,49 @@ def load_and_process_data(
     if not rows:
         return [], [], [], {}
     
+    # Squad market values (Transfermarkt). club_mapping only needs each
+    # team's league, which is available straight from the raw rows — building
+    # it here avoids running the expensive feature pass twice just to learn
+    # team->league. Any failure here is non-fatal: the squad-value features
+    # fall back to 0 with has_squad_value=0 and everything else still trains.
+    squad_values, club_map = None, None
+    try:
+        import transfermarkt_data
+        import club_mapping
+        team_leagues = {}
+        for r in rows:
+            comp = r.get("competition", "")
+            team_leagues.setdefault(r["home_team"], {"league": comp})
+            team_leagues.setdefault(r["away_team"], {"league": comp})
+        club_map = club_mapping.build_club_mapping(
+            team_leagues, transfermarkt_data.load_table("clubs"))
+        squad_values = transfermarkt_data.get_index()
+        covered = sum(1 for t in team_leagues if t in club_map)
+        print(f"Squad values: {len(club_map)} clubs mapped "
+              f"({covered}/{len(team_leagues)} teams matched)")
+    except Exception as e:  # noqa: BLE001 - optional enrichment, never fatal
+        print(f"Squad values unavailable ({type(e).__name__}: {e}); "
+              f"continuing without them")
+        squad_values, club_map = None, None
+
     # Add form features
-    rows = add_form_features(rows, n_matches=n_matches)
+    rows = add_form_features(rows, n_matches=n_matches,
+                              squad_values=squad_values, club_map=club_map)
     print(f"Features added. Total rows: {len(rows)}")
-    
+
     # Prepare training data
-    X, y, feature_names = prepare_training_data(rows)
+    X, y, feature_names, row_meta = prepare_training_data(rows, return_meta=True)
     print(f"Training samples prepared: {len(X)}")
-    
+
     # Compute team stats for prediction
-    team_stats = compute_team_stats(rows)
-    
+    team_stats = compute_team_stats(rows, squad_values=squad_values, club_map=club_map)
+
+    # Per-row leagues are exposed as an attribute rather than a 5th return
+    # value so the long-standing 4-tuple contract (main.py and the training
+    # scripts all unpack it) keeps working. Callers that persist data read
+    # this and hand it to save_processed_data(leagues=...).
+    load_and_process_data.last_leagues = [m["league"] for m in row_meta]
+
     return X, y, feature_names, team_stats
 
 
@@ -621,14 +653,21 @@ def save_processed_data(
     y: List[int], 
     feature_names: List[str],
     team_stats: Dict[str, Any],
-    path: str = "processed_data.json"
+    path: str = "processed_data.json",
+    leagues: Optional[List[str]] = None,
 ):
-    """Save processed training data and team stats to JSON file."""
+    """Save processed training data and team stats to JSON file.
+
+    `leagues` is parallel to X and lets evaluate.py break results down per
+    competition — a single global accuracy across 30 leagues hides how
+    differently the model performs in each.
+    """
     data = {
         "X": X,
         "y": y,
         "feature_names": feature_names,
         "team_stats": team_stats,
+        "leagues": leagues or [],
         "saved_at": datetime.utcnow().isoformat() + "Z",
     }
     with open(path, "w") as f:

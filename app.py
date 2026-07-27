@@ -17,6 +17,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 os.chdir(SCRIPT_DIR)
 
 from config import LEAGUE_CODES
+from csv_data_loader import LEAGUE_CODE_MAP
 from api_client import fetch_upcoming_matches, MissingTokenError
 from data_processor import prepare_prediction_features, load_data, compute_team_stats
 from model_trainer import MatchPredictorModel
@@ -125,11 +126,17 @@ def league_options(teams):
 @app.route("/")
 def dashboard():
     metrics = load_metrics()
+    # evaluation.json is produced by evaluate.py after training. It's
+    # optional: the dashboard still renders without it, just without the
+    # per-league and calibration sections.
+    evaluation = _load_json("evaluation.json")
     return render_template(
         "dashboard.html",
         active="dashboard",
         metrics=metrics,
-        n_train_leagues=12,
+        evaluation=evaluation,
+        league_names=LEAGUE_NAMES,
+        n_train_leagues=len(LEAGUE_CODE_MAP),
         error=request.args.get("error", ""),
     )
 

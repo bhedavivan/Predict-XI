@@ -35,6 +35,51 @@
   {% endif %}
 </div>
 
+{% if evaluation %}
+<div class="card">
+  <h2>Where the model actually works <span class="tag">{{ "{:,}".format(evaluation.holdout_matches) }} held-out matches</span></h2>
+  <p class="muted" style="margin-bottom:1rem;">One global accuracy figure averages over very
+     different competitions. Higher-scoring, more predictable leagues sit at the top.</p>
+  <div class="league-table">
+    <div class="lt-head">
+      <span>League</span><span>Matches</span><span>Accuracy</span><span>Macro F1</span><span>Draw recall</span>
+    </div>
+    {% for r in evaluation.per_league %}
+    <div class="lt-row{% if r.pooled %} pooled{% endif %}">
+      <span class="lt-name">{{ league_names.get(r.league, r.league) }}</span>
+      <span>{{ r.matches }}</span>
+      <span><span class="lt-bar" style="width:{{ (r.accuracy*140)|round(0)|int }}px"></span>{{ (r.accuracy*100)|round(1) }}%</span>
+      <span>{{ r.macro_f1 }}</span>
+      <span>{{ (r.draw_recall*100)|round(1) }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Are the probabilities honest? <span class="tag">calibration</span></h2>
+  <p class="muted" style="margin-bottom:1rem;">When the model says 60%, does it happen 60% of the
+     time? Bars show observed accuracy against stated confidence — closer to equal is better.</p>
+  <div class="calib">
+    {% for b in evaluation.reliability %}
+    <div class="calib-row">
+      <span class="calib-label">{{ (b.mean_confidence*100)|round(0)|int }}%</span>
+      <span class="calib-track">
+        <span class="calib-said" style="width:{{ (b.mean_confidence*100)|round(1) }}%"></span>
+        <span class="calib-got" style="width:{{ (b.observed_accuracy*100)|round(1) }}%"></span>
+      </span>
+      <span class="calib-obs">{{ (b.observed_accuracy*100)|round(0)|int }}%</span>
+      <span class="calib-n">n={{ b.n }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="calib-key">
+    <span><i class="k-said"></i> stated confidence</span>
+    <span><i class="k-got"></i> observed accuracy</span>
+  </div>
+</div>
+{% endif %}
+
 <div class="tiles">
   <a class="tile" href="/predict">
     <div class="ico">&#127919;</div><h3>Predict a match</h3>

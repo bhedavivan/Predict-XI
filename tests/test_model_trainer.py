@@ -287,3 +287,50 @@ class TestMatchPredictorModel:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+class TestDrawThreshold:
+    """The draw decision rule. Plain argmax under-predicts draws because
+    P(draw) is systematically compressed (never above ~0.48), so a draw is
+    rarely the single most likely outcome even when it's the best call."""
+
+    def _fitted(self, threshold=None):
+        X = [[float(i), float(i % 3)] for i in range(60)]
+        y = [(-1 if i % 3 == 0 else (0 if i % 3 == 1 else 1)) for i in range(60)]
+        m = MatchPredictorModel()
+        m.train(X, y)
+        m.draw_threshold = threshold
+        return m
+
+    def test_no_threshold_keeps_argmax(self):
+        m = self._fitted(threshold=None)
+        r = m.predict([1.0, 1.0])
+        assert r["prediction"] == r["argmax_prediction"]
+        assert r["threshold_applied"] is False
+
+    def test_low_threshold_forces_draw(self):
+        """A threshold below any plausible P(draw) must always pick Draw."""
+        m = self._fitted(threshold=0.0)
+        r = m.predict([1.0, 1.0])
+        assert r["prediction"] == "Draw"
+
+    def test_high_threshold_never_picks_draw(self):
+        """Above the achievable range, the rule must fall back to the better
+        of home/away rather than leaving a draw that argmax would have taken."""
+        m = self._fitted(threshold=1.01)
+        r = m.predict([1.0, 1.0])
+        assert r["prediction"] in ("Home Win", "Away Win")
+
+    def test_probabilities_are_never_rewritten_by_the_rule(self):
+        """The displayed numbers stay the model's own — the rule changes the
+        pick, not the calibrated probabilities behind it."""
+        base = self._fitted(threshold=None).predict([1.0, 1.0])["probabilities"]
+        forced = self._fitted(threshold=0.0).predict([1.0, 1.0])["probabilities"]
+        assert base == forced
+
+    def test_threshold_survives_save_and_load(self, tmp_path):
+        m = self._fitted(threshold=0.35)
+        p = tmp_path / "m.json"
+        m.save(str(p))
+        m2 = MatchPredictorModel()
+        assert m2.load(str(p))
+        assert m2.draw_threshold == 0.35

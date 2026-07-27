@@ -1,55 +1,54 @@
 {
-  "version": "v7",
-  "baseline_v6": {
-    "macro_f1": 0.4298,
-    "accuracy": 0.4558,
-    "draw_recall": 0.246,
-    "log_loss": 1.0182,
-    "brier": 0.2037,
-    "joblib_mb": 64.3,
-    "features": 73,
-    "leagues": 29,
-    "samples": 65759
-  },
-  "v7": {
+  "version": "v8",
+  "baseline_v7": {
     "macro_f1": 0.4312,
     "accuracy": 0.46,
     "draw_recall": 0.233,
-    "log_loss": 1.0183,
-    "brier": 0.2037,
+    "log_loss": 1.018,
+    "brier": 0.204,
     "joblib_mb": 26.4,
     "features": 77,
-    "leagues": 30,
+    "samples": 68228
+  },
+  "v8": {
+    "macro_f1": 0.4345,
+    "accuracy": 0.4606,
+    "draw_recall": 0.25,
+    "log_loss": 1.0052,
+    "brier": 0.2008,
+    "joblib_mb": 40.5,
+    "features": 82,
     "samples": 68228,
+    "squad_value_coverage": 0.4823,
     "select_k": {
-      "k": 50,
-      "n_features": 77,
-      "cv_macro_f1": 0.3927
+      "k": "all",
+      "n_features": 82,
+      "cv_macro_f1": 0.4096
     }
   },
   "deltas": {
-    "macro_f1": 0.0014,
-    "accuracy": 0.0042,
-    "draw_recall": -0.013,
-    "joblib_mb": -37.9
+    "macro_f1": 0.0033,
+    "accuracy": 0.0006,
+    "draw_recall": 0.017,
+    "joblib_mb": 14.1
   },
   "tuning_notes": {
     "select_k": {
-      "k": 50,
-      "n_features": 77,
-      "cv_macro_f1": 0.3927
+      "k": "all",
+      "n_features": 82,
+      "cv_macro_f1": 0.4096
     },
     "rf": {
       "params": {
-        "n_estimators": 300,
+        "n_estimators": 400,
         "max_depth": 10,
         "min_samples_split": 10,
-        "min_samples_leaf": 10,
+        "min_samples_leaf": 5,
         "max_features": "sqrt",
         "random_state": 42,
         "n_jobs": -1
       },
-      "cv_macro_f1": 0.4184
+      "cv_macro_f1": 0.4213
     },
     "histgb": {
       "params": {
@@ -60,23 +59,23 @@
         "l2_regularization": 0.1,
         "random_state": 42
       },
-      "cv_macro_f1": 0.3981
+      "cv_macro_f1": 0.4096
     },
     "logreg": {
       "params": {
         "max_iter": 2000,
-        "C": 1.0,
+        "C": 0.05,
         "random_state": 42
       },
-      "cv_macro_f1": 0.4236
+      "cv_macro_f1": 0.4235
     },
     "voting_weights": {
       "weights": [
-        0.5,
-        0.3,
-        0.2
+        0.25,
+        0.45,
+        0.3
       ],
-      "cv_macro_f1": 0.4184
+      "cv_macro_f1": 0.4205
     }
   }
 }

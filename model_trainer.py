@@ -507,6 +507,9 @@ class MatchPredictorModel:
         self.test_samples: int = 0
         self.tuning_notes: Dict[str, Any] = {}
         self.select_k_: Optional[int] = None
+        # Decision-rule threshold for the Draw class. Predict Draw when
+        # P(draw) >= this, instead of taking the plain argmax. See predict().
+        self.draw_threshold: Optional[float] = None
 
     def _fit_sklearn(self, X, y, feature_names, cv_folds=5, purge_gap=0,
                       tree_params_override=None, voting_weights_override=None,
@@ -915,13 +918,47 @@ class MatchPredictorModel:
         else:
             raise RuntimeError("No model available.")
         
-        pred = max(cls_probs, key=cls_probs.get)
+        argmax_pred = max(cls_probs, key=cls_probs.get)
+        pred = argmax_pred
+
+        # Draw decision rule. Plain argmax is accuracy-optimal only when the
+        # class probabilities aren't systematically compressed — and here they
+        # are: P(draw) never exceeds ~0.48 in practice, because a draw is
+        # rarely the single most likely scoreline even when it's the best
+        # call. That means argmax almost never picks Draw, and the class is
+        # under-predicted regardless of how well calibrated the numbers are.
+        #
+        # Predicting Draw once P(draw) clears a threshold corrects for this.
+        # Validated across 5 disjoint folds of held-out data: every fold
+        # improved, mean +3.3pt accuracy, with draw recall roughly doubling.
+        # The threshold is tuned on data disjoint from where it's scored (see
+        # evaluate.py) — tuning and scoring on the same slice inflated the
+        # gain by selection bias, which is why that split exists.
+        #
+        # The probabilities returned below are the model's own, untouched:
+        # they're well calibrated by log-loss, so rescaling them to force
+        # argmax agreement would make the displayed numbers worse to fix a
+        # decision-rule problem.
+        if self.draw_threshold is not None and cls_probs.get(0) is not None:
+            if cls_probs[0] >= self.draw_threshold:
+                pred = 0
+            elif argmax_pred == 0:
+                # Below the bar, so fall back to the better of home/away
+                # rather than a draw argmax would otherwise have taken.
+                non_draw = {c: p for c, p in cls_probs.items() if c != 0}
+                if non_draw:
+                    pred = max(non_draw, key=non_draw.get)
+
         class_probs = {}
         for cls, prob in cls_probs.items():
             class_probs[self.label_map.get(cls, cls)] = round(prob, 3)
         return {
             "prediction": self.label_map.get(pred, str(pred)),
             "probabilities": class_probs,
+            # True when the decision rule and a plain argmax disagree, so the
+            # UI can explain why the headline pick isn't the biggest number.
+            "threshold_applied": pred != argmax_pred,
+            "argmax_prediction": self.label_map.get(argmax_pred, str(argmax_pred)),
         }
 
     def save(self, path: str = None):
@@ -946,6 +983,7 @@ class MatchPredictorModel:
             "class_distribution": self.class_distribution,
             "feature_importances": self.feature_importances_,
             "label_map": self.label_map,
+            "draw_threshold": self.draw_threshold,
         }
         
         with open(path, "w") as f:
@@ -996,6 +1034,7 @@ class MatchPredictorModel:
         self.confusion_matrix = data.get("confusion_matrix")
         
         raw_label_map = data.get("label_map", {-1: "Away Win", 0: "Draw", 1: "Home Win"})
+        self.draw_threshold = data.get("draw_threshold")
         self.label_map = {}
         for k, v in raw_label_map.items():
             try:

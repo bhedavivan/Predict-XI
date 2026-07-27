@@ -146,3 +146,46 @@ option { color: var(--text); background: var(--panel-2); }
 .fixture-row + .fixture-row { margin-top: .5rem; }
 .fixture-row .teams { font-weight:650; }
 .fixture-row .date { color: var(--muted); font-size:.78rem; margin-top:.1rem; }
+
+/* ── Per-league breakdown ────────────────────────────────────────────── */
+.league-table { font-size: .85rem; }
+.lt-head, .lt-row { display:grid; grid-template-columns: 1.6fr .6fr 1.2fr .7fr .8fr;
+  gap:.6rem; align-items:center; padding:.5rem .6rem; }
+.lt-head { color: var(--muted); font-size:.74rem; text-transform:uppercase;
+  letter-spacing:.04em; border-bottom:1px solid var(--border); }
+.lt-row + .lt-row { border-top:1px solid var(--border); }
+.lt-row:hover { background: var(--panel-2); }
+.lt-row.pooled { color: var(--muted); font-style: italic; }
+.lt-name { font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lt-bar { display:inline-block; height:6px; border-radius:999px; background: var(--accent);
+  margin-right:.5rem; vertical-align:middle; opacity:.75; }
+
+/* ── Calibration / reliability ───────────────────────────────────────── */
+.calib { display:flex; flex-direction:column; gap:.35rem; font-size:.8rem; }
+.calib-row { display:grid; grid-template-columns: 3rem 1fr 3rem 4rem; gap:.6rem; align-items:center; }
+.calib-label, .calib-obs { color: var(--muted); font-variant-numeric: tabular-nums; }
+.calib-obs { text-align:right; color: var(--text); font-weight:650; }
+.calib-n { color: var(--faint); font-size:.72rem; text-align:right; }
+.calib-track { position:relative; height:14px; background: var(--panel-2);
+  border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+.calib-said, .calib-got { position:absolute; left:0; top:0; height:100%; }
+.calib-said { background: var(--faint); opacity:.45; }
+.calib-got { background: var(--accent); opacity:.85; height:6px; top:4px; }
+.calib-key { display:flex; gap:1.2rem; margin-top:.9rem; font-size:.75rem; color: var(--muted); }
+.calib-key i { display:inline-block; width:12px; height:8px; border-radius:2px;
+  margin-right:.35rem; vertical-align:middle; }
+.calib-key .k-said { background: var(--faint); opacity:.45; }
+.calib-key .k-got { background: var(--accent); opacity:.85; }
+
+@media (max-width: 620px) {
+  .lt-head, .lt-row { grid-template-columns: 1.4fr .5fr 1fr; }
+  .lt-head span:nth-child(n+4), .lt-row span:nth-child(n+4) { display:none; }
+  .calib-row { grid-template-columns: 2.5rem 1fr 2.5rem; }
+  .calib-n { display:none; }
+}
+
+/* Explains why the headline pick can differ from the largest probability */
+.rule-note { max-width: 46rem; margin: .7rem auto 0; font-size: .78rem; line-height: 1.55;
+  color: var(--muted); background: var(--panel-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: .6rem .8rem; text-align: left; }
+.rule-note strong { color: var(--text); }

@@ -287,7 +287,7 @@ class TestPrepareTrainingData:
         assert len(X) == 1
         assert len(y) == 1
         assert y[0] == 1
-        assert len(feature_names) == 77  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles + 4 evenness
+        assert len(feature_names) == 82  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles + 4 evenness + 5 squad-value
 
 
 class TestPreparePredictionFeatures:
@@ -326,7 +326,7 @@ class TestPreparePredictionFeatures:
             },
         }
         features = prepare_prediction_features("Team A", "Team B", team_stats)
-        assert len(features) == 77  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles + 4 evenness
+        assert len(features) == 82  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles + 4 evenness + 5 squad-value
         assert features[0] == 1.0  # home form
         assert features[4] == 0.5  # away form
 
@@ -402,6 +402,62 @@ class TestLeagueBaselinesNoLookahead:
         # The match just before the threshold still had too little history.
         just_before = result[LEAGUE_BASELINE_MIN_MATCHES - 1]
         assert just_before["league_base_home_goals"] == dixon_coles.LEAGUE_AVG_HOME_GOALS
+
+
+class TestSquadValueFeatures:
+    """Squad market value is what makes transfer activity visible to the
+    model: sign five players, current squad value rises, prediction shifts —
+    with a weight learned from history rather than a hand-set adjustment."""
+
+    def test_signing_players_raises_squad_features(self):
+        from data_processor import squad_value_feature_dict
+        before = squad_value_feature_dict(500_000_000, 500_000_000)
+        after = squad_value_feature_dict(900_000_000, 500_000_000)
+        assert after["home_squad_value"] > before["home_squad_value"]
+        assert after["squad_value_diff"] > before["squad_value_diff"]
+
+    def test_missing_value_on_either_side_disables_the_block(self):
+        """A one-sided comparison is worse than none — the model would read
+        the missing side as an infinitely weak squad."""
+        from data_processor import squad_value_feature_dict
+        for h, a in ((500_000_000, None), (None, 500_000_000), (None, None)):
+            f = squad_value_feature_dict(h, a)
+            assert f["has_squad_value"] == 0.0
+            assert f["home_squad_value"] == 0.0
+            assert f["away_squad_value"] == 0.0
+            assert f["squad_value_diff"] == 0.0
+
+    def test_both_known_sets_the_indicator(self):
+        from data_processor import squad_value_feature_dict
+        assert squad_value_feature_dict(1, 1)["has_squad_value"] == 1.0
+
+    def test_log_scaling_compresses_extreme_values(self):
+        """Raw euros would let a handful of superclubs dominate any
+        distance-based split; log space keeps the range usable."""
+        from data_processor import squad_value_feature_dict
+        small = squad_value_feature_dict(10_000_000, 1)["home_squad_value"]
+        huge = squad_value_feature_dict(1_400_000_000, 1)["home_squad_value"]
+        assert huge > small
+        assert huge / small < 5  # 140x in euros, but far less in log space
+
+    def test_equal_squads_give_zero_difference(self):
+        from data_processor import squad_value_feature_dict
+        f = squad_value_feature_dict(300_000_000, 300_000_000)
+        assert f["squad_value_diff"] == pytest.approx(0.0)
+        assert f["abs_squad_value_diff"] == pytest.approx(0.0)
+
+    def test_abs_diff_is_symmetric(self):
+        from data_processor import squad_value_feature_dict
+        fwd = squad_value_feature_dict(900_000_000, 200_000_000)
+        rev = squad_value_feature_dict(200_000_000, 900_000_000)
+        assert fwd["abs_squad_value_diff"] == pytest.approx(rev["abs_squad_value_diff"])
+        assert fwd["squad_value_diff"] == pytest.approx(-rev["squad_value_diff"])
+
+    def test_features_absent_without_a_source(self):
+        """No Transfermarkt data must degrade gracefully, not crash."""
+        rows = [_match_row("2023-08-12T14:00:00Z", "Team A", "Team B", 1, 0)]
+        result = add_form_features(rows, squad_values=None, club_map=None)
+        assert result[0]["has_squad_value"] == 0.0
 
 
 class TestTrainPredictFeatureAlignment:
