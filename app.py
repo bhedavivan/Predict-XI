@@ -38,6 +38,10 @@ LEAGUE_NAMES = {
     "SCO3": "Scottish League One", "SCO4": "Scottish League Two",
     "ELC": "Championship", "BL2": "2. Bundesliga", "PD2": "Segunda Division",
     "SA2": "Serie B", "FL2": "Ligue 2",
+    # Trained-on competitions that had no display name, so the per-league
+    # dashboard table was showing raw codes for them.
+    "ELC2": "League One", "ELC3": "League Two", "ENG5": "National League",
+    "BSA": "Brasileirao Serie A",
 }
 
 # ─── Helpers ──────────────────────────────────────────────────────────────
