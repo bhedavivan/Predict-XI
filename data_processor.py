@@ -518,7 +518,42 @@ def add_form_features(rows: list, n_matches: int = 5,
             "away_win": 1 if result == -1 else 0,
         })
 
+    # Expose the final pair histories so prediction can reuse them. Without
+    # this, H2H is computed during training but fed as 0 for every live
+    # prediction — the model learns a weight for a feature it then never
+    # receives, which is a train/serve skew rather than a missing nicety.
+    add_form_features.last_h2h = {
+        f"{a}|{b}": list(v[-5:]) for (a, b), v in team_pair_h2h.items() if v
+    }
+
     return result_rows
+
+
+def h2h_pair_key(home: str, away: str) -> str:
+    """Pair key for H2H lookups. Sorted, so the same two clubs map to one
+    entry regardless of which is at home — matching how add_form_features
+    accumulates them."""
+    a, b = sorted([home or "", away or ""])
+    return f"{a}|{b}"
+
+
+def h2h_features_for(home: str, away: str, h2h_map: Optional[dict]) -> list:
+    """[matches, home_wins, draws, away_wins] over the last 5 meetings.
+
+    Semantics deliberately mirror training: `home_win` counts meetings won by
+    whoever was at home in THAT match, not by the current home side. Keeping
+    the definition identical matters more than making it more intuitive —
+    training and serving must agree.
+    """
+    if not h2h_map:
+        return [0, 0, 0, 0]
+    recent = h2h_map.get(h2h_pair_key(home, away)) or []
+    return [
+        len(recent),
+        sum(1 for m in recent if m.get("home_win") == 1),
+        sum(1 for m in recent if m.get("draw") == 1),
+        sum(1 for m in recent if m.get("away_win") == 1),
+    ]
 
 
 def prepare_training_data(rows: list, return_meta: bool = False):
@@ -582,9 +617,18 @@ def prepare_training_data(rows: list, return_meta: bool = False):
 
 
 def prepare_prediction_features(home_team: str, away_team: str,
-                                team_stats: dict) -> list:
+                                team_stats: dict, h2h_map: Optional[dict] = None) -> list:
+    """Build the feature vector for one hypothetical match.
+
+    `h2h_map` supplies head-to-head history for this specific PAIR. It is a
+    separate argument because H2H is a property of two clubs together, not of
+    either one — storing it on a team record (as was previously attempted)
+    yields whatever that team's most recent unrelated fixture happened to
+    show, which is why it silently read 0 everywhere.
+    """
     home = team_stats.get(home_team, {})
     away = team_stats.get(away_team, {})
+    h2h = h2h_features_for(home_team, away_team, h2h_map)
     home_elo = home.get("elo", ELO_START)
     away_elo = away.get("elo", ELO_START)
 
@@ -595,7 +639,7 @@ def prepare_prediction_features(home_team: str, away_team: str,
         away.get("matches_played", 0),
         home.get("overall_form", 0), home.get("overall_goals_scored_avg", 0), home.get("overall_goals_conceded_avg", 0),
         away.get("overall_form", 0), away.get("overall_goals_scored_avg", 0), away.get("overall_goals_conceded_avg", 0),
-        home.get("h2h_matches", 0), home.get("h2h_home_wins", 0), home.get("h2h_draws", 0), home.get("h2h_away_wins", 0),
+        h2h[0], h2h[1], h2h[2], h2h[3],
         home.get("rest_days", 7), away.get("rest_days", 7),
         # Advanced
         home.get("ppf_10", 0), home.get("ppf_20", 0), away.get("ppf_10", 0), away.get("ppf_20", 0),

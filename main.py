@@ -134,7 +134,7 @@ def train_model_csv(seasons: list, league_codes: list, cv_folds: int = 5,
     return model, metrics
 
 
-def save_artifacts(metrics: dict, team_stats: dict):
+def save_artifacts(metrics: dict, team_stats: dict, h2h_map: dict = None):
     """Persist lightweight, committable artifacts the web app reads."""
     metrics_out = {k: v for k, v in metrics.items() if k != "cv_scores"}
     metrics_out["trained_at"] = datetime.utcnow().isoformat() + "Z"
@@ -146,6 +146,12 @@ def save_artifacts(metrics: dict, team_stats: dict):
         json.dump(metrics_out, f, indent=2)
     with open(os.path.join(_SCRIPT_DIR, "team_stats.json"), "w") as f:
         json.dump(team_stats, f, indent=2)
+    # Head-to-head is a property of a PAIR, so it cannot live on team_stats.
+    # Persisted separately and loaded by the app; without it every live
+    # prediction silently received h2h=0.
+    if h2h_map:
+        with open(os.path.join(_SCRIPT_DIR, "h2h_stats.json"), "w") as f:
+            json.dump(h2h_map, f)
 
 
 def print_metrics(metrics: dict):

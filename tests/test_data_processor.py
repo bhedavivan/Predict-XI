@@ -522,3 +522,54 @@ class TestTrainPredictFeatureAlignment:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+class TestHeadToHeadAtPredictionTime:
+    """H2H describes a PAIR of clubs, not either one alone. It was previously
+    read off the home team's record, which held whatever that team's most
+    recent unrelated fixture showed — so every live prediction silently got
+    zeros while the model had trained on real H2H values."""
+
+    def _rows(self):
+        return add_form_features([
+            _match_row("2023-08-12T14:00:00Z", "Team A", "Team B", 3, 0),
+            _match_row("2023-09-12T14:00:00Z", "Team B", "Team A", 1, 1),
+            _match_row("2023-10-12T14:00:00Z", "Team A", "Team C", 2, 0),
+        ])
+
+    def test_pair_key_is_order_independent(self):
+        from data_processor import h2h_pair_key
+        assert h2h_pair_key("Team A", "Team B") == h2h_pair_key("Team B", "Team A")
+
+    def test_h2h_map_is_exposed_after_feature_building(self):
+        self._rows()
+        assert getattr(add_form_features, "last_h2h", None)
+
+    def test_known_pair_has_history(self):
+        from data_processor import h2h_features_for
+        self._rows()
+        h2h = add_form_features.last_h2h
+        matches, home_wins, draws, away_wins = h2h_features_for("Team A", "Team B", h2h)
+        assert matches == 2
+        assert home_wins + draws + away_wins == matches
+
+    def test_unseen_pair_is_zeros_not_an_error(self):
+        from data_processor import h2h_features_for
+        self._rows()
+        assert h2h_features_for("Team A", "Nobody FC", add_form_features.last_h2h) == [0, 0, 0, 0]
+
+    def test_missing_map_degrades_gracefully(self):
+        from data_processor import h2h_features_for
+        assert h2h_features_for("Team A", "Team B", None) == [0, 0, 0, 0]
+
+    def test_prediction_features_reflect_pair_history(self):
+        """The regression that started this: features must differ between a
+        pair with history and a pair without."""
+        rows = self._rows()
+        stats = compute_team_stats(rows)
+        h2h = add_form_features.last_h2h
+        names = prepare_training_data(rows)[2]
+        i = names.index("h2h_matches")
+        with_hist = prepare_prediction_features("Team A", "Team B", stats, h2h)
+        without = prepare_prediction_features("Team A", "Nobody FC", stats, h2h)
+        assert with_hist[i] > 0
+        assert without[i] == 0

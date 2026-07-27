@@ -58,6 +58,13 @@ def load_metrics():
     return _load_json("model_metrics.json") or {}
 
 
+def build_h2h_map():
+    """Pair-keyed head-to-head history. Kept separate from team_stats because
+    H2H describes two clubs together — storing it per team yielded whatever
+    that team's last unrelated fixture showed, which read as 0 everywhere."""
+    return _load_json("h2h_stats.json") or {}
+
+
 def build_team_stats():
     """Team stats for predictions. Prefer committed team_stats.json, then the
     full processed_data.json, then the API-path matches_data.json."""
@@ -186,7 +193,7 @@ def predict():
         common["model_exists"] = False
         return render_template("predict.html", active="predict", prediction=None, **common)
 
-    features = prepare_prediction_features(home_lookup, away_lookup, stats)
+    features = prepare_prediction_features(home_lookup, away_lookup, stats, build_h2h_map())
     result = model.predict(features)
 
     probs = result["probabilities"]

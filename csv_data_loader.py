@@ -644,6 +644,7 @@ def load_and_process_data(
     # scripts all unpack it) keeps working. Callers that persist data read
     # this and hand it to save_processed_data(leagues=...).
     load_and_process_data.last_leagues = [m["league"] for m in row_meta]
+    load_and_process_data.last_h2h = getattr(add_form_features, "last_h2h", {})
 
     return X, y, feature_names, team_stats
 
