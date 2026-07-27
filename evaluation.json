@@ -1,519 +1,519 @@
 {
-  "holdout_matches": 13645,
+  "holdout_matches": 6823,
   "holdout_fraction": 0.2,
   "draw_threshold": {
     "method": "threshold tuned on first half of holdout, scored on second half",
     "tuning_curve": [
       {
         "threshold": 0.2,
-        "accuracy": 0.2734,
-        "macro_f1": 0.1651,
-        "draw_recall": 0.9994
+        "accuracy": 0.5236,
+        "macro_f1": 0.5141,
+        "draw_recall": 0.8777
       },
       {
         "threshold": 0.21,
-        "accuracy": 0.2778,
-        "macro_f1": 0.173,
-        "draw_recall": 0.9994
+        "accuracy": 0.528,
+        "macro_f1": 0.5192,
+        "draw_recall": 0.8575
       },
       {
         "threshold": 0.22,
-        "accuracy": 0.2825,
-        "macro_f1": 0.1816,
-        "draw_recall": 0.9994
+        "accuracy": 0.5342,
+        "macro_f1": 0.5263,
+        "draw_recall": 0.8373
       },
       {
         "threshold": 0.23,
-        "accuracy": 0.288,
-        "macro_f1": 0.192,
-        "draw_recall": 0.9983
+        "accuracy": 0.5388,
+        "macro_f1": 0.531,
+        "draw_recall": 0.8227
       },
       {
         "threshold": 0.24,
-        "accuracy": 0.2933,
-        "macro_f1": 0.2009,
-        "draw_recall": 0.9977
+        "accuracy": 0.5441,
+        "macro_f1": 0.5368,
+        "draw_recall": 0.8058
       },
       {
         "threshold": 0.25,
-        "accuracy": 0.2993,
-        "macro_f1": 0.2112,
-        "draw_recall": 0.9971
+        "accuracy": 0.5491,
+        "macro_f1": 0.5419,
+        "draw_recall": 0.7912
       },
       {
         "threshold": 0.26,
-        "accuracy": 0.3065,
-        "macro_f1": 0.2231,
-        "draw_recall": 0.9943
+        "accuracy": 0.5532,
+        "macro_f1": 0.5458,
+        "draw_recall": 0.7733
       },
       {
         "threshold": 0.27,
-        "accuracy": 0.3128,
-        "macro_f1": 0.2345,
-        "draw_recall": 0.9886
+        "accuracy": 0.5582,
+        "macro_f1": 0.5511,
+        "draw_recall": 0.7632
       },
       {
         "threshold": 0.28,
-        "accuracy": 0.321,
-        "macro_f1": 0.2477,
-        "draw_recall": 0.9846
+        "accuracy": 0.562,
+        "macro_f1": 0.5548,
+        "draw_recall": 0.7363
       },
       {
         "threshold": 0.29,
-        "accuracy": 0.3336,
-        "macro_f1": 0.2682,
-        "draw_recall": 0.9783
+        "accuracy": 0.5658,
+        "macro_f1": 0.558,
+        "draw_recall": 0.7127
       },
       {
         "threshold": 0.3,
-        "accuracy": 0.3587,
-        "macro_f1": 0.3095,
-        "draw_recall": 0.9681
+        "accuracy": 0.5679,
+        "macro_f1": 0.5595,
+        "draw_recall": 0.6857
       },
       {
         "threshold": 0.31,
-        "accuracy": 0.3904,
-        "macro_f1": 0.3579,
-        "draw_recall": 0.9441
+        "accuracy": 0.5702,
+        "macro_f1": 0.5614,
+        "draw_recall": 0.6633
       },
       {
         "threshold": 0.32,
-        "accuracy": 0.4346,
-        "macro_f1": 0.4171,
-        "draw_recall": 0.9213
+        "accuracy": 0.5667,
+        "macro_f1": 0.5574,
+        "draw_recall": 0.6386
       },
       {
         "threshold": 0.33,
-        "accuracy": 0.4742,
-        "macro_f1": 0.4644,
-        "draw_recall": 0.8734
+        "accuracy": 0.5685,
+        "macro_f1": 0.5582,
+        "draw_recall": 0.615
       },
       {
         "threshold": 0.34,
-        "accuracy": 0.5053,
-        "macro_f1": 0.5007,
-        "draw_recall": 0.7856
+        "accuracy": 0.5711,
+        "macro_f1": 0.5601,
+        "draw_recall": 0.5937
       },
       {
         "threshold": 0.35,
-        "accuracy": 0.5311,
-        "macro_f1": 0.5275,
-        "draw_recall": 0.6414
+        "accuracy": 0.5752,
+        "macro_f1": 0.5635,
+        "draw_recall": 0.5825
       },
       {
         "threshold": 0.36,
-        "accuracy": 0.529,
-        "macro_f1": 0.5105,
-        "draw_recall": 0.3706
+        "accuracy": 0.579,
+        "macro_f1": 0.5666,
+        "draw_recall": 0.5668
       },
       {
         "threshold": 0.37,
-        "accuracy": 0.518,
-        "macro_f1": 0.4508,
-        "draw_recall": 0.13
+        "accuracy": 0.5775,
+        "macro_f1": 0.564,
+        "draw_recall": 0.5387
       },
       {
         "threshold": 0.38,
-        "accuracy": 0.5001,
-        "macro_f1": 0.3925,
-        "draw_recall": 0.0262
+        "accuracy": 0.5767,
+        "macro_f1": 0.5621,
+        "draw_recall": 0.5208
       },
       {
         "threshold": 0.39,
-        "accuracy": 0.495,
-        "macro_f1": 0.3781,
-        "draw_recall": 0.0057
+        "accuracy": 0.5775,
+        "macro_f1": 0.5612,
+        "draw_recall": 0.4983
       },
       {
         "threshold": 0.4,
-        "accuracy": 0.4946,
-        "macro_f1": 0.3769,
-        "draw_recall": 0.004
+        "accuracy": 0.5767,
+        "macro_f1": 0.5584,
+        "draw_recall": 0.4759
       },
       {
         "threshold": 0.41,
-        "accuracy": 0.4944,
-        "macro_f1": 0.3765,
-        "draw_recall": 0.0034
+        "accuracy": 0.5784,
+        "macro_f1": 0.5578,
+        "draw_recall": 0.4534
       },
       {
         "threshold": 0.42,
-        "accuracy": 0.4944,
-        "macro_f1": 0.3765,
-        "draw_recall": 0.0034
+        "accuracy": 0.5775,
+        "macro_f1": 0.5548,
+        "draw_recall": 0.431
       },
       {
         "threshold": 0.43,
-        "accuracy": 0.4944,
-        "macro_f1": 0.3765,
-        "draw_recall": 0.0034
+        "accuracy": 0.5775,
+        "macro_f1": 0.5518,
+        "draw_recall": 0.4063
       },
       {
         "threshold": 0.44,
-        "accuracy": 0.4941,
-        "macro_f1": 0.3757,
-        "draw_recall": 0.0023
+        "accuracy": 0.5764,
+        "macro_f1": 0.5483,
+        "draw_recall": 0.3861
       },
       {
         "threshold": 0.45,
-        "accuracy": 0.4937,
-        "macro_f1": 0.3744,
-        "draw_recall": 0.0006
+        "accuracy": 0.5767,
+        "macro_f1": 0.5467,
+        "draw_recall": 0.3681
       },
       {
         "threshold": 0.46,
-        "accuracy": 0.4936,
-        "macro_f1": 0.374,
-        "draw_recall": 0.0
+        "accuracy": 0.5749,
+        "macro_f1": 0.5427,
+        "draw_recall": 0.3502
       },
       {
         "threshold": 0.47,
-        "accuracy": 0.4936,
-        "macro_f1": 0.374,
-        "draw_recall": 0.0
+        "accuracy": 0.5726,
+        "macro_f1": 0.5371,
+        "draw_recall": 0.3277
       },
       {
         "threshold": 0.48,
-        "accuracy": 0.4936,
-        "macro_f1": 0.374,
-        "draw_recall": 0.0
+        "accuracy": 0.5685,
+        "macro_f1": 0.5291,
+        "draw_recall": 0.3019
       },
       {
         "threshold": 0.49,
-        "accuracy": 0.4936,
-        "macro_f1": 0.374,
-        "draw_recall": 0.0
+        "accuracy": 0.5664,
+        "macro_f1": 0.5236,
+        "draw_recall": 0.2828
       },
       {
         "threshold": 0.5,
-        "accuracy": 0.4936,
-        "macro_f1": 0.374,
-        "draw_recall": 0.0
+        "accuracy": 0.5632,
+        "macro_f1": 0.5159,
+        "draw_recall": 0.2604
       }
     ],
     "tuning_baseline": {
       "threshold": null,
-      "accuracy": 0.4966,
-      "macro_f1": 0.4768,
-      "draw_recall": 0.3375
+      "accuracy": 0.5781,
+      "macro_f1": 0.5612,
+      "draw_recall": 0.5017
     },
-    "chosen_threshold": 0.35,
+    "chosen_threshold": 0.36,
     "test_argmax": {
       "threshold": null,
-      "accuracy": 0.4995,
-      "macro_f1": 0.4768,
-      "draw_recall": 0.31
+      "accuracy": 0.5724,
+      "macro_f1": 0.5504,
+      "draw_recall": 0.4581
     },
     "test_with_threshold": {
-      "threshold": 0.35,
-      "accuracy": 0.5319,
-      "macro_f1": 0.5287,
-      "draw_recall": 0.6105
+      "threshold": 0.36,
+      "accuracy": 0.5788,
+      "macro_f1": 0.5625,
+      "draw_recall": 0.5287
     },
     "survives_holdout": true,
-    "verdict": "adopt threshold 0.35 \u2014 the gain survived on held-out data (macro-F1 0.4768 -> 0.5287)."
+    "verdict": "adopt threshold 0.36 \u2014 the gain survived on held-out data (macro-F1 0.5504 -> 0.5625)."
   },
   "overall": {
-    "accuracy": 0.5315,
-    "macro_f1": 0.5281,
-    "draw_recall": 0.6257
+    "accuracy": 0.5779,
+    "macro_f1": 0.5624,
+    "draw_recall": 0.5237
   },
   "overall_argmax": {
-    "accuracy": 0.4981,
-    "macro_f1": 0.4769,
-    "draw_recall": 0.3236
+    "accuracy": 0.5753,
+    "macro_f1": 0.5558,
+    "draw_recall": 0.4797
   },
   "per_league": [
     {
-      "league": "BL1",
-      "matches": 425,
-      "accuracy": 0.6188,
-      "macro_f1": 0.6119,
-      "draw_recall": 0.5455,
-      "home_win_rate": 0.3906
-    },
-    {
-      "league": "SA",
-      "matches": 527,
-      "accuracy": 0.6148,
-      "macro_f1": 0.6079,
-      "draw_recall": 0.5324,
-      "home_win_rate": 0.3985
-    },
-    {
-      "league": "PPL",
-      "matches": 428,
-      "accuracy": 0.6051,
-      "macro_f1": 0.6045,
-      "draw_recall": 0.6372,
-      "home_win_rate": 0.4089
-    },
-    {
-      "league": "RUS1",
-      "matches": 336,
-      "accuracy": 0.6012,
-      "macro_f1": 0.5905,
-      "draw_recall": 0.5109,
-      "home_win_rate": 0.4673
-    },
-    {
-      "league": "FL1",
-      "matches": 427,
-      "accuracy": 0.5995,
-      "macro_f1": 0.5907,
-      "draw_recall": 0.5699,
-      "home_win_rate": 0.466
+      "league": "TUR1",
+      "matches": 215,
+      "accuracy": 0.6698,
+      "macro_f1": 0.6693,
+      "draw_recall": 0.8571,
+      "home_win_rate": 0.4419
     },
     {
       "league": "PL",
-      "matches": 521,
-      "accuracy": 0.5988,
-      "macro_f1": 0.5924,
-      "draw_recall": 0.4853,
-      "home_win_rate": 0.428
+      "matches": 283,
+      "accuracy": 0.6643,
+      "macro_f1": 0.6612,
+      "draw_recall": 0.5357,
+      "home_win_rate": 0.3993
     },
     {
-      "league": "SCO1",
-      "matches": 306,
-      "accuracy": 0.598,
-      "macro_f1": 0.5916,
-      "draw_recall": 0.6316,
-      "home_win_rate": 0.4575
-    },
-    {
-      "league": "DED",
-      "matches": 422,
-      "accuracy": 0.5972,
-      "macro_f1": 0.5873,
-      "draw_recall": 0.4821,
-      "home_win_rate": 0.4455
+      "league": "BL1",
+      "matches": 227,
+      "accuracy": 0.6608,
+      "macro_f1": 0.6385,
+      "draw_recall": 0.4407,
+      "home_win_rate": 0.4449
     },
     {
       "league": "GRE1",
-      "matches": 320,
-      "accuracy": 0.5938,
-      "macro_f1": 0.5883,
-      "draw_recall": 0.7683,
-      "home_win_rate": 0.4281
+      "matches": 181,
+      "accuracy": 0.6575,
+      "macro_f1": 0.6475,
+      "draw_recall": 0.9423,
+      "home_win_rate": 0.4088
+    },
+    {
+      "league": "DED",
+      "matches": 211,
+      "accuracy": 0.6493,
+      "macro_f1": 0.6506,
+      "draw_recall": 0.6167,
+      "home_win_rate": 0.4265
+    },
+    {
+      "league": "SA",
+      "matches": 287,
+      "accuracy": 0.6446,
+      "macro_f1": 0.6482,
+      "draw_recall": 0.6269,
+      "home_win_rate": 0.3937
+    },
+    {
+      "league": "SCO1",
+      "matches": 168,
+      "accuracy": 0.6369,
+      "macro_f1": 0.6274,
+      "draw_recall": 0.65,
+      "home_win_rate": 0.4821
     },
     {
       "league": "MEX1",
-      "matches": 458,
-      "accuracy": 0.5917,
-      "macro_f1": 0.5782,
-      "draw_recall": 0.6091,
-      "home_win_rate": 0.4847
+      "matches": 201,
+      "accuracy": 0.607,
+      "macro_f1": 0.5851,
+      "draw_recall": 0.54,
+      "home_win_rate": 0.4726
     },
     {
-      "league": "TUR1",
-      "matches": 447,
-      "accuracy": 0.5794,
-      "macro_f1": 0.5805,
-      "draw_recall": 0.7034,
-      "home_win_rate": 0.4474
+      "league": "PPL",
+      "matches": 221,
+      "accuracy": 0.6063,
+      "macro_f1": 0.6089,
+      "draw_recall": 0.7097,
+      "home_win_rate": 0.4299
     },
     {
-      "league": "BEL1",
-      "matches": 427,
-      "accuracy": 0.5761,
-      "macro_f1": 0.5761,
-      "draw_recall": 0.7257,
-      "home_win_rate": 0.3981
+      "league": "FL1",
+      "matches": 213,
+      "accuracy": 0.6056,
+      "macro_f1": 0.5996,
+      "draw_recall": 0.5,
+      "home_win_rate": 0.4366
     },
     {
       "league": "PD",
-      "matches": 535,
-      "accuracy": 0.572,
-      "macro_f1": 0.5677,
-      "draw_recall": 0.7,
-      "home_win_rate": 0.4692
-    },
-    {
-      "league": "DEN1",
-      "matches": 282,
-      "accuracy": 0.5496,
-      "macro_f1": 0.5394,
-      "draw_recall": 0.4697,
-      "home_win_rate": 0.4291
-    },
-    {
-      "league": "BSA",
-      "matches": 569,
-      "accuracy": 0.5308,
-      "macro_f1": 0.5198,
-      "draw_recall": 0.651,
-      "home_win_rate": 0.4974
-    },
-    {
-      "league": "SUI1",
-      "matches": 321,
-      "accuracy": 0.5202,
-      "macro_f1": 0.5075,
-      "draw_recall": 0.4744,
-      "home_win_rate": 0.4361
-    },
-    {
-      "league": "ENG5",
-      "matches": 755,
-      "accuracy": 0.5099,
-      "macro_f1": 0.5054,
-      "draw_recall": 0.5459,
-      "home_win_rate": 0.4305
-    },
-    {
-      "league": "BL2",
-      "matches": 426,
-      "accuracy": 0.5023,
-      "macro_f1": 0.4916,
-      "draw_recall": 0.7315,
-      "home_win_rate": 0.4648
-    },
-    {
-      "league": "FL2",
-      "matches": 414,
-      "accuracy": 0.4952,
-      "macro_f1": 0.4873,
-      "draw_recall": 0.719,
-      "home_win_rate": 0.4082
-    },
-    {
-      "league": "AUT1",
-      "matches": 285,
-      "accuracy": 0.4947,
-      "macro_f1": 0.4925,
-      "draw_recall": 0.6579,
-      "home_win_rate": 0.4175
-    },
-    {
-      "league": "SCO3",
-      "matches": 244,
-      "accuracy": 0.4918,
-      "macro_f1": 0.4732,
-      "draw_recall": 0.3125,
-      "home_win_rate": 0.4057
+      "matches": 275,
+      "accuracy": 0.6,
+      "macro_f1": 0.5848,
+      "draw_recall": 0.6667,
+      "home_win_rate": 0.4945
     },
     {
       "league": "ELC3",
-      "matches": 753,
-      "accuracy": 0.4887,
-      "macro_f1": 0.4874,
-      "draw_recall": 0.6567,
-      "home_win_rate": 0.4117
+      "matches": 384,
+      "accuracy": 0.5938,
+      "macro_f1": 0.5724,
+      "draw_recall": 0.4688,
+      "home_win_rate": 0.4193
     },
     {
-      "league": "ROU1",
-      "matches": 433,
-      "accuracy": 0.4781,
-      "macro_f1": 0.47,
-      "draw_recall": 0.678,
-      "home_win_rate": 0.4319
+      "league": "RUS1",
+      "matches": 135,
+      "accuracy": 0.5926,
+      "macro_f1": 0.5626,
+      "draw_recall": 0.4118,
+      "home_win_rate": 0.4667
     },
     {
-      "league": "SCO4",
-      "matches": 248,
-      "accuracy": 0.4758,
-      "macro_f1": 0.467,
-      "draw_recall": 0.4603,
-      "home_win_rate": 0.4153
+      "league": "FL2",
+      "matches": 190,
+      "accuracy": 0.5842,
+      "macro_f1": 0.5711,
+      "draw_recall": 0.6333,
+      "home_win_rate": 0.3789
     },
     {
-      "league": "SCO2",
-      "matches": 247,
-      "accuracy": 0.4737,
-      "macro_f1": 0.4739,
-      "draw_recall": 0.4625,
-      "home_win_rate": 0.3887
+      "league": "BSA",
+      "matches": 269,
+      "accuracy": 0.5762,
+      "macro_f1": 0.5434,
+      "draw_recall": 0.5,
+      "home_win_rate": 0.4944
     },
     {
       "league": "SA2",
-      "matches": 514,
-      "accuracy": 0.4728,
-      "macro_f1": 0.4497,
-      "draw_recall": 0.7914,
-      "home_win_rate": 0.4377
+      "matches": 276,
+      "accuracy": 0.5761,
+      "macro_f1": 0.553,
+      "draw_recall": 0.6709,
+      "home_win_rate": 0.4674
     },
     {
-      "league": "ELC2",
-      "matches": 757,
-      "accuracy": 0.469,
-      "macro_f1": 0.4679,
-      "draw_recall": 0.6524,
-      "home_win_rate": 0.4452
+      "league": "ROU1",
+      "matches": 208,
+      "accuracy": 0.5721,
+      "macro_f1": 0.5568,
+      "draw_recall": 0.6346,
+      "home_win_rate": 0.4712
+    },
+    {
+      "league": "DEN1",
+      "matches": 114,
+      "accuracy": 0.5702,
+      "macro_f1": 0.5572,
+      "draw_recall": 0.3667,
+      "home_win_rate": 0.3947
+    },
+    {
+      "league": "ENG5",
+      "matches": 363,
+      "accuracy": 0.5675,
+      "macro_f1": 0.5228,
+      "draw_recall": 0.3077,
+      "home_win_rate": 0.4463
+    },
+    {
+      "league": "BEL1",
+      "matches": 214,
+      "accuracy": 0.5607,
+      "macro_f1": 0.5634,
+      "draw_recall": 0.6275,
+      "home_win_rate": 0.3972
+    },
+    {
+      "league": "BL2",
+      "matches": 210,
+      "accuracy": 0.5333,
+      "macro_f1": 0.4944,
+      "draw_recall": 0.4286,
+      "home_win_rate": 0.4619
+    },
+    {
+      "league": "SUI1",
+      "matches": 162,
+      "accuracy": 0.5309,
+      "macro_f1": 0.4761,
+      "draw_recall": 0.186,
+      "home_win_rate": 0.3889
     },
     {
       "league": "PD2",
-      "matches": 645,
-      "accuracy": 0.4682,
-      "macro_f1": 0.4528,
-      "draw_recall": 0.7963,
-      "home_win_rate": 0.4698
+      "matches": 337,
+      "accuracy": 0.5282,
+      "macro_f1": 0.5026,
+      "draw_recall": 0.7595,
+      "home_win_rate": 0.4599
+    },
+    {
+      "league": "SCO4",
+      "matches": 130,
+      "accuracy": 0.5231,
+      "macro_f1": 0.4469,
+      "draw_recall": 0.1579,
+      "home_win_rate": 0.4308
+    },
+    {
+      "league": "ELC2",
+      "matches": 389,
+      "accuracy": 0.5219,
+      "macro_f1": 0.4933,
+      "draw_recall": 0.4327,
+      "home_win_rate": 0.4499
     },
     {
       "league": "ELC",
-      "matches": 737,
-      "accuracy": 0.4654,
-      "macro_f1": 0.4633,
-      "draw_recall": 0.6789,
-      "home_win_rate": 0.4315
+      "matches": 397,
+      "accuracy": 0.5088,
+      "macro_f1": 0.4753,
+      "draw_recall": 0.3431,
+      "home_win_rate": 0.4282
+    },
+    {
+      "league": "SCO3",
+      "matches": 125,
+      "accuracy": 0.504,
+      "macro_f1": 0.475,
+      "draw_recall": 0.275,
+      "home_win_rate": 0.416
+    },
+    {
+      "league": "AUT1",
+      "matches": 127,
+      "accuracy": 0.4882,
+      "macro_f1": 0.4383,
+      "draw_recall": 0.4,
+      "home_win_rate": 0.4646
+    },
+    {
+      "league": "SCO2",
+      "matches": 119,
+      "accuracy": 0.4706,
+      "macro_f1": 0.414,
+      "draw_recall": 0.2051,
+      "home_win_rate": 0.4202
     },
     {
       "league": "POL1",
-      "matches": 436,
-      "accuracy": 0.4289,
-      "macro_f1": 0.4113,
-      "draw_recall": 0.6293,
-      "home_win_rate": 0.4518
+      "matches": 192,
+      "accuracy": 0.4688,
+      "macro_f1": 0.4342,
+      "draw_recall": 0.4444,
+      "home_win_rate": 0.4219
     }
   ],
   "reliability": [
     {
       "bin_low": 0.3,
       "bin_high": 0.4,
-      "n": 6600,
-      "mean_confidence": 0.3687,
-      "observed_accuracy": 0.3944
+      "n": 718,
+      "mean_confidence": 0.3765,
+      "observed_accuracy": 0.3858
     },
     {
       "bin_low": 0.4,
       "bin_high": 0.5,
-      "n": 4246,
-      "mean_confidence": 0.4435,
-      "observed_accuracy": 0.5078
+      "n": 2356,
+      "mean_confidence": 0.4492,
+      "observed_accuracy": 0.4626
     },
     {
       "bin_low": 0.5,
       "bin_high": 0.6,
-      "n": 1785,
-      "mean_confidence": 0.5419,
-      "observed_accuracy": 0.6605
+      "n": 1598,
+      "mean_confidence": 0.5456,
+      "observed_accuracy": 0.5914
     },
     {
       "bin_low": 0.6,
       "bin_high": 0.7,
-      "n": 653,
-      "mean_confidence": 0.6423,
-      "observed_accuracy": 0.7933
+      "n": 1179,
+      "mean_confidence": 0.6489,
+      "observed_accuracy": 0.6726
     },
     {
       "bin_low": 0.7,
       "bin_high": 0.8,
-      "n": 333,
-      "mean_confidence": 0.7379,
-      "observed_accuracy": 0.9399
+      "n": 520,
+      "mean_confidence": 0.7433,
+      "observed_accuracy": 0.7885
     },
     {
       "bin_low": 0.8,
       "bin_high": 0.9,
-      "n": 25,
-      "mean_confidence": 0.8258,
-      "observed_accuracy": 0.96
+      "n": 341,
+      "mean_confidence": 0.8505,
+      "observed_accuracy": 0.8856
     },
     {
       "bin_low": 0.9,
       "bin_high": 1.0,
-      "n": 3,
-      "mean_confidence": 0.9296,
-      "observed_accuracy": 1.0
+      "n": 111,
+      "mean_confidence": 0.9223,
+      "observed_accuracy": 0.973
     }
   ]
 }

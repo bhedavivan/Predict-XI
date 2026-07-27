@@ -743,17 +743,34 @@ def compute_team_stats(rows: list, squad_values=None, club_map: dict = None) -> 
         "ewma_form": "ewma_form", "ewma_gs": "ewma_gs", "ewma_gc": "ewma_gc",
         "streak": "streak", "cs_rate_5": "cs_rate_5", "cs_rate_10": "cs_rate_10",
         "btts_rate_5": "btts_rate_5", "o25_rate_5": "o25_rate_5",
-        "home_ppf_10": "home_ppf_10", "away_ppf_10": "away_ppf_10",
-        "sos": "sos", "gd_5": "gd_5", "gd_10": "gd_10", "season_progress": "season_progress",
+        "sos": "sos", "gd_5": "gd_5", "gd_10": "gd_10",
         "shots_avg": "shots_avg", "shots_against_avg": "shots_against_avg",
         "sot_avg": "sot_avg", "sot_against_avg": "sot_against_avg",
         "corners_avg": "corners_avg", "corners_against_avg": "corners_against_avg",
         "cards_avg": "cards_avg", "cards_against_avg": "cards_against_avg",
     }
 
+    # Venue-split form has to be captured from the team's most recent match
+    # AT THAT VENUE, not from its most recent match overall — otherwise a side
+    # whose last outing was away carries home_ppf_10=0 into every prediction,
+    # a value the model never sees while training.
+    seen_home_venue, seen_away_venue = set(), set()
+
     for row in reversed(rows):
         home = row["home_team"]
         away = row["away_team"]
+        if home not in seen_home_venue and "home_home_ppf_10" in row:
+            team_stats[home]["home_ppf_10"] = row["home_home_ppf_10"]
+            seen_home_venue.add(home)
+        if away not in seen_away_venue and "away_away_ppf_10" in row:
+            team_stats[away]["away_ppf_10"] = row["away_away_ppf_10"]
+            seen_away_venue.add(away)
+        # season_progress describes the match, not either club. Training rows
+        # are almost all late-season (the value is capped at 1.0), so the
+        # sane carry-forward is the most recent match's value.
+        for side in (home, away):
+            if team_stats[side]["matches_played"] == 0 and "season_progress" in row:
+                team_stats[side]["season_progress"] = row["season_progress"]
         if team_stats[home]["matches_played"] == 0:
             for key, base in prefix_map.items():
                 row_key = f"home_{base}"

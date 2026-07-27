@@ -573,3 +573,71 @@ class TestHeadToHeadAtPredictionTime:
         without = prepare_prediction_features("Team A", "Nobody FC", stats, h2h)
         assert with_hist[i] > 0
         assert without[i] == 0
+
+
+class TestLiveFeaturesMatchTrainingDistribution:
+    """Guard against the recurring failure mode in this project: a feature
+    that is populated during training but degenerate at prediction time.
+
+    It has bitten four times — team names, head-to-head, squad values, and
+    season_progress — and each time the model kept returning confident
+    probabilities computed from a value it had never seen while training.
+    Checking that live vectors land inside the training range catches the
+    whole class automatically.
+    """
+
+    def _built(self):
+        rows = add_form_features([
+            _match_row("2023-08-12T14:00:00Z", "Team A", "Team B", 2, 0),
+            _match_row("2023-08-20T14:00:00Z", "Team B", "Team A", 1, 1),
+            _match_row("2023-09-01T14:00:00Z", "Team A", "Team C", 0, 2),
+            _match_row("2023-09-10T14:00:00Z", "Team C", "Team B", 3, 1),
+            _match_row("2023-09-20T14:00:00Z", "Team B", "Team C", 1, 0),
+        ])
+        return rows, compute_team_stats(rows), add_form_features.last_h2h
+
+    def test_season_progress_is_carried_to_prediction(self):
+        """Regression: season_progress is match-level, so the per-team
+        `home_`/`away_` prefix lookup could never find it and every live
+        vector carried 0 — a value training effectively never contains."""
+        _, stats, _ = self._built()
+        assert stats["Team A"]["season_progress"] > 0
+
+    def test_venue_split_form_comes_from_the_matching_venue(self):
+        """Regression: these were read from a team's most recent match of ANY
+        venue, so a side whose last game was away carried home_ppf_10 from
+        nowhere (0) into every prediction.
+
+        Asserts the mechanism rather than a positive value — a team can
+        legitimately have 0 points at one venue, and asserting >0 would make
+        the test pass or fail on the fixture's scorelines instead of on the
+        carry-forward logic."""
+        rows, stats, _ = self._built()
+        last_home = [r for r in rows if r["home_team"] == "Team B"][-1]
+        last_away = [r for r in rows if r["away_team"] == "Team B"][-1]
+        assert stats["Team B"]["home_ppf_10"] == last_home["home_home_ppf_10"]
+        assert stats["Team B"]["away_ppf_10"] == last_away["away_away_ppf_10"]
+
+    def test_home_form_not_taken_from_an_away_fixture(self):
+        """The specific corruption: Team A's last match is away, so before
+        the fix its home_ppf_10 was 0 rather than its real home record."""
+        rows, stats, _ = self._built()
+        last_home = [r for r in rows if r["home_team"] == "Team A"][-1]
+        assert stats["Team A"]["home_ppf_10"] == last_home["home_home_ppf_10"]
+        assert stats["Team A"]["home_ppf_10"] > 0
+
+    def test_no_live_feature_is_wildly_outside_training_range(self):
+        rows, stats, h2h = self._built()
+        X, _, names = prepare_training_data(rows)
+        live = prepare_prediction_features("Team A", "Team B", stats, h2h)
+        cols = list(zip(*X))
+        offenders = []
+        for i, name in enumerate(names):
+            col = [c for c in cols[i]]
+            lo, hi = min(col), max(col)
+            if lo == hi:
+                continue  # constant in this tiny fixture set, nothing to compare
+            span = hi - lo
+            if live[i] < lo - span or live[i] > hi + span:
+                offenders.append((name, live[i], lo, hi))
+        assert not offenders, f"live features far outside training range: {offenders}"

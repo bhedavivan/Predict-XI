@@ -218,11 +218,19 @@ def main():
     if not model.load():
         raise SystemExit("No trained model found.")
 
-    n_test = max(int(len(X) * HOLDOUT_FRACTION), 1)
+    n_hold = max(int(len(X) * HOLDOUT_FRACTION), 1)
+    # The shipped calibrator is fitted on the first half of the holdout, so
+    # scoring here uses only the second half. Reporting over the whole slice
+    # would quietly grade the calibrator on its own fitting data — the same
+    # selection bias that inflated the draw-threshold result by +3.6pt.
+    half = n_hold // 2
+    n_test = n_hold - half
     Xte, yte = X[-n_test:], y[-n_test:]
     lg_te = leagues[-n_test:] if len(leagues) == len(X) else ["unknown"] * n_test
 
-    proba = model.pipeline.predict_proba(Xte)
+    # Must go through the model's own calibration, not the raw pipeline —
+    # otherwise this reports numbers no user ever sees.
+    proba = model.apply_calibration(model.pipeline.predict_proba(Xte))
     classes = list(model.classes)
     pred = np.asarray(classes)[proba.argmax(axis=1)]
 
