@@ -10,7 +10,55 @@ from csv_data_loader import (
     _fd_couk_new_season_label,
     FD_COUK_LEAGUE_MAP,
     FD_COUK_NEW_LEAGUE_MAP,
+    LEAGUE_CODE_MAP,
+    CALENDAR_YEAR_LEAGUES,
+    NEW_LEAGUE_NAME_CANON,
 )
+
+
+NEW_LEAGUES = ["no.1", "se.1", "fi.1", "ie.1", "us.1", "jp.1", "cn.1", "ar.1"]
+
+
+def _new_feed_csv(rows):
+    header = "Country,League,Season,Date,Time,Home,Away,HG,AG,Res\n"
+    return header + "".join(rows)
+
+
+class TestNewCalendarLeagues:
+    """The 8 new calendar-year leagues and the Argentina trailing-year fix."""
+
+    def test_all_new_leagues_fully_wired(self):
+        for lg in NEW_LEAGUES:
+            assert lg in FD_COUK_NEW_LEAGUE_MAP, f"{lg} missing feed map"
+            assert lg in LEAGUE_CODE_MAP, f"{lg} missing code map"
+            assert lg in CALENDAR_YEAR_LEAGUES, f"{lg} not marked calendar-year"
+
+    def test_argentina_trailing_year_captures_both_label_formats(self):
+        # ar.1 mixes legacy split-year ('2016/2017') and calendar ('2017','2020')
+        # labels in one file. Season 2016-17 -> target year 2017 must capture the
+        # 2016/2017 AND 2017 rows, but never the 2020 row (which belongs to 2019-20).
+        csv = _new_feed_csv([
+            "Argentina,Liga,2016/2017,10/09/2016,,River,Boca,2,1,H\n",
+            "Argentina,Liga,2017,05/03/2017,,Boca,River,0,0,D\n",
+            "Argentina,Liga,2020,01/03/2020,,River,Boca,1,2,A\n",
+        ])
+        got = parse_fd_couk_new_csv(csv, "2016-17", "ar.1")
+        assert len(got) == 2  # the two 2017-trailing rows, not the 2020 one
+        got2020 = parse_fd_couk_new_csv(csv, "2019-20", "ar.1")
+        assert len(got2020) == 1
+
+    def test_name_canonicalization_merges_spelling_variants(self):
+        csv = _new_feed_csv([
+            "Norway,Elite,2024,01/05/2024,,Ham-Kam,Bodo,1,1,D\n",
+        ])
+        got = parse_fd_couk_new_csv(csv, "2023-24", "no.1")
+        assert got and got[0]["homeTeam"]["name"] == NEW_LEAGUE_NAME_CANON["Ham-Kam"]
+
+    def test_pure_calendar_league_unaffected(self):
+        csv = _new_feed_csv([
+            "Brazil,Serie A,2024,01/05/2024,,Flamengo,Vasco,2,0,H\n",
+        ])
+        assert len(parse_fd_couk_new_csv(csv, "2023-24", "br.1")) == 1
 
 
 FD_COUK_SAMPLE_CSV = (

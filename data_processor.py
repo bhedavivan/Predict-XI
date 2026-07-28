@@ -8,6 +8,26 @@ from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
 
 import dixon_coles
+import clubelo_data
+import player_stats
+import pi_ratings
+
+# pi-ratings (Constantinou & Fenton): a goal-difference-based, venue-split team
+# rating that outperforms Elo in the no-odds forecasting literature (the backbone
+# of the CatBoost+pi SOTA). ON by default; wired on both the training and serving
+# paths and covered by the feature-alignment tests, like Elo/Dixon-Coles/ClubElo.
+INCLUDE_PI_RATINGS = True
+
+# Player-performance features (goals+assists/cards per game from Transfermarkt
+# appearances) were built, wired, and ABLATED — and they do not help: a
+# leak-free retrain moved RPS 0.2108 -> 0.2111 (marginally worse), the features
+# never entered the top-10 importances, and they inflated the model 49MB->80MB.
+# Goals+assists aggregated to team level is redundant with the scoring/form/Elo/
+# Dixon-Coles signals already present; the genuinely-new player signals (tackles,
+# pace, playstyle, xG) are not available free/historically. So player-stats ship
+# OFF, exactly like recency weighting. The module + wiring stay so flipping this
+# to True (and retraining) re-enables them the moment a richer source exists.
+INCLUDE_PLAYER_STATS = False
 
 
 def process_matches(matches: list) -> list:
@@ -135,6 +155,37 @@ def squad_value_feature_dict(home_value: Optional[float], away_value: Optional[f
     }
 
 
+def draw_signal_features(dc_p_home: float, dc_p_draw: float, dc_p_away: float,
+                          dc_exp_home: float, dc_exp_away: float,
+                          elo_diff: float, form_diff: float) -> dict:
+    """Cheap draw-signalling features derived from values BOTH paths already
+    compute. Shared helper (same reason as squad_value_feature_dict) so the
+    training and serving vectors can never silently disagree — the alignment
+    guard test covers it.
+
+      dc_entropy         Shannon entropy of the Dixon-Coles H/D/A distribution.
+                         High when the model itself is unsure, which is exactly
+                         when a draw is most likely — a direct "closeness"
+                         signal a tree would otherwise have to reconstruct from
+                         several splits.
+      dc_total_exp_goals Sum of expected goals. Low-scoring games draw more
+                         often, so total goal expectation carries draw signal
+                         the signed dc_* probabilities don't state outright.
+      tightness          1/(1+|elo diff|) * 1/(1+|form diff|): peaks (→1) when
+                         two sides are level on BOTH strength and form, decays
+                         fast otherwise. A single explicit closeness scalar.
+    """
+    probs = [max(dc_p_home, 1e-9), max(dc_p_draw, 1e-9), max(dc_p_away, 1e-9)]
+    total = sum(probs)
+    probs = [p / total for p in probs]
+    entropy = -sum(p * math.log(p) for p in probs)
+    return {
+        "dc_entropy": entropy,
+        "dc_total_exp_goals": dc_exp_home + dc_exp_away,
+        "tightness": (1.0 / (1.0 + abs(elo_diff))) * (1.0 / (1.0 + abs(form_diff))),
+    }
+
+
 def _squad_value_features(home: str, away: str, match_date: str,
                            squad_values, club_map: Optional[dict]) -> dict:
     if squad_values is None or not club_map:
@@ -144,11 +195,24 @@ def _squad_value_features(home: str, away: str, match_date: str,
     return squad_value_feature_dict(hv, av)
 
 
+def _player_stats_features(home: str, away: str, match_date: str,
+                            pstats, club_map: Optional[dict]) -> dict:
+    """Rolling player-performance block for one match, resolved via the same
+    team->TM-club_id map squad value uses (point-in-time, no lookahead)."""
+    if pstats is None or not club_map:
+        return player_stats.player_stats_feature_dict(None, None)
+    h = pstats.features_at(club_map.get(home, ""), match_date)
+    a = pstats.features_at(club_map.get(away, ""), match_date)
+    return player_stats.player_stats_feature_dict(h, a)
+
+
 def add_form_features(rows: list, n_matches: int = 5,
                        elo_k: float = None, elo_home_adv: float = None,
                        elo_season_regress: float = None,
                        dc_k: float = None, dc_rho: float = None,
-                       squad_values=None, club_map: dict = None) -> list:
+                       pi_lam: float = None, pi_gamma: float = None,
+                       squad_values=None, club_map: dict = None,
+                       clubelo=None, pstats=None) -> list:
     """Add rolling form features for each team (home/away specific), plus Elo.
 
     The rating constants are overridable so they can be tuned against actual
@@ -179,6 +243,7 @@ def add_form_features(rows: list, n_matches: int = 5,
     team_overall_history = defaultdict(list)
     team_elo = {}
     dc_ratings = dixon_coles.DixonColesRatings(k=dc_k, rho=dc_rho)
+    pi_r = pi_ratings.PiRatings(lam=pi_lam, gamma=pi_gamma)
     # Per-league goal baselines, accumulated as matches stream past rather
     # than precomputed over the whole file — using a full-dataset average
     # would leak later results into the features of earlier matches. Same
@@ -448,9 +513,32 @@ def add_form_features(rows: list, n_matches: int = 5,
             # dc_* from identical assumptions or the vectors silently skew.
             "league_base_home_goals": base_home_goals,
             "league_base_away_goals": base_away_goals,
+            # Carry the DC rho actually used so serving rebuilds dc_* with the
+            # SAME correlation constant. Not a model feature — it exists only
+            # so prepare_prediction_features can't silently use a different rho
+            # than training if rho is ever retuned away from the module default.
+            "dc_rho": dc_rho,
         })
         new_row.update(stat_features)
         new_row.update(_squad_value_features(home, away, match_date, squad_values, club_map))
+        new_row.update(draw_signal_features(
+            dc_p_home, dc_p_draw, dc_p_away, dc_exp_home, dc_exp_away,
+            home_elo - away_elo, home_overall_form - away_overall_form))
+        # ClubElo cross-league rating AS OF this match date (no lookahead). Both
+        # teams share this match's competition, so the league code is `comp`.
+        if clubelo is not None:
+            h_ce = clubelo.elo_at(home, comp, match_date)
+            a_ce = clubelo.elo_at(away, comp, match_date)
+        else:
+            h_ce = a_ce = None
+        new_row.update(clubelo_data.clubelo_feature_dict(h_ce, a_ce))
+        # Player-performance (goals+assists / cards per game), point-in-time.
+        new_row.update(_player_stats_features(home, away, match_date, pstats, club_map))
+        # pi-ratings (venue-split, goal-difference based), pre-match — no
+        # lookahead, same discipline as Elo/Dixon-Coles. Appended LAST.
+        new_row.update(pi_ratings.pi_feature_dict(
+            pi_r.home_rating(home), pi_r.away_rating(away),
+            pi_r.games(home), pi_r.games(away)))
         result_rows.append(new_row)
 
         # Fold this match into its league's running goal baseline. Done only
@@ -470,8 +558,28 @@ def add_form_features(rows: list, n_matches: int = 5,
         new_row["away_dc_attack_post"] = dc_ratings.attack[away]
         new_row["away_dc_defense_post"] = dc_ratings.defense[away]
 
-        # Update Elo (margin-of-victory scaled)
-        league_home_adv = elo_home_adv * (base_home_goals / max(dixon_coles.LEAGUE_AVG_HOME_GOALS, 1e-6))
+        # pi-ratings update from the real result, then persist post-match home &
+        # away ratings for both clubs so compute_team_stats can carry them
+        # forward to predict brand-new matchups (mirrors the dc_*_post above).
+        pi_r.update(home, away, row["home_score"], row["away_score"])
+        new_row["home_pi_home_post"] = pi_r.home_rating(home)
+        new_row["home_pi_away_post"] = pi_r.away_rating(home)
+        new_row["away_pi_home_post"] = pi_r.home_rating(away)
+        new_row["away_pi_away_post"] = pi_r.away_rating(away)
+        new_row["home_pi_games_post"] = pi_r.games(home)
+        new_row["away_pi_games_post"] = pi_r.games(away)
+
+        # Update Elo (margin-of-victory scaled). Scale home advantage by the
+        # league's home/away goal ASYMMETRY relative to the global one — not by
+        # its total home scoring. The old `base_home_goals / global_home_goals`
+        # conflated "this league is high-scoring" with "this league has a strong
+        # home edge": a high-scoring but symmetric league wrongly got extra home
+        # advantage. The ratio-of-ratios is 1.0 for a league with average
+        # asymmetry and only departs when home really does outscore away more
+        # (or less) than typical.
+        global_ratio = dixon_coles.LEAGUE_AVG_HOME_GOALS / max(dixon_coles.LEAGUE_AVG_AWAY_GOALS, 1e-6)
+        league_ratio = base_home_goals / max(base_away_goals, 1e-6)
+        league_home_adv = elo_home_adv * (league_ratio / max(global_ratio, 1e-6))
         exp_home = _elo_expected(home_earned, away_earned, league_home_adv)
         actual_home = 1.0 if result == 1 else (0.5 if result == 0 else 0.0)
         mov = _elo_goal_diff_multiplier(row["goal_diff"])
@@ -593,8 +701,27 @@ def prepare_training_data(rows: list, return_meta: bool = False):
     # league or club isn't covered — see squad_value_feature_dict.
     squad_cols = ["home_squad_value", "away_squad_value", "squad_value_diff",
                   "abs_squad_value_diff", "has_squad_value"]
+    # Cheap draw-signalling features derived from the DC grid + strength/form
+    # gaps (see draw_signal_features). Appended LAST — prepare_prediction_features
+    # must mirror this exact order.
+    draw_signal_cols = ["dc_entropy", "dc_total_exp_goals", "tightness"]
+    # ClubElo cross-league ratings (see clubelo_data). 0 + has_clubelo=0 for
+    # non-European leagues and unmapped clubs. Appended LAST —
+    # prepare_prediction_features must mirror this exact order.
+    clubelo_cols = ["home_clubelo", "away_clubelo", "clubelo_diff",
+                    "clubelo_expected", "has_clubelo"]
+    # Player-performance (Transfermarkt appearances). 0 + has_player_stats=0
+    # where uncovered. Appended LAST — prepare_prediction_features mirrors this.
+    player_stat_cols = ["home_ga_per_game", "away_ga_per_game", "ga_per_game_diff",
+                        "home_cards_per_game", "away_cards_per_game", "has_player_stats"]
+    # pi-ratings (see pi_ratings). Venue-split, goal-difference based. Appended
+    # LAST — prepare_prediction_features must mirror this exact order.
+    pi_cols = ["home_pi", "away_pi", "pi_diff", "pi_expected_gd", "has_pi"]
     feature_cols = (base_form_cols + advanced_form_cols + match_stat_cols
-                    + elo_cols + dc_cols + evenness_cols + squad_cols)
+                    + elo_cols + dc_cols + evenness_cols + squad_cols
+                    + draw_signal_cols + clubelo_cols
+                    + (player_stat_cols if INCLUDE_PLAYER_STATS else [])
+                    + (pi_cols if INCLUDE_PI_RATINGS else []))
 
     X = []
     y = []
@@ -632,11 +759,22 @@ def prepare_prediction_features(home_team: str, away_team: str,
     home_elo = home.get("elo", ELO_START)
     away_elo = away.get("elo", ELO_START)
 
+    # The first feature block is venue-specific in training (home_form is the
+    # home side's record over its last 5 HOME matches), so serving must read
+    # the venue-matched capture — the flat keys hold whichever venue the
+    # team's most recent match happened to be at, which is the wrong venue
+    # about half the time. Flat keys remain as fallback so a team_stats.json
+    # written before the venue keys existed degrades to the old behaviour
+    # instead of silently serving zeros.
     base_features = [
-        home.get("form", 0), home.get("goals_scored_avg", 0), home.get("goals_conceded_avg", 0),
-        home.get("matches_played", 0),
-        away.get("form", 0), away.get("goals_scored_avg", 0), away.get("goals_conceded_avg", 0),
-        away.get("matches_played", 0),
+        home.get("home_form", home.get("form", 0)),
+        home.get("home_goals_scored_avg", home.get("goals_scored_avg", 0)),
+        home.get("home_goals_conceded_avg", home.get("goals_conceded_avg", 0)),
+        home.get("home_matches_played", home.get("matches_played", 0)),
+        away.get("away_form", away.get("form", 0)),
+        away.get("away_goals_scored_avg", away.get("goals_scored_avg", 0)),
+        away.get("away_goals_conceded_avg", away.get("goals_conceded_avg", 0)),
+        away.get("away_matches_played", away.get("matches_played", 0)),
         home.get("overall_form", 0), home.get("overall_goals_scored_avg", 0), home.get("overall_goals_conceded_avg", 0),
         away.get("overall_form", 0), away.get("overall_goals_scored_avg", 0), away.get("overall_goals_conceded_avg", 0),
         h2h[0], h2h[1], h2h[2], h2h[3],
@@ -653,7 +791,10 @@ def prepare_prediction_features(home_team: str, away_team: str,
         home.get("o25_rate_5", 0), away.get("o25_rate_5", 0),
         home.get("home_ppf_10", 0), away.get("away_ppf_10", 0),
         home.get("sos", ELO_START), away.get("sos", ELO_START),
-        home.get("gd_5", 0), away.get("gd_5", 0),
+        # gd_5 is venue-split in training (last 5 matches at that venue);
+        # gd_10 is from overall history, so its flat key is already right.
+        home.get("home_gd_5", home.get("gd_5", 0)),
+        away.get("away_gd_5", away.get("gd_5", 0)),
         home.get("gd_10", 0), away.get("gd_10", 0),
         home.get("season_progress", 0),
     ]
@@ -678,6 +819,7 @@ def prepare_prediction_features(home_team: str, away_team: str,
         away.get("dc_attack", dixon_coles.DC_START), away.get("dc_defense", dixon_coles.DC_START),
         home.get("league_base_home_goals", dixon_coles.LEAGUE_AVG_HOME_GOALS),
         home.get("league_base_away_goals", dixon_coles.LEAGUE_AVG_AWAY_GOALS),
+        rho=home.get("dc_rho", dixon_coles.DC_RHO),
     )
     dc_features = [dc_exp_home, dc_exp_away, dc_p_home, dc_p_draw, dc_p_away]
 
@@ -701,11 +843,119 @@ def prepare_prediction_features(home_team: str, away_team: str,
                       squad_block["squad_value_diff"], squad_block["abs_squad_value_diff"],
                       squad_block["has_squad_value"]]
 
+    # Draw-signal block — same shared helper and same order as
+    # draw_signal_cols in prepare_training_data (alignment test covers it).
+    ds = draw_signal_features(
+        dc_p_home, dc_p_draw, dc_p_away, dc_exp_home, dc_exp_away,
+        home_elo - away_elo,
+        home.get("overall_form", 0) - away.get("overall_form", 0))
+    draw_signal_block = [ds["dc_entropy"], ds["dc_total_exp_goals"], ds["tightness"]]
+
+    # ClubElo block — each team's CURRENT ClubElo, carried onto team_stats by
+    # compute_team_stats (so cross-league matchups read each side's own rating).
+    # Same order as clubelo_cols in prepare_training_data (alignment test covers it).
+    ce_block = clubelo_data.clubelo_feature_dict(
+        home.get("clubelo"), away.get("clubelo"))
+    clubelo_features = [ce_block["home_clubelo"], ce_block["away_clubelo"],
+                        ce_block["clubelo_diff"], ce_block["clubelo_expected"],
+                        ce_block["has_clubelo"]]
+
+    # Player-performance block — each team's CURRENT rolling stats, carried onto
+    # team_stats by compute_team_stats. Same order as player_stat_cols.
+    ps_block = player_stats.player_stats_feature_dict(
+        home.get("player_stats"), away.get("player_stats"))
+    player_stat_features = [ps_block["home_ga_per_game"], ps_block["away_ga_per_game"],
+                            ps_block["ga_per_game_diff"], ps_block["home_cards_per_game"],
+                            ps_block["away_cards_per_game"], ps_block["has_player_stats"]]
+
+    # pi-ratings block — home team's HOME rating, away team's AWAY rating
+    # (venue split), carried onto team_stats by compute_team_stats. Same order
+    # as pi_cols in prepare_training_data (alignment test covers it).
+    pi_block = pi_ratings.pi_feature_dict(
+        home.get("pi_home"), away.get("pi_away"),
+        home.get("pi_games", 0), away.get("pi_games", 0))
+    pi_features = [pi_block["home_pi"], pi_block["away_pi"], pi_block["pi_diff"],
+                   pi_block["pi_expected_gd"], pi_block["has_pi"]]
+
     return (base_features + match_stat_features + elo_features
-            + dc_features + evenness_features + squad_features)
+            + dc_features + evenness_features + squad_features
+            + draw_signal_block + clubelo_features
+            + (player_stat_features if INCLUDE_PLAYER_STATS else [])
+            + (pi_features if INCLUDE_PI_RATINGS else []))
 
 
-def compute_team_stats(rows: list, squad_values=None, club_map: dict = None) -> dict:
+def explain_prediction(home_team: str, away_team: str, team_stats: dict,
+                        h2h_map: Optional[dict] = None) -> dict:
+    """Human-facing drivers behind a prediction — the same quantities the model
+    reads, surfaced so a bare probability becomes an argument. Presentation
+    only: every value here is already in the feature vector, computed the same
+    way prepare_prediction_features computes it (so the "why" matches the
+    "what"). Returns None-valued squad fields when a club isn't covered."""
+    home = team_stats.get(home_team, {})
+    away = team_stats.get(away_team, {})
+    home_elo = home.get("elo", ELO_START)
+    away_elo = away.get("elo", ELO_START)
+
+    dc_p_home, dc_p_draw, dc_p_away, dc_exp_home, dc_exp_away = dixon_coles.match_probabilities(
+        home.get("dc_attack", dixon_coles.DC_START), home.get("dc_defense", dixon_coles.DC_START),
+        away.get("dc_attack", dixon_coles.DC_START), away.get("dc_defense", dixon_coles.DC_START),
+        home.get("league_base_home_goals", dixon_coles.LEAGUE_AVG_HOME_GOALS),
+        home.get("league_base_away_goals", dixon_coles.LEAGUE_AVG_AWAY_GOALS),
+        rho=home.get("dc_rho", dixon_coles.DC_RHO),
+    )
+    h2h = h2h_features_for(home_team, away_team, h2h_map)  # [matches, home_w, draws, away_w]
+    sv_home, sv_away = home.get("squad_value_eur"), away.get("squad_value_eur")
+
+    def _fmt_val(v):
+        if not v:
+            return None
+        return round(v / 1_000_000)  # EUR millions
+
+    # Ordered list of drivers, each with which side it favours and how strong,
+    # so the template can render a ranked "why" without business logic.
+    drivers = []
+
+    def _driver(label, home_val, away_val, fmt="{:.0f}", higher_is_home=True, unit=""):
+        favours = None
+        if home_val is not None and away_val is not None and home_val != away_val:
+            home_better = (home_val > away_val) if higher_is_home else (home_val < away_val)
+            favours = "home" if home_better else "away"
+        drivers.append({
+            "label": label,
+            "home": (fmt.format(home_val) + unit) if home_val is not None else "—",
+            "away": (fmt.format(away_val) + unit) if away_val is not None else "—",
+            "favours": favours,
+        })
+
+    ce_home, ce_away = home.get("clubelo"), away.get("clubelo")
+    _driver("Elo rating (in-league)", round(home_elo), round(away_elo))
+    if ce_home is not None or ce_away is not None:
+        _driver("ClubElo (cross-league)",
+                round(ce_home) if ce_home is not None else None,
+                round(ce_away) if ce_away is not None else None)
+    _driver("Expected goals (Dixon-Coles)", dc_exp_home, dc_exp_away, fmt="{:.2f}")
+    _driver("Recent form (pts/game)", home.get("overall_form"), away.get("overall_form"), fmt="{:.2f}")
+    _driver("Squad value (€M)", _fmt_val(sv_home), _fmt_val(sv_away))
+    ps_home, ps_away = home.get("player_stats"), away.get("player_stats")
+    # Only surface player-output as a driver when it's actually a model feature
+    # (it's ablated off by default — see INCLUDE_PLAYER_STATS).
+    if INCLUDE_PLAYER_STATS and (ps_home or ps_away):
+        _driver("Squad output (goals+assists/game)",
+                round(ps_home["ga_per_game"], 2) if ps_home else None,
+                round(ps_away["ga_per_game"], 2) if ps_away else None, fmt="{:.2f}")
+    _driver("Goal diff (last 10)", round(home.get("gd_10", 0), 2), round(away.get("gd_10", 0), 2), fmt="{:.2f}")
+
+    return {
+        "drivers": drivers,
+        "elo_diff": round(home_elo - away_elo),
+        "dc_probs": {"home": round(dc_p_home, 3), "draw": round(dc_p_draw, 3), "away": round(dc_p_away, 3)},
+        "h2h": {"matches": h2h[0], "home_wins": h2h[1], "draws": h2h[2], "away_wins": h2h[3]},
+        "has_squad_value": bool(sv_home) and bool(sv_away),
+    }
+
+
+def compute_team_stats(rows: list, squad_values=None, club_map: dict = None,
+                        clubelo=None, pstats=None) -> dict:
     """Latest per-team state for predictions.
 
     `squad_values`/`club_map` attach each team's CURRENT squad market value
@@ -727,10 +977,22 @@ def compute_team_stats(rows: list, squad_values=None, club_map: dict = None) -> 
         "ppf_10": 0, "ppf_20": 0, "ewma_form": 0, "ewma_gs": 0, "ewma_gc": 0,
         "streak": 0, "cs_rate_5": 0, "cs_rate_10": 0, "btts_rate_5": 0, "o25_rate_5": 0,
         "home_ppf_10": 0, "away_ppf_10": 0, "sos": ELO_START,
+        # Venue-specific captures (see the venue_home_keys/venue_away_keys
+        # loop). Default 0 matches training, where a team with no history at
+        # a venue gets 0 for that venue's form block.
+        "home_form": 0, "away_form": 0,
+        "home_goals_scored_avg": 0, "away_goals_scored_avg": 0,
+        "home_goals_conceded_avg": 0, "away_goals_conceded_avg": 0,
+        "home_matches_played": 0, "away_matches_played": 0,
+        "home_gd_5": 0, "away_gd_5": 0,
         "gd_5": 0, "gd_10": 0, "season_progress": 0,
         "shots_avg": 0, "shots_against_avg": 0, "sot_avg": 0, "sot_against_avg": 0,
         "corners_avg": 0, "corners_against_avg": 0, "cards_avg": 0, "cards_against_avg": 0,
         "dc_attack": dixon_coles.DC_START, "dc_defense": dixon_coles.DC_START,
+        "dc_rho": dixon_coles.DC_RHO,
+        "clubelo": None,
+        "player_stats": None,
+        "pi_home": pi_ratings.PI_START, "pi_away": pi_ratings.PI_START, "pi_games": 0,
     })
 
     # Map team_stats keys to row prefixes
@@ -750,21 +1012,52 @@ def compute_team_stats(rows: list, squad_values=None, club_map: dict = None) -> 
         "cards_avg": "cards_avg", "cards_against_avg": "cards_against_avg",
     }
 
-    # Venue-split form has to be captured from the team's most recent match
+    # Venue-split stats have to be captured from the team's most recent match
     # AT THAT VENUE, not from its most recent match overall — otherwise a side
-    # whose last outing was away carries home_ppf_10=0 into every prediction,
-    # a value the model never sees while training.
+    # whose last outing was away carries its away-venue numbers into every
+    # home prediction (and vice versa), a combination the model never sees
+    # while training. ppf_10 was fixed first; form, goals scored/conceded,
+    # matches_played and gd_5 are built from the same venue-split histories in
+    # add_form_features and need the identical capture. The flat keys below
+    # ("form", "gd_5", ...) keep their last-match-any-venue behaviour for
+    # backward compatibility; prediction reads these venue keys first.
+    venue_home_keys = {
+        "home_ppf_10": "home_home_ppf_10",
+        "home_form": "home_form",
+        "home_goals_scored_avg": "home_goals_scored_avg",
+        "home_goals_conceded_avg": "home_goals_conceded_avg",
+        "home_matches_played": "home_matches_played",
+        "home_gd_5": "home_gd_5",
+    }
+    venue_away_keys = {
+        "away_ppf_10": "away_away_ppf_10",
+        "away_form": "away_form",
+        "away_goals_scored_avg": "away_goals_scored_avg",
+        "away_goals_conceded_avg": "away_goals_conceded_avg",
+        "away_matches_played": "away_matches_played",
+        "away_gd_5": "away_gd_5",
+    }
     seen_home_venue, seen_away_venue = set(), set()
 
     for row in reversed(rows):
         home = row["home_team"]
         away = row["away_team"]
-        if home not in seen_home_venue and "home_home_ppf_10" in row:
-            team_stats[home]["home_ppf_10"] = row["home_home_ppf_10"]
-            seen_home_venue.add(home)
-        if away not in seen_away_venue and "away_away_ppf_10" in row:
-            team_stats[away]["away_ppf_10"] = row["away_away_ppf_10"]
-            seen_away_venue.add(away)
+        if home not in seen_home_venue:
+            found = False
+            for ts_key, row_key in venue_home_keys.items():
+                if row_key in row:
+                    team_stats[home][ts_key] = row[row_key]
+                    found = True
+            if found:
+                seen_home_venue.add(home)
+        if away not in seen_away_venue:
+            found = False
+            for ts_key, row_key in venue_away_keys.items():
+                if row_key in row:
+                    team_stats[away][ts_key] = row[row_key]
+                    found = True
+            if found:
+                seen_away_venue.add(away)
         # season_progress describes the match, not either club. Training rows
         # are almost all late-season (the value is capped at 1.0), so the
         # sane carry-forward is the most recent match's value.
@@ -784,6 +1077,10 @@ def compute_team_stats(rows: list, squad_values=None, club_map: dict = None) -> 
                 "league_base_home_goals", dixon_coles.LEAGUE_AVG_HOME_GOALS)
             team_stats[home]["league_base_away_goals"] = row.get(
                 "league_base_away_goals", dixon_coles.LEAGUE_AVG_AWAY_GOALS)
+            team_stats[home]["dc_rho"] = row.get("dc_rho", dixon_coles.DC_RHO)
+            team_stats[home]["pi_home"] = row.get("home_pi_home_post", pi_ratings.PI_START)
+            team_stats[home]["pi_away"] = row.get("home_pi_away_post", pi_ratings.PI_START)
+            team_stats[home]["pi_games"] = row.get("home_pi_games_post", 0)
         if team_stats[away]["matches_played"] == 0:
             for key, base in prefix_map.items():
                 row_key = f"away_{base}"
@@ -797,6 +1094,10 @@ def compute_team_stats(rows: list, squad_values=None, club_map: dict = None) -> 
                 "league_base_home_goals", dixon_coles.LEAGUE_AVG_HOME_GOALS)
             team_stats[away]["league_base_away_goals"] = row.get(
                 "league_base_away_goals", dixon_coles.LEAGUE_AVG_AWAY_GOALS)
+            team_stats[away]["dc_rho"] = row.get("dc_rho", dixon_coles.DC_RHO)
+            team_stats[away]["pi_home"] = row.get("away_pi_home_post", pi_ratings.PI_START)
+            team_stats[away]["pi_away"] = row.get("away_pi_away_post", pi_ratings.PI_START)
+            team_stats[away]["pi_games"] = row.get("away_pi_games_post", 0)
         if all(team_stats[t]["matches_played"] > 0 for t in [home, away]):
             pass
 
@@ -806,6 +1107,17 @@ def compute_team_stats(rows: list, squad_values=None, club_map: dict = None) -> 
             club_id = club_map.get(team)
             if club_id:
                 info["squad_value_eur"] = squad_values.current_value(club_id)
+    if clubelo is not None:
+        # Each team's CURRENT ClubElo, resolved via its own league — this is
+        # what lets a cross-league matchup compare two clubs on one scale.
+        for team, info in out.items():
+            info["clubelo"] = clubelo.current_elo(team, info.get("league", ""))
+    if pstats is not None and club_map:
+        # Each team's CURRENT rolling player-performance stats (via club_id).
+        for team, info in out.items():
+            cid = club_map.get(team)
+            if cid:
+                info["player_stats"] = pstats.current_features(cid)
     return out
 
 

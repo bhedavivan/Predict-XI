@@ -160,6 +160,54 @@ option { color: var(--text); background: var(--panel-2); }
 .lt-bar { display:inline-block; height:6px; border-radius:999px; background: var(--accent);
   margin-right:.5rem; vertical-align:middle; opacity:.75; }
 
+/* ── Season simulator ────────────────────────────────────────────────── */
+.sim-proj { width:100%; border-collapse:collapse; font-size:.85rem; min-width:520px; }
+.sim-proj th { color: var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.03em;
+  font-weight:700; padding:.45rem .55rem; border-bottom:1px solid var(--border); white-space:nowrap; }
+.sim-proj td { padding:.45rem .55rem; border-top:1px solid var(--border); white-space:nowrap;
+  font-variant-numeric:tabular-nums; }
+.sim-proj tr:hover td { background: var(--panel-2); }
+.sim-proj .l { text-align:left; }
+.sim-proj .r { text-align:right; }
+.sim-proj .c { text-align:center; }
+.sim-proj td.l { font-weight:650; }
+.sim-proj .range { color: var(--faint); font-size:.74rem; margin-left:.3rem; }
+.sim-proj .ci { color: var(--faint); font-size:.68rem; margin-left:.25rem; }
+.sim-proj .rel-hi { color: var(--danger); font-weight:650; }
+.resim { margin-left:auto; font: inherit; font-size:.72rem; font-weight:600; cursor:pointer;
+  color: var(--muted); background: var(--panel-2); border:1px solid var(--border);
+  border-radius:999px; padding:.2rem .6rem; }
+.resim:hover { color: var(--text); border-color: var(--accent); }
+.sim-scroll { overflow-x:auto; }
+.sim-table .num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.sim-table .col-pos { text-align:center; font-variant-numeric:tabular-nums; }
+.sim-table .range { color: var(--faint); font-size:.74rem; margin-left:.35rem; }
+.sim-table .rel-hi { color: var(--danger); font-weight:650; }
+.sim-live .sim-row { grid-template-columns:
+  2.4rem minmax(96px,1.4fr) 3rem minmax(92px,1.7fr) 1.5fr 1fr 1fr .9fr; min-width:600px; }
+.sim-table:not(.sim-live) .sim-row { grid-template-columns:
+  minmax(110px,1.6fr) minmax(92px,1.7fr) 1.5fr 1fr 1fr .9fr; min-width:460px; }
+
+/* Position-probability heatmap — single-hue sequential ramp (--seq-*) */
+.heatmap { border-collapse:separate; border-spacing:2px; font-size:.72rem; }
+.heatmap th { color: var(--muted); font-weight:600; font-size:.7rem; padding:.2rem .3rem;
+  text-align:center; font-variant-numeric:tabular-nums; }
+.heatmap .hm-team { text-align:left; white-space:nowrap; position:sticky; left:0;
+  background: var(--panel); z-index:1; padding-right:.8rem; font-weight:600; }
+.heatmap td.hm { text-align:center; font-variant-numeric:tabular-nums; min-width:26px;
+  padding:.28rem .1rem; border-radius:3px; }
+.hm0 { color:transparent; }
+.hm1 { background: var(--seq-100); color:#0b1220; }
+.hm2 { background: var(--seq-200); color:#0b1220; }
+.hm3 { background: var(--seq-300); color:#0b1220; }
+.hm4 { background: var(--seq-400); color:#fff; }
+.hm5 { background: var(--seq-500); color:#fff; }
+.hm6 { background: var(--seq-600); color:#fff; }
+.hm7 { background: var(--seq-700); color:#fff; }
+.hm-legend { display:flex; align-items:center; gap:.35rem; margin-top:.9rem;
+  font-size:.74rem; color: var(--muted); }
+.hm-legend i { width:22px; height:10px; display:inline-block; border-radius:2px; }
+
 /* ── Calibration / reliability ───────────────────────────────────────── */
 .calib { display:flex; flex-direction:column; gap:.35rem; font-size:.8rem; }
 .calib-row { display:grid; grid-template-columns: 3rem 1fr 3rem 4rem; gap:.6rem; align-items:center; }
@@ -180,6 +228,9 @@ option { color: var(--text); background: var(--panel-2); }
 @media (max-width: 620px) {
   .lt-head, .lt-row { grid-template-columns: 1.4fr .5fr 1fr; }
   .lt-head span:nth-child(n+4), .lt-row span:nth-child(n+4) { display:none; }
+  /* The simulator tables scroll horizontally (in .sim-scroll) instead of
+     dropping columns, so keep every column visible. */
+  .sim-table .lt-head span, .sim-table .lt-row span { display:block !important; }
   .calib-row { grid-template-columns: 2.5rem 1fr 2.5rem; }
   .calib-n { display:none; }
 }
@@ -189,3 +240,21 @@ option { color: var(--text); background: var(--panel-2); }
   color: var(--muted); background: var(--panel-2); border: 1px solid var(--border);
   border-radius: 8px; padding: .6rem .8rem; text-align: left; }
 .rule-note strong { color: var(--text); }
+
+/* "Why this prediction" explainability block on the Predict page */
+.why { margin-top: 1.3rem; border-top: 1px solid var(--border); padding-top: 1rem; text-align: left; }
+.why-head { font-weight: 650; font-size: .95rem; margin-bottom: .7rem; color: var(--text); }
+.why-grid { display: flex; flex-direction: column; gap: 2px; }
+.why-row { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: .5rem; align-items: center;
+  padding: .4rem .6rem; border-radius: 7px; }
+.why-row:nth-child(odd) { background: var(--panel-2, rgba(127,127,127,.06)); }
+.why-hdr { font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+  background: none !important; }
+.why-hdr span:not(:first-child), .why-val { text-align: right; font-variant-numeric: tabular-nums; }
+.why-label { color: var(--muted); font-size: .84rem; }
+.why-val { font-size: .9rem; color: var(--text); }
+.why-win { font-weight: 700; color: var(--accent); }
+.why-notes { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .9rem; }
+.why-chip { font-size: .76rem; padding: .3rem .6rem; border: 1px solid var(--border);
+  border-radius: 999px; color: var(--text); }
+.why-chip.muted { color: var(--muted); }

@@ -14,7 +14,9 @@ from data_processor import (
     ELO_START,
     ELO_HOME_ADV,
     LEAGUE_BASELINE_MIN_MATCHES,
+    draw_signal_features,
 )
+import math
 import dixon_coles
 
 
@@ -287,7 +289,7 @@ class TestPrepareTrainingData:
         assert len(X) == 1
         assert len(y) == 1
         assert y[0] == 1
-        assert len(feature_names) == 82  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles + 4 evenness + 5 squad-value
+        assert len(feature_names) == 95  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles + 4 evenness + 5 squad-value + 3 draw-signal + 5 ClubElo + 5 pi-ratings (player-stats ablated off; see INCLUDE_PLAYER_STATS)
 
 
 class TestPreparePredictionFeatures:
@@ -326,7 +328,7 @@ class TestPreparePredictionFeatures:
             },
         }
         features = prepare_prediction_features("Team A", "Team B", team_stats)
-        assert len(features) == 82  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles + 4 evenness + 5 squad-value
+        assert len(features) == 95  # 20 base + 29 advanced + 16 match-stat + 3 Elo + 5 Dixon-Coles + 4 evenness + 5 squad-value + 3 draw-signal + 5 ClubElo + 5 pi-ratings (player-stats ablated off; see INCLUDE_PLAYER_STATS)
         assert features[0] == 1.0  # home form
         assert features[4] == 0.5  # away form
 
@@ -579,10 +581,12 @@ class TestLiveFeaturesMatchTrainingDistribution:
     """Guard against the recurring failure mode in this project: a feature
     that is populated during training but degenerate at prediction time.
 
-    It has bitten four times — team names, head-to-head, squad values, and
-    season_progress — and each time the model kept returning confident
-    probabilities computed from a value it had never seen while training.
-    Checking that live vectors land inside the training range catches the
+    It has bitten six times — team names, head-to-head, squad values,
+    season_progress, the rest of the venue-split form block, and the
+    season-gap Elo regression missing at serving — and each time the model
+    kept returning confident probabilities computed from a value it had never
+    seen while training. Checking that live vectors land inside the training
+    range (plus the finite-value and draw-signal checks below) catches the
     whole class automatically.
     """
 
@@ -626,6 +630,52 @@ class TestLiveFeaturesMatchTrainingDistribution:
         assert stats["Team A"]["home_ppf_10"] == last_home["home_home_ppf_10"]
         assert stats["Team A"]["home_ppf_10"] > 0
 
+    def test_venue_form_block_comes_from_the_matching_venue(self):
+        """Regression, fifth instance of the train/serve family: form,
+        goals scored/conceded, matches_played and gd_5 are venue-specific in
+        training (built from team_home_history / team_away_history), but were
+        captured from the team's most recent match of ANY venue — so a side
+        whose last outing was away served its away-venue numbers as home_form
+        etc. for every prediction where it was the home team."""
+        rows, stats, _ = self._built()
+        last_home = [r for r in rows if r["home_team"] == "Team B"][-1]
+        last_away = [r for r in rows if r["away_team"] == "Team B"][-1]
+        for ts_key, row_key in (
+            ("home_form", "home_form"),
+            ("home_goals_scored_avg", "home_goals_scored_avg"),
+            ("home_goals_conceded_avg", "home_goals_conceded_avg"),
+            ("home_matches_played", "home_matches_played"),
+            ("home_gd_5", "home_gd_5"),
+        ):
+            assert stats["Team B"][ts_key] == last_home[row_key]
+        for ts_key, row_key in (
+            ("away_form", "away_form"),
+            ("away_goals_scored_avg", "away_goals_scored_avg"),
+            ("away_goals_conceded_avg", "away_goals_conceded_avg"),
+            ("away_matches_played", "away_matches_played"),
+            ("away_gd_5", "away_gd_5"),
+        ):
+            assert stats["Team B"][ts_key] == last_away[row_key]
+
+    def test_home_strong_away_weak_team_serves_home_form_at_home(self):
+        """End-to-end shape of the bug: a team that wins every home game but
+        lost its most recent (away) game must not carry that away-venue form
+        into a prediction where it plays at home."""
+        rows = add_form_features([
+            _match_row("2023-08-01T14:00:00Z", "Team A", "Team B", 4, 0),
+            _match_row("2023-08-08T14:00:00Z", "Team C", "Team A", 3, 0),
+            _match_row("2023-08-15T14:00:00Z", "Team A", "Team C", 3, 0),
+            # Team A's most recent match: an away loss.
+            _match_row("2023-08-22T14:00:00Z", "Team B", "Team A", 4, 0),
+        ])
+        stats = compute_team_stats(rows)
+        features = prepare_prediction_features("Team A", "Team C", stats, {})
+        last_home = [r for r in rows if r["home_team"] == "Team A"][-1]
+        # Feature 0 is home_form; it must be A's home-venue record (won its
+        # only prior home match -> 3.0), not the away-venue 0.0.
+        assert features[0] == last_home["home_form"]
+        assert features[0] > 0
+
     def test_no_live_feature_is_wildly_outside_training_range(self):
         rows, stats, h2h = self._built()
         X, _, names = prepare_training_data(rows)
@@ -641,3 +691,126 @@ class TestLiveFeaturesMatchTrainingDistribution:
             if live[i] < lo - span or live[i] > hi + span:
                 offenders.append((name, live[i], lo, hi))
         assert not offenders, f"live features far outside training range: {offenders}"
+
+    def test_every_live_feature_is_finite(self):
+        """A NaN/inf slips silently through the range check (comparisons with
+        NaN are always False) yet corrupts the model's output. The new
+        draw-signal features (entropy from a log, tightness from a division)
+        are the most likely source, so assert finiteness explicitly."""
+        _, stats, h2h = self._built()
+        _, _, names = prepare_training_data(self._built()[0])
+        live = prepare_prediction_features("Team A", "Team B", stats, h2h)
+        bad = [(names[i], live[i]) for i in range(len(live)) if not math.isfinite(live[i])]
+        assert not bad, f"non-finite live features: {bad}"
+
+
+class TestDrawSignalFeatures:
+    """The new shared draw-signal helper (used identically by training and
+    serving, which is what keeps the two paths from drifting)."""
+
+    def test_equal_probs_give_max_entropy(self):
+        f = draw_signal_features(1 / 3, 1 / 3, 1 / 3, 1.4, 1.2, 0.0, 0.0)
+        assert abs(f["dc_entropy"] - math.log(3)) < 1e-9
+
+    def test_lopsided_probs_lower_entropy(self):
+        even = draw_signal_features(1 / 3, 1 / 3, 1 / 3, 1.4, 1.2, 0.0, 0.0)["dc_entropy"]
+        lop = draw_signal_features(0.8, 0.15, 0.05, 2.0, 0.5, 0.0, 0.0)["dc_entropy"]
+        assert lop < even
+
+    def test_tightness_bounds_and_direction(self):
+        level = draw_signal_features(0.4, 0.3, 0.3, 1.4, 1.2, 0.0, 0.0)["tightness"]
+        mismatch = draw_signal_features(0.7, 0.2, 0.1, 1.4, 1.2, 300.0, 2.0)["tightness"]
+        assert level == 1.0                      # perfectly level on both axes
+        assert 0.0 < mismatch < level            # decays fast with any gap
+
+    def test_total_expected_goals(self):
+        assert draw_signal_features(0.4, 0.3, 0.3, 1.6, 1.1, 0.0, 0.0)["dc_total_exp_goals"] == 2.7
+
+    def test_outputs_always_finite_even_at_degenerate_inputs(self):
+        f = draw_signal_features(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+        assert all(math.isfinite(v) for v in f.values())
+
+
+class _FakeSquadIndex:
+    """Minimal stand-in for transfermarkt_data.SquadValueIndex."""
+    def __init__(self, values):
+        self._v = values  # {club_id: eur}
+
+    def value_at(self, club_id, on_date):
+        return self._v.get(club_id)
+
+    def current_value(self, club_id):
+        return self._v.get(club_id)
+
+
+class TestSquadValueServingPath:
+    """The squad-value block is built from TWO different tables on TWO paths
+    (value_at for training, current_value for serving) — a classic setup for
+    the recurring train/serve skew. This exercises the serving path end-to-end."""
+
+    def _rows(self):
+        idx = _FakeSquadIndex({"A": 5.0e8, "B": 2.0e8})
+        cmap = {"Team A": "A", "Team B": "B"}
+        rows = add_form_features([
+            _match_row("2023-08-01T14:00:00Z", "Team A", "Team B", 2, 0),
+            _match_row("2023-08-08T14:00:00Z", "Team B", "Team A", 1, 1),
+            _match_row("2023-08-15T14:00:00Z", "Team A", "Team B", 0, 0),
+        ], squad_values=idx, club_map=cmap)
+        stats = compute_team_stats(rows, squad_values=idx, club_map=cmap)
+        return rows, stats
+
+    def test_has_squad_value_reaches_the_live_vector(self):
+        rows, stats = self._rows()
+        _, _, names = prepare_training_data(rows)
+        live = prepare_prediction_features("Team A", "Team B", stats, add_form_features.last_h2h)
+        assert live[names.index("has_squad_value")] == 1.0
+        # richer (Team A) squad should read as a positive value difference
+        assert live[names.index("squad_value_diff")] > 0
+
+    def test_missing_one_side_disables_the_block(self):
+        # Only Team A mapped -> both-sides rule zeroes the whole block at serve.
+        idx = _FakeSquadIndex({"A": 5.0e8})
+        cmap = {"Team A": "A"}
+        rows = add_form_features([
+            _match_row("2023-08-01T14:00:00Z", "Team A", "Team B", 2, 0),
+            _match_row("2023-08-15T14:00:00Z", "Team A", "Team B", 0, 0),
+        ], squad_values=idx, club_map=cmap)
+        stats = compute_team_stats(rows, squad_values=idx, club_map=cmap)
+        _, _, names = prepare_training_data(rows)
+        live = prepare_prediction_features("Team A", "Team B", stats, add_form_features.last_h2h)
+        assert live[names.index("has_squad_value")] == 0.0
+
+
+class TestPiRatingServingPath:
+    """pi-ratings are updated no-lookahead in training and carried onto team_stats
+    for serving — another spot the recurring train/serve skew could bite. This
+    exercises the carry-forward end-to-end."""
+
+    def _rows(self):
+        # Team A dominates Team B over enough games to pass PI_MIN_MATCHES.
+        matches = []
+        for i in range(6):
+            d = f"2023-{8 + i:02d}-01T14:00:00Z"
+            matches.append(_match_row(d, "Team A", "Team B", 3, 0))
+        rows = add_form_features(matches)
+        stats = compute_team_stats(rows)
+        return rows, stats
+
+    def test_pi_reaches_the_live_vector_and_favours_the_stronger_side(self):
+        rows, stats = self._rows()
+        _, _, names = prepare_training_data(rows)
+        live = prepare_prediction_features("Team A", "Team B", stats, add_form_features.last_h2h)
+        assert live[names.index("has_pi")] == 1.0            # carry-forward worked
+        assert live[names.index("pi_diff")] > 0              # A (home) rated above B
+        assert live[names.index("pi_expected_gd")] > 0
+
+    def test_pi_gate_zero_without_enough_history(self):
+        # Two games each -> below PI_MIN_MATCHES -> block zeroed at serve.
+        rows = add_form_features([
+            _match_row("2023-08-01T14:00:00Z", "Team A", "Team B", 1, 0),
+            _match_row("2023-08-08T14:00:00Z", "Team B", "Team A", 0, 1),
+        ])
+        stats = compute_team_stats(rows)
+        _, _, names = prepare_training_data(rows)
+        live = prepare_prediction_features("Team A", "Team B", stats, add_form_features.last_h2h)
+        assert live[names.index("has_pi")] == 0.0

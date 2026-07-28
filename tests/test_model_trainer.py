@@ -3,7 +3,11 @@
 import pytest
 import os
 import json
-from model_trainer import GaussianNaiveBayes, MatchPredictorModel, MODEL_VERSION
+import numpy as np
+from model_trainer import (
+    GaussianNaiveBayes, MatchPredictorModel, MODEL_VERSION, _rps,
+    _evaluate_pipeline, _build_sklearn_pipeline, SKLEARN_AVAILABLE,
+)
 
 
 class TestGaussianNaiveBayes:
@@ -334,3 +338,137 @@ class TestDrawThreshold:
         m2 = MatchPredictorModel()
         assert m2.load(str(p))
         assert m2.draw_threshold == 0.35
+
+
+class TestRPS:
+    """Ranked Probability Score — the ordinal proper scoring rule now reported
+    as the primary metric. Its whole point over log-loss is ordinality: a
+    confident wrong pick two steps away (Home when Away) must be penalised more
+    than one step away (Home when Draw)."""
+
+    CLASSES = [-1, 0, 1]  # away < draw < home
+
+    def test_perfect_confident_prediction_scores_zero(self):
+        assert _rps([1], [[0.0, 0.0, 1.0]], self.CLASSES) == 0.0
+
+    def test_uniform_is_between_zero_and_one(self):
+        r = _rps([1], [[1 / 3, 1 / 3, 1 / 3]], self.CLASSES)
+        assert 0.0 < r < 1.0
+
+    def test_ordinality_far_error_worse_than_adjacent(self):
+        far = _rps([1], [[1.0, 0.0, 0.0]], self.CLASSES)       # Away when Home
+        adjacent = _rps([1], [[0.0, 1.0, 0.0]], self.CLASSES)  # Draw when Home
+        assert far > adjacent
+        assert far == 1.0 and adjacent == 0.5
+
+    def test_reported_in_metrics_and_survives_save_load(self, tmp_path):
+        X = [[float(i), float(i % 3)] for i in range(60)]
+        y = [(-1 if i % 3 == 0 else (0 if i % 3 == 1 else 1)) for i in range(60)]
+        m = MatchPredictorModel()
+        metrics = m.train(X, y)
+        assert "rps" in metrics  # present even if None on a tiny set
+        m.rps_ = 0.21
+        p = tmp_path / "m.json"
+        m.save(str(p))
+        m2 = MatchPredictorModel()
+        assert m2.load(str(p))
+        assert m2.rps_ == 0.21
+
+
+class TestRecencyWeights:
+    """Exponential time-decay weighting: recent matches must weigh more, and
+    the whole thing must no-op cleanly when disabled (it is gated on RPS, not
+    assumed to help)."""
+
+    def test_recent_matches_weigh_more(self):
+        dates = ["2020-01-01", "2023-01-01", "2026-01-01"]
+        w = MatchPredictorModel._recency_weights(dates, halflife_days=365)
+        assert w is not None
+        assert w[2] > w[1] > w[0]
+        assert abs(w[2] - 1.0) < 1e-9  # most recent match is the reference
+
+    def test_disabled_returns_none(self):
+        assert MatchPredictorModel._recency_weights(["2020-01-01"], None) is None
+        assert MatchPredictorModel._recency_weights(None, 365) is None
+
+    def test_training_with_recency_still_produces_a_working_model(self):
+        X = [[float(i), float(i % 3)] for i in range(60)]
+        y = [(-1 if i % 3 == 0 else (0 if i % 3 == 1 else 1)) for i in range(60)]
+        dates = [f"20{20 + i // 30:02d}-{1 + i % 12:02d}-01" for i in range(60)]
+        m = MatchPredictorModel()
+        m.train(X, y, sample_dates=dates, recency_halflife_days=540)
+        r = m.predict([1.0, 1.0])
+        assert set(r["probabilities"]) == {"Home Win", "Draw", "Away Win"}
+
+    def test_unparseable_date_gets_min_not_max_weight(self):
+        # A bad/missing date must not be treated as the most-recent match.
+        w = MatchPredictorModel._recency_weights(
+            ["2020-01-01", "not-a-date", "2026-01-01"], halflife_days=365)
+        assert w[1] == min(w)          # unparseable -> smallest weight
+        assert w[1] < w[2]
+
+
+@pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="sklearn required")
+class TestCalibration:
+    """The reworked calibrator: selection, tail-clip, apply, and save/load
+    round-trip of the calibration params (previously untested)."""
+
+    def _data(self, n=180, feats=6):
+        rng = np.random.RandomState(1)
+        X, y = [], []
+        for i in range(n):
+            cls = i % 3            # 0,1,2 -> map to -1,0,1
+            base = [rng.normal(cls, 1.0) for _ in range(feats)]
+            X.append(base)
+            y.append(cls - 1)
+        return X, y
+
+    def test_train_with_calibrate_fits_a_calibrator_and_predicts(self):
+        X, y = self._data()
+        m = MatchPredictorModel()
+        m.train(X, y, calibrate=True)
+        assert m.calibrator is not None
+        r = m.predict(X[0])
+        probs = list(r["probabilities"].values())
+        assert abs(sum(probs) - 1.0) < 0.02
+        assert all(0.0 <= p <= 1.0 for p in probs)
+
+    def test_apply_calibration_is_identity_without_a_calibrator(self):
+        m = MatchPredictorModel()
+        m.classes = [-1, 0, 1]
+        proba = np.array([[0.2, 0.3, 0.5]])
+        assert np.allclose(m.apply_calibration(proba), proba)
+
+    def test_input_clip_bounds_the_map(self):
+        m = MatchPredictorModel()
+        m.classes = [-1, 0, 1]
+        logp = m._calib_logspace(np.array([[0.0, 0.0, 1.0]]))  # extreme 0/1 inputs
+        assert np.isfinite(logp).all()  # clipped, no -inf from log(0)
+
+    def test_calibration_params_survive_save_load(self, tmp_path):
+        X, y = self._data()
+        m = MatchPredictorModel()
+        m.train(X, y, calibrate=True)
+        p = tmp_path / "m.json"
+        m.save(str(p))
+        m2 = MatchPredictorModel()
+        assert m2.load(str(p))
+        assert m2.calib_C_ == m.calib_C_
+        assert m2.calib_shrinkage_ == m.calib_shrinkage_
+        assert m2.class_prior_ == m.class_prior_
+
+
+@pytest.mark.skipif(not SKLEARN_AVAILABLE, reason="sklearn required")
+class TestBurnInFolds:
+    """burn_in_folds trains the earliest folds but excludes them from the
+    reported score (the ratings warm-up fix) — previously untested."""
+
+    def test_burn_in_reduces_scored_folds(self):
+        rng = np.random.RandomState(2)
+        X = rng.normal(size=(300, 6))
+        y = np.array([(-1, 0, 1)[i % 3] for i in range(300)])
+        pipe = _build_sklearn_pipeline("histgb", 6, select_k=None)
+        r0 = _evaluate_pipeline(pipe, X, y, n_folds=4, burn_in_folds=0)
+        pipe2 = _build_sklearn_pipeline("histgb", 6, select_k=None)
+        r1 = _evaluate_pipeline(pipe2, X, y, n_folds=4, burn_in_folds=1)
+        assert r1["n_folds_used"] == r0["n_folds_used"] - 1

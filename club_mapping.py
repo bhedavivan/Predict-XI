@@ -41,6 +41,19 @@ LEAGUE_TO_TM_COMP = {
     "DED": "NL1", "PPL": "PO1", "BEL1": "BE1", "TUR1": "TR1", "GRE1": "GR1",
     "RUS1": "RU1", "POL1": "PL1", "AUT1": "A1", "SUI1": "C1", "DEN1": "DK1",
     "ROU1": "RO1", "BSA": "BRA1", "SCO1": "SC1", "MEX1": "MEX1",
+    # Added new-league divisions Transfermarkt actually covers (verified comp
+    # ids present in clubs.csv). Only the league-constrained exact/containment
+    # matcher runs on these — it maps just the confident names (e.g. short
+    # names contained in TM's formal name) and leaves the rest unmapped with
+    # has_squad_value=0. FIN1/IRL1/CHN1 have NO Transfermarkt counterpart and
+    # are intentionally absent (documented, not overlooked).
+    "NOR1": "NO1", "SWE1": "SE1", "JPN1": "JAP1", "MLS": "MLS1", "ARG1": "ARG1",
+    # Second/lower divisions the CC0 dataset omits — squad values for these come
+    # from transfermarkt_scraper.py (self-scraped), fed into build_club_mapping
+    # as candidates tagged with these TM codes. Every code verified by fetching
+    # the competition page and confirming its title.
+    "ELC": "GB2", "ELC2": "GB3", "ELC3": "GB4",
+    "PD2": "ES2", "SA2": "IT2", "BL2": "L2", "FL2": "FR2",
 }
 
 _DROP_TOKENS = r"\b(fc|afc|cf|sc|cd|ac|sv|ss|as|us|rc|sk|sp|ca|ec|se|cr|club|de|do|the|team)\b"
@@ -148,6 +161,42 @@ def normalize(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", s)
 
 
+def match_team_name(team: str, candidates: list) -> Optional[str]:
+    """Resolve one of our team names to a Transfermarkt club_id within a given
+    candidate list `[(club_id, tm_name), ...]`, using the safe tiered rule:
+    hand-verified manual map, then exact, then unique containment, then a strict
+    >=0.90 similarity. Returns None when nothing is confident — unmapped is
+    always safer than mis-mapped. Shared by the CC0 path and the scraper path so
+    there is exactly one matching implementation.
+    """
+    manual = MANUAL_CLUB_MAP.get(team)
+    if manual:
+        hit = [cid for cid, nm in candidates if nm == manual]
+        return hit[0] if hit else None
+    if team in KNOWN_ABSENT:
+        return None
+
+    n = normalize(team)
+    norms = [(cid, normalize(nm)) for cid, nm in candidates]
+
+    exact = [cid for cid, nn in norms if nn == n]
+    if len(exact) == 1:
+        return exact[0]
+
+    contained = [cid for cid, nn in norms if n and nn and (n in nn or nn in n)]
+    if len(contained) == 1:
+        return contained[0]
+
+    best, score = None, 0.0
+    for cid, nn in norms:
+        s = SequenceMatcher(None, n, nn).ratio()
+        if s > score:
+            best, score = cid, s
+    # 0.90 is deliberately strict: everything below it goes to a human, because
+    # the 0.7-0.85 band is exactly where the wrong matches live.
+    return best if (best and score >= 0.90) else None
+
+
 def build_club_mapping(our_teams: Dict[str, dict], tm_clubs: list) -> Dict[str, str]:
     """Return {our_team_name: transfermarkt_club_id}.
 
@@ -168,37 +217,8 @@ def build_club_mapping(our_teams: Dict[str, dict], tm_clubs: list) -> Dict[str, 
         candidates = by_comp.get(comp, [])
         if not candidates:
             continue
-
-        manual = MANUAL_CLUB_MAP.get(team)
-        if manual:
-            hit = [cid for cid, nm in candidates if nm == manual]
-            if hit:
-                mapping[team] = hit[0]
-            continue
-        if team in KNOWN_ABSENT:
-            continue
-
-        n = normalize(team)
-        norms = [(cid, nm, normalize(nm)) for cid, nm in candidates]
-
-        exact = [cid for cid, _, nn in norms if nn == n]
-        if len(exact) == 1:
-            mapping[team] = exact[0]
-            continue
-
-        contained = [cid for cid, _, nn in norms if n and nn and (n in nn or nn in n)]
-        if len(contained) == 1:
-            mapping[team] = contained[0]
-            continue
-
-        best, score = None, 0.0
-        for cid, _, nn in norms:
-            s = SequenceMatcher(None, n, nn).ratio()
-            if s > score:
-                best, score = cid, s
-        # 0.90 is deliberately strict: everything below it goes to a human,
-        # because the 0.7-0.85 band is exactly where the wrong matches live.
-        if best and score >= 0.90:
-            mapping[team] = best
+        cid = match_team_name(team, candidates)
+        if cid:
+            mapping[team] = cid
 
     return mapping

@@ -76,8 +76,55 @@ def train_model_api(league_codes: list, season: str, cv_folds: int = 5,
         msg += " Try passing --season with a completed season (e.g., --season 2023)."
         raise TrainingError(msg)
 
+    # Squad market values, same optional enrichment as the CSV path — without
+    # this the API path would build features with no squad value AND overwrite
+    # team_stats.json with squad_value_eur=None for every club, silently wiping
+    # the coverage a prior CSV train produced. Non-fatal on any failure.
+    squad_values, club_map = None, None
+    try:
+        import transfermarkt_data
+        import club_mapping
+        # Tag each team with the most-recent Transfermarkt-COVERED league it
+        # appeared in (fallback: its latest league). See the matching note in
+        # csv_data_loader.load_and_process_data — this recovers promoted/
+        # relegated clubs that have ever been top-flight.
+        from collections import defaultdict as _dd
+        _covered = set(club_mapping.LEAGUE_TO_TM_COMP)
+        _seq = _dd(list)
+        for r in rows:
+            comp = r.get("competition", "")
+            _seq[r["home_team"]].append(comp)
+            _seq[r["away_team"]].append(comp)
+        team_leagues = {}
+        for _team, _cs in _seq.items():
+            _cov = [c for c in _cs if c in _covered]
+            team_leagues[_team] = {"league": _cov[-1] if _cov else _cs[-1]}
+        club_map = club_mapping.build_club_mapping(
+            team_leagues, transfermarkt_data.load_table("clubs"))
+        squad_values = transfermarkt_data.get_index()
+    except Exception as e:  # noqa: BLE001 - optional enrichment, never fatal
+        print(f"Squad values unavailable ({type(e).__name__}: {e}); continuing without them")
+        squad_values, club_map = None, None
+
+    clubelo = None
+    try:
+        import clubelo_data
+        clubelo = clubelo_data.get_index()
+    except Exception as e:  # noqa: BLE001 - optional enrichment, never fatal
+        print(f"ClubElo unavailable ({type(e).__name__}: {e}); continuing without it")
+        clubelo = None
+
+    pstats = None
+    try:
+        import player_stats
+        pstats = player_stats.get_index()
+    except Exception as e:  # noqa: BLE001 - optional enrichment, never fatal
+        print(f"Player stats unavailable ({type(e).__name__}: {e}); continuing without them")
+        pstats = None
+
     print("Adding form features...")
-    rows = add_form_features(rows)
+    rows = add_form_features(rows, squad_values=squad_values, club_map=club_map,
+                             clubelo=clubelo, pstats=pstats)
     print(f"Features added. Total rows: {len(rows)}")
 
     save_data(rows)
@@ -98,21 +145,33 @@ def train_model_api(league_codes: list, season: str, cv_folds: int = 5,
 
     print_metrics(metrics)
     model.save()
-    api_team_stats = compute_team_stats(rows)
-    save_artifacts(metrics, api_team_stats)
+    api_team_stats = compute_team_stats(rows, squad_values=squad_values, club_map=club_map,
+                                        clubelo=clubelo, pstats=pstats)
+    save_artifacts(metrics, api_team_stats, h2h_map=getattr(add_form_features, "last_h2h", {}))
     print("\nModel saved to model.json")
     return model, metrics
 
 
 def train_model_csv(seasons: list, league_codes: list, cv_folds: int = 5,
-                    model_type: str = "ensemble"):
-    """Load data from CSV files, train model, return (model, metrics)."""
-    print("Loading match data from footballcsv/cache.footballdata...")
+                    model_type: str = "ensemble", recency_halflife_days=None,
+                    burn_in_folds: int = 1, calibrate: bool = True):
+    """Load data from CSV files, train model, return (model, metrics).
+
+    One command reproduces the shipped model: calibration is folded in
+    (`calibrate=True` fits it on the tail holdout inside train()), the coldest
+    CV fold is burned in so the reported CV number isn't dragged down by
+    warming-up ratings, and per-row dates enable optional recency weighting.
+    Leagues, dates and head-to-head are all persisted for the app + evaluate.py.
+    """
+    print("Loading match data from football-data.co.uk / footballcsv...")
 
     X, y, feature_names, team_stats = load_and_process_data(
         seasons=seasons,
         league_codes=league_codes
     )
+    leagues = getattr(load_and_process_data, "last_leagues", [])
+    dates = getattr(load_and_process_data, "last_dates", [])
+    h2h_map = getattr(load_and_process_data, "last_h2h", {})
 
     if not X or len(X) == 0:
         raise TrainingError(
@@ -122,13 +181,15 @@ def train_model_csv(seasons: list, league_codes: list, cv_folds: int = 5,
     print(f"Training samples: {len(X)}")
     print(f"Training model ({model_type})...")
     model = MatchPredictorModel(model_type=model_type)
-    metrics = model.train(X, y, feature_names=feature_names, cv_folds=cv_folds)
+    metrics = model.train(X, y, feature_names=feature_names, cv_folds=cv_folds,
+                          sample_dates=dates, recency_halflife_days=recency_halflife_days,
+                          burn_in_folds=burn_in_folds, calibrate=calibrate)
 
     print_metrics(metrics)
 
     model.save()
-    save_processed_data(X, y, feature_names, team_stats)
-    save_artifacts(metrics, team_stats)
+    save_processed_data(X, y, feature_names, team_stats, leagues=leagues, dates=dates)
+    save_artifacts(metrics, team_stats, h2h_map=h2h_map)
     print("\nModel saved to model.json")
     print("Processed data saved to processed_data.json")
     return model, metrics
@@ -165,6 +226,10 @@ def print_metrics(metrics: dict):
         print(f"Log-loss: {metrics['log_loss']:.3f}   Brier: {metrics['brier']:.3f}  (lower is better)")
     elif "log_loss" in metrics:
         print("Log-loss/Brier: unavailable (holdout probability computation failed)")
+    if metrics.get("rps") is not None:
+        print(f"RPS (holdout): {metrics['rps']:.4f}   RPS (warm CV): "
+              f"{metrics.get('cv_rps') if metrics.get('cv_rps') is not None else float('nan'):.4f}  "
+              f"(lower is better; ~0.19-0.21 is published no-odds SOTA)")
     print(f"Train samples: {metrics.get('train_samples', 0)}")
     if "cv_mean" in metrics:
         print(f"CV accuracy: {metrics['cv_mean']:.3f} (+/- {metrics['cv_std']:.3f})")
@@ -356,7 +421,9 @@ def main():
             if args.all_leagues:
                 train_codes = list(LEAGUE_CODE_MAP.keys())
             else:
-                train_codes = ["eng.1", "es.1", "de.1", "it.1", "fr.1"]
+                # Cold-start default: the strongest handful of top flights.
+                import leagues as _lg
+                train_codes = _lg.TRAIN_CSV_CODES[:5]
 
         if args.seasons:
             seasons_arg = args.seasons

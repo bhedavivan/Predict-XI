@@ -22,14 +22,15 @@ def _make_request(url: str) -> dict:
         with urllib.request.urlopen(req, timeout=15) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8") if e.fp else ""
         if e.code == 403 or e.code == 401:
             raise MissingTokenError(
                 f"API authentication failed (HTTP {e.code}). "
                 "Your API token may be invalid or expired. "
                 "Get a free token at https://www.football-data.org/client/register"
             )
-        raise RuntimeError(f"HTTP {e.code}: {e.reason} - {body}")
+        # Don't surface the raw upstream response body to the user (it can carry
+        # arbitrary provider text / internal detail); the status is enough.
+        raise RuntimeError(f"HTTP {e.code}: {e.reason}")
     except urllib.error.URLError as e:
         raise RuntimeError(f"Network error: {e.reason}. Check your internet connection.")
 

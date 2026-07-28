@@ -23,13 +23,13 @@
   <div class="matchup">
     <div>
       <div class="team-name">{{ home_team }}</div>
-      <div class="pill" style="margin-top:.45rem;"><span class="dot" style="background:var(--home)"></span>{{ home_info.tier }} &middot; Elo {{ home_info.elo|round|int }}</div>
+      <div class="pill" style="margin-top:.45rem;"><span class="dot" style="background:var(--home)"></span>{{ home_info.tier }}</div>
       <div class="muted" style="font-size:.74rem; margin-top:.3rem;">{{ home_info.league_name }}</div>
     </div>
     <div class="vs">VS</div>
     <div>
       <div class="team-name">{{ away_team }}</div>
-      <div class="pill" style="margin-top:.45rem;"><span class="dot" style="background:var(--away)"></span>{{ away_info.tier }} &middot; Elo {{ away_info.elo|round|int }}</div>
+      <div class="pill" style="margin-top:.45rem;"><span class="dot" style="background:var(--away)"></span>{{ away_info.tier }}</div>
       <div class="muted" style="font-size:.74rem; margin-top:.3rem;">{{ away_info.league_name }}</div>
     </div>
   </div>
@@ -39,6 +39,7 @@
     <div class="value" style="color: {% if prediction.prediction=='Home Win' %}var(--home){% elif prediction.prediction=='Away Win' %}var(--away){% else %}var(--draw){% endif %};">
       {{ prediction.prediction }}</div>
     <span class="pill" style="margin-top:.4rem;">{{ confidence_label }} confidence &middot; {{ (top_prob*100)|round|int }}%</span>
+    {% if live_adjusted %}<span class="pill" style="margin-top:.4rem; margin-left:.4rem;">&#9877; adjusted for team news</span>{% endif %}
     {% if prediction.threshold_applied %}
     <p class="rule-note">
       Highest single probability is <strong>{{ prediction.argmax_prediction }}</strong>, but a draw is
@@ -65,10 +66,41 @@
     {% endfor %}
   </div>
 
-  <p class="muted" style="margin-top:1.1rem; font-size:.82rem;">
-    Elo edge: <strong style="color:var(--text)">{{ home_team if elo_diff>=0 else away_team }}</strong>
-    by {{ elo_diff|abs|round|int }} points{% if cross_league %} &middot; cross-league matchup{% endif %}.
-  </p>
+  {% if cross_league %}
+  <p class="muted" style="margin-top:1.1rem; font-size:.82rem;">Cross-league matchup.</p>
+  {% endif %}
+
+  {% if explanation %}
+  <div class="why">
+    <div class="why-head">Why this prediction</div>
+    <div class="why-grid">
+      <div class="why-row why-hdr"><span>Driver</span><span>{{ home_team }}</span><span>{{ away_team }}</span></div>
+      {% for d in explanation.drivers %}
+      <div class="why-row">
+        <span class="why-label">{{ d.label }}</span>
+        <span class="why-val {% if d.favours=='home' %}why-win{% endif %}">{{ d.home }}</span>
+        <span class="why-val {% if d.favours=='away' %}why-win{% endif %}">{{ d.away }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="why-notes">
+      {% if explanation.h2h.matches %}
+      <span class="why-chip">H2H (last {{ explanation.h2h.matches }}): {{ explanation.h2h.home_wins }}W&ndash;{{ explanation.h2h.draws }}D&ndash;{{ explanation.h2h.away_wins }}L
+        <span class="muted">for the home side</span></span>
+      {% else %}
+      <span class="why-chip muted">No recent head-to-head</span>
+      {% endif %}
+      <span class="why-chip">Dixon-Coles scoreline model: H {{ (explanation.dc_probs.home*100)|round|int }}% &middot;
+        D {{ (explanation.dc_probs.draw*100)|round|int }}% &middot; A {{ (explanation.dc_probs.away*100)|round|int }}%</span>
+      {% if not explanation.has_squad_value %}
+      <span class="why-chip muted">Squad value unavailable for one/both clubs</span>
+      {% endif %}
+    </div>
+    <p class="muted" style="margin-top:.7rem; font-size:.76rem;">
+      Highlighted value favours that side. These are the actual inputs the model reads — no bookmaker
+      odds are used (predictions are the model's own).</p>
+  </div>
+  {% endif %}
 </div>
 {% endif %}
 
@@ -129,7 +161,7 @@
 
 {% block scripts %}
 <script>
-var TEAMS = {{ teams_json|safe }};
+var TEAMS = {{ teams|tojson }};
 var homeLeagueSel = document.getElementById('home-league'), awayLeagueSel = document.getElementById('away-league');
 var homeSel = document.getElementById('home'), awaySel = document.getElementById('away');
 var swapBtn = document.getElementById('swap'), randBtn = document.getElementById('rand'), submitBtn = document.getElementById('submit-btn');
@@ -139,7 +171,8 @@ var preHomeLeague = {{ sel_home_league|tojson }}, preAwayLeague = {{ sel_away_le
 function findTeam(name){ for (var i=0;i<TEAMS.length;i++){ if (TEAMS[i].name===name) return TEAMS[i]; } return null; }
 
 function opt(t, selected){
-  var o = document.createElement('option'); o.value = t.name; o.textContent = t.name + ' (Elo ' + Math.round(t.elo) + ')';
+  // value stays the team_stats key (the lookup id); label shows the pretty name.
+  var o = document.createElement('option'); o.value = t.name; o.textContent = t.display || t.name;
   if (selected) o.selected = true; return o;
 }
 
@@ -160,7 +193,7 @@ function updateButtons(){
 
 function badge(sel, el){
   var t = findTeam(sel.value);
-  el.textContent = t ? (t.tier + ' · Elo ' + Math.round(t.elo) + ' · ' + t.league_name) : '';
+  el.textContent = t ? (t.tier + ' · ' + t.league_name) : '';
 }
 
 function refreshBadges(){

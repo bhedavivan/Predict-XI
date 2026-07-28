@@ -114,6 +114,45 @@ TEAM_NAME_ALIASES = {
 }
 
 
+# Pretty display names for our abbreviated training-data keys, so the SAME club
+# reads the same on every page (Predict/Simulate/Fixtures). Verified by hand;
+# anything not listed falls back to its key (already clean, e.g. "Liverpool",
+# "Arsenal", "Bayern Munich"), so this only needs the abbreviated/odd forms.
+# The key stays the lookup id everywhere; only the label changes.
+PRETTY_NAME = {
+    # England
+    "Man City": "Manchester City", "Man United": "Manchester United",
+    "Nott'm Forest": "Nottingham Forest", "Wolves": "Wolverhampton",
+    "West Brom": "West Bromwich Albion", "Sheffield Weds": "Sheffield Wednesday",
+    "QPR": "Queens Park Rangers", "Bristol Rvs": "Bristol Rovers",
+    # Spain
+    "Ath Madrid": "Atlético Madrid", "Ath Bilbao": "Athletic Bilbao",
+    "Espanol": "Espanyol", "Vallecano": "Rayo Vallecano",
+    "La Coruna": "Deportivo La Coruña", "Sociedad": "Real Sociedad",
+    "Betis": "Real Betis", "Sevilla": "Sevilla", "Celta": "Celta Vigo",
+    # Germany
+    "M'gladbach": "Borussia Mönchengladbach", "Ein Frankfurt": "Eintracht Frankfurt",
+    "FC Koln": "FC Köln", "Werder Bremen": "Werder Bremen", "Nurnberg": "Nürnberg",
+    "Fortuna Dusseldorf": "Fortuna Düsseldorf",
+    # France
+    "Paris SG": "Paris Saint-Germain", "St Etienne": "Saint-Étienne",
+    # Netherlands / Portugal / Belgium
+    "For Sittard": "Fortuna Sittard", "Sp Lisbon": "Sporting CP",
+    "St Truiden": "Sint-Truiden", "St. Gilloise": "Union Saint-Gilloise",
+    # Brazil
+    "Botafogo RJ": "Botafogo", "Atletico-MG": "Atlético Mineiro",
+    "Athletico-PR": "Athletico Paranaense", "Flamengo RJ": "Flamengo",
+    "Vasco": "Vasco da Gama", "Gremio": "Grêmio", "Sao Paulo": "São Paulo",
+    "Chapecoense-SC": "Chapecoense",
+}
+
+
+def team_display_name(key: str) -> str:
+    """Canonical display label for a team_stats key — the same string on every
+    page. Falls back to the key (already the common short name)."""
+    return PRETTY_NAME.get(key, key or "")
+
+
 def resolve_team_name(name: str, team_stats: dict) -> "str | None":
     """Best-effort resolution of an external (e.g. live-API) team name to a
     team_stats.json key. Returns None if genuinely unresolved — callers must

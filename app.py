@@ -19,30 +19,14 @@ os.chdir(SCRIPT_DIR)
 from config import LEAGUE_CODES
 from csv_data_loader import LEAGUE_CODE_MAP
 from api_client import fetch_upcoming_matches, MissingTokenError
-from data_processor import prepare_prediction_features, load_data, compute_team_stats
+from data_processor import prepare_prediction_features, load_data, compute_team_stats, explain_prediction
 from model_trainer import MatchPredictorModel
-from team_aliases import resolve_team_name
+from team_aliases import resolve_team_name, team_display_name
+import leagues
 
 app = Flask(__name__)
 app.jinja_env.filters['urlencode'] = lambda s: urllib.parse.quote(str(s), safe='')
 
-
-# Human-readable names for every competition code used in training/predictions.
-LEAGUE_NAMES = {
-    "PL": "Premier League", "PD": "La Liga", "BL1": "Bundesliga", "SA": "Serie A",
-    "FL1": "Ligue 1", "DED": "Eredivisie", "PPL": "Primeira Liga",
-    "BEL1": "Belgian Pro League", "TUR1": "Super Lig", "GRE1": "Greek Super League",
-    "RUS1": "Russian Premier League", "POL1": "Ekstraklasa", "AUT1": "Austrian Bundesliga",
-    "SUI1": "Swiss Super League", "DEN1": "Danish Superliga", "ROU1": "Liga I",
-    "MEX1": "Liga MX", "SCO1": "Scottish Premiership", "SCO2": "Scottish Championship",
-    "SCO3": "Scottish League One", "SCO4": "Scottish League Two",
-    "ELC": "Championship", "BL2": "2. Bundesliga", "PD2": "Segunda Division",
-    "SA2": "Serie B", "FL2": "Ligue 2",
-    # Trained-on competitions that had no display name, so the per-league
-    # dashboard table was showing raw codes for them.
-    "ELC2": "League One", "ELC3": "League Two", "ENG5": "National League",
-    "BSA": "Brasileirao Serie A",
-}
 
 # ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -79,7 +63,11 @@ def build_team_stats():
 
 
 def model_exists():
-    return os.path.exists(os.path.join(SCRIPT_DIR, "model.json"))
+    # Require BOTH the metadata and the pipeline: model.json alone doesn't make
+    # a usable model (load() returns False without the .joblib), so checking
+    # only the json disagreed with get_model() when the pipeline was missing.
+    return (os.path.exists(os.path.join(SCRIPT_DIR, "model.json"))
+            and os.path.exists(os.path.join(SCRIPT_DIR, "model.joblib")))
 
 
 def get_model():
@@ -98,20 +86,25 @@ def team_tier(elo):
 
 
 def league_name(code):
-    return LEAGUE_NAMES.get(code, code or "Other")
+    return leagues.display_name(code)
 
 
 def team_list(stats):
-    """Sorted teams with Elo, tier and league for the chooser."""
+    """Teams for the chooser — TOP-FLIGHT leagues only, each with Elo, tier,
+    league and a canonical display name. Sorted by Elo (valid within the app's
+    grouping; leagues themselves are strength-ordered by league_options)."""
     out = []
     for name, s in stats.items():
         if not name or s.get("matches_played", 0) <= 0:
             continue
-        elo = s.get("elo", 1500)
         lg = s.get("league", "")
-        out.append({"name": name, "elo": round(elo, 1), "tier": team_tier(elo),
+        if lg not in leagues.TOP_FLIGHT_CODES:
+            continue   # hide second/lower divisions from the whole app
+        elo = s.get("elo", 1500)
+        out.append({"name": name, "display": team_display_name(name),
+                    "elo": round(elo, 1), "tier": team_tier(elo),
                     "league": lg, "league_name": league_name(lg)})
-    out.sort(key=lambda t: (-t["elo"], t["name"]))
+    out.sort(key=lambda t: (-t["elo"], t["display"]))
     return out
 
 
@@ -124,12 +117,13 @@ def team_info(stats, name):
 
 
 def league_options(teams):
-    """Distinct (code, name) leagues present, sorted by name."""
+    """Distinct (code, name) leagues present, ordered by STRENGTH rank
+    (Premier League first) rather than alphabetically."""
     seen = {}
     for t in teams:
         if t["league"]:
             seen[t["league"]] = t["league_name"]
-    return sorted(seen.items(), key=lambda kv: kv[1])
+    return sorted(seen.items(), key=lambda kv: leagues.league_rank(kv[0]))
 
 
 # ─── Routes ───────────────────────────────────────────────────────────────
@@ -146,8 +140,7 @@ def dashboard():
         active="dashboard",
         metrics=metrics,
         evaluation=evaluation,
-        league_names=LEAGUE_NAMES,
-        n_train_leagues=len(LEAGUE_CODE_MAP),
+        n_train_leagues=len(leagues.TOP_FLIGHT_CODES),
         error=request.args.get("error", ""),
     )
 
@@ -176,7 +169,6 @@ def predict():
 
     common = dict(
         teams=teams,
-        teams_json=json.dumps(teams),
         league_opts=league_options(teams),
         sel_home=home_team, sel_away=away_team,
         sel_home_league=sel_home_league, sel_away_league=sel_away_league,
@@ -193,8 +185,35 @@ def predict():
         common["model_exists"] = False
         return render_template("predict.html", active="predict", prediction=None, **common)
 
-    features = prepare_prediction_features(home_lookup, away_lookup, stats, build_h2h_map())
-    result = model.predict(features)
+    # Guard the feature-build + predict: a stale artifact (model.joblib trained
+    # with a different feature count than the current data_processor produces)
+    # would otherwise raise a raw 500. Show a clear message instead.
+    try:
+        features = prepare_prediction_features(home_lookup, away_lookup, stats, build_h2h_map())
+        result = model.predict(features)
+    except Exception as e:
+        common["error"] = (f"Prediction failed ({type(e).__name__}). The shipped model and the "
+                           f"feature builder may be out of sync — retrain with "
+                           f"`python main.py --all-seasons --all-leagues --force-retrain`.")
+        return render_template("predict.html", active="predict", prediction=None, **common)
+
+    # Live team-news nudge (serving-only, never trained): if a player-data
+    # source is configured (a bring-your-own JSON file or an API token), shift
+    # the forecast for injured/suspended key players. Fully inert otherwise, and
+    # wrapped so it can never break a prediction.
+    live_adjusted = False
+    try:
+        from player_data import get_source, live_availability_adjustment
+        src = get_source()
+        if src is not None:
+            today = datetime.utcnow().strftime("%Y-%m-%d")
+            ha, aa = src.availability(home_lookup, today), src.availability(away_lookup, today)
+            adj = live_availability_adjustment(ha, aa, result["probabilities"])
+            if adj != result["probabilities"]:
+                result["probabilities"] = adj
+                live_adjusted = True
+    except Exception:
+        pass
 
     probs = result["probabilities"]
     p_home = probs.get("Home Win", 0.0)
@@ -206,9 +225,18 @@ def predict():
     h_info = team_info(stats, home_lookup)
     a_info = team_info(stats, away_lookup)
 
+    # "Why" drivers — the model reads these exact quantities, so surfacing them
+    # turns a bare percentage into an argument (now that the probabilities are
+    # honestly calibrated, showing the reasoning is worth a lot).
+    try:
+        explanation = explain_prediction(home_lookup, away_lookup, stats, build_h2h_map())
+    except Exception:
+        explanation = None
+
     return render_template(
         "predict.html", active="predict", prediction=result,
-        home_team=home_team, away_team=away_team,
+        home_team=team_display_name(home_lookup) if h_info["known"] else home_team,
+        away_team=team_display_name(away_lookup) if a_info["known"] else away_team,
         p_home=p_home, p_draw=p_draw, p_away=p_away,
         top_prob=top_prob, confidence_label=conf,
         home_info=h_info, away_info=a_info,
@@ -217,8 +245,87 @@ def predict():
         cross_league=h_info["league"] and a_info["league"] and h_info["league"] != a_info["league"],
         bars=[("Home Win", p_home, "var(--home)"), ("Draw", p_draw, "var(--draw)"),
               ("Away Win", p_away, "var(--away)")],
+        explanation=explanation,
+        live_adjusted=live_adjusted,
         **common,
     )
+
+
+@app.route("/simulate")
+def simulate():
+    """Monte Carlo season projection. For leagues the live API covers, it
+    projects the REAL remaining fixtures on top of the ACTUAL current standings
+    (so the numbers move as matches are played — like the online supercomputers);
+    otherwise it plays a hypothetical full season from current ratings. Either
+    way it aggregates the model's calibrated match probabilities — it does not
+    change any single match's forecast."""
+    stats = build_team_stats()
+    teams = team_list(stats)
+    league_opts = league_options(teams)   # NB: don't shadow the `leagues` module
+    league_code = request.args.get("league", "").strip()
+    rows, positions = [], []
+    err, lname, mode, as_of, remaining, live = "", "", "", "", 0, False
+    rules, n_sims_used = {}, 0
+    if league_code:
+        lname = league_name(league_code)
+        try:
+            import numpy as np
+            from simulate_season import simulate_league
+            # A fresh seed (the Re-simulate button) lets the user watch the Monte
+            # Carlo vary; the default is deterministic so a plain reload is stable.
+            try:
+                seed = int(request.args.get("seed", "42")) % (2**31)
+            except ValueError:
+                seed = 42
+            out = simulate_league(league_code, seed=seed)
+            mode = out.get("mode", "")
+            live = mode == "live"
+            as_of = out.get("as_of") or ""
+            remaining = out.get("remaining", 0)
+            rules = out.get("rules", {})
+            n_sims_used = out.get("n_sims", 0)
+            title = np.asarray(out["title_prob"])
+            meanpos = np.asarray(out["mean_position"])
+            order = list(np.argsort(-title + meanpos * 1e-6))
+            posmat = np.asarray(out["position_matrix"])
+            n = len(out["teams"])
+            positions = list(range(1, n + 1))
+            cur_pts, cur_pos = out.get("current_points"), out.get("current_position")
+
+            def pct(arr, i):
+                return round(float(out[arr][i]) * 100, 1)
+
+            def ci(arr, i):
+                return round(float(out[arr][i]) * 100 * 1.96, 1)   # ~95% half-width
+
+            for i in order:
+                rows.append({
+                    "team": team_display_name(out["teams"][i]),
+                    "now_pts": (int(cur_pts[i]) if cur_pts else None),
+                    "now_pos": (int(cur_pos[i]) if cur_pos else None),
+                    "exp_pts": round(float(out["expected_points"][i]), 1),
+                    "p10": int(round(float(out["points_p10"][i]))),
+                    "p90": int(round(float(out["points_p90"][i]))),
+                    "title": pct("title_prob", i), "title_ci": ci("title_se", i),
+                    "ucl": pct("ucl_prob", i), "ucl_ci": ci("ucl_se", i),
+                    "uel": pct("uel_prob", i),
+                    "playoff": pct("playoff_prob", i),
+                    "releg": pct("relegation_prob", i), "releg_ci": ci("relegation_se", i),
+                    "avg_pos": round(float(out["mean_position"][i]), 1),
+                    "exp_gf": round(float(out["expected_gf"][i]), 1),
+                    "exp_ga": round(float(out["expected_ga"][i]), 1),
+                    "exp_gd": round(float(out["expected_gd"][i]), 1),
+                    "btts": pct("btts_pct", i), "over25": pct("over25_pct", i),
+                    "cells": [round(float(posmat[i][j]) * 100, 1) for j in range(n)],
+                })
+        except SystemExit as e:
+            err = str(e)
+        except Exception as e:
+            err = f"Simulation failed: {e}"
+    return render_template("simulate.html", active="simulate", leagues=league_opts,
+                           selected=league_code, league_name=lname, rows=rows,
+                           positions=positions, mode=mode, live=live, as_of=as_of,
+                           remaining=remaining, rules=rules, n_sims=n_sims_used, error=err)
 
 
 @app.route("/fixtures")
@@ -241,15 +348,14 @@ def fixtures():
 
     stats = build_team_stats()
 
-    def _predict_name(team):
+    def _resolve(team):
         """The live API uses official long names ('Manchester United FC')
         that don't match the training data's short names ('Man United').
-        Resolve to whichever name our stats actually recognize, trying the
-        official name then the API's shortName, so the Predict link lands on
-        real stats instead of silently falling back to neutral defaults."""
+        Resolve to whichever name our stats recognize (official then shortName),
+        so the Predict link lands on real stats, not neutral defaults, and the
+        DISPLAYED name matches the rest of the app."""
         name = team.get("name", "")
-        resolved = resolve_team_name(name, stats) or resolve_team_name(team.get("shortName", ""), stats)
-        return resolved or name
+        return resolve_team_name(name, stats) or resolve_team_name(team.get("shortName", ""), stats) or name
 
     fixtures_list = []
     for m in raw:
@@ -259,11 +365,14 @@ def fixtures():
         except (ValueError, AttributeError):
             pass
         home, away = m.get("homeTeam", {}), m.get("awayTeam", {})
+        h_res, a_res = _resolve(home), _resolve(away)
         fixtures_list.append({
-            "home_team": home.get("name", "Unknown"),
-            "away_team": away.get("name", "Unknown"),
-            "home_predict": _predict_name(home),
-            "away_predict": _predict_name(away),
+            # Show the canonical name (resolved → pretty) so a club reads the
+            # same on Fixtures as on Predict/Simulate.
+            "home_team": team_display_name(h_res) if h_res in stats else h_res,
+            "away_team": team_display_name(a_res) if a_res in stats else a_res,
+            "home_predict": h_res,
+            "away_predict": a_res,
             "date": date_str,
         })
 
@@ -277,6 +386,17 @@ def fixtures():
 @app.route("/train", methods=["POST"])
 def train():
     from main import train_model_csv, TrainingError
+    # This endpoint OVERWRITES the shipped model/artifacts, so it must never be
+    # reachable once a model exists: the app ships pretrained, retraining is a
+    # deliberate offline step (`python main.py --all-seasons --all-leagues
+    # --force-retrain`), and an unauthenticated POST that clobbers the ensemble
+    # (and hammers upstream feeds on the single dev thread) is both a footgun
+    # and a DoS vector. Only the genuine cold-start (no model) may bootstrap.
+    if model_exists():
+        return render_template("training.html", active="", success="", accuracy=0,
+            test_samples=0, train_samples=0,
+            error="A trained model already ships with the app. Retrain offline with "
+                  "`python main.py --all-seasons --all-leagues --force-retrain`."), 403
     top5 = ["eng.1", "es.1", "de.1", "it.1", "fr.1"]
     seasons = ["2021-22", "2022-23", "2023-24"]
     try:
@@ -293,5 +413,11 @@ def train():
 
 
 if __name__ == "__main__":
-    print("Starting Predict-XI web UI  ->  http://localhost:5000")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    # debug/host are env-gated: the Werkzeug debugger is a remote-code-execution
+    # console, so it must NOT default to on and must NOT bind to 0.0.0.0. Opt in
+    # explicitly for local debugging (FLASK_DEBUG=1); default is loopback only.
+    host = os.getenv("HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", "5000"))
+    debug = os.getenv("FLASK_DEBUG") == "1"
+    print(f"Starting Predict-XI web UI  ->  http://{host}:{port}")
+    app.run(host=host, port=port, debug=debug)

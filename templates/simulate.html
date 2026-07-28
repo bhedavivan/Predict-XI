@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Predict-XI &middot; Simulate{% endblock %}
+{% block content %}
+<div class="hero"><h1>Season simulator</h1>
+  <p>Run the rest of the season tens of thousands of times from the model's calibrated match
+     probabilities &mdash; sampling real scorelines &mdash; and read off the title, European and relegation
+     odds, the way the Opta and FiveThirtyEight "supercomputers" do.</p></div>
+
+{% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+
+<div class="card">
+  <form method="GET" action="/simulate" class="chooser" style="grid-template-columns:1fr auto;">
+    <div>
+      <label for="league">League</label>
+      <select id="league" name="league" onchange="this.form.submit()">
+        <option value="" disabled {% if not selected %}selected{% endif %}>Select a league&hellip;</option>
+        {% for code, lname in leagues %}
+          <option value="{{ code }}" {% if code==selected %}selected{% endif %}>{{ lname }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="display:flex; align-items:flex-end;">
+      <button class="btn" type="submit" style="width:auto; padding:.65rem 1.2rem;">Simulate &rarr;</button>
+    </div>
+  </form>
+</div>
+
+{% if rows %}
+<div class="card">
+  <h2>{{ league_name }}
+    {% if live %}<span class="tag">Live projection</span>
+    {% else %}<span class="tag">Hypothetical</span>{% endif %}
+    <span class="tag">{{ "{:,}".format(n_sims) }} seasons</span>
+    <button type="button" class="resim" title="Roll a fresh set of simulations"
+      onclick="location.href='/simulate?league={{ selected|urlencode }}&seed='+Math.floor(Math.random()*2000000000)">
+      &#8635; Re-simulate</button>
+  </h2>
+  <p class="muted" style="margin:-.4rem 0 1.1rem; font-size:.82rem;">
+    {% if live %}
+      Projecting the <strong>{{ remaining }}</strong> remaining fixtures on top of the actual current
+      table (standings as of {{ as_of }}). These odds move as real matches are played &mdash; they don't
+      change on reload, because a projection shouldn't jitter randomly, only when the season does.
+    {% else %}
+      This league isn't on the live-fixtures feed, so this plays a full home-and-away season from every
+      side's current rating (from 0&ndash;0) &mdash; a strength ranking, not a live projection.
+    {% endif %}
+  </p>
+
+  <div class="sim-scroll">
+    <table class="sim-proj">
+      <thead><tr>
+        {% if live %}<th class="c">#</th>{% endif %}
+        <th class="l">Team</th>
+        {% if live %}<th class="r">Pts</th>{% endif %}
+        <th class="r">Proj pts</th>
+        <th class="r">Title</th>
+        <th class="r" title="Top places qualifying for the confederation's top competition (approx, by league position)">UCL</th>
+        {% if rules.uel_slots %}<th class="r" title="Secondary European qualification (approx)">UEL</th>{% endif %}
+        {% if rules.playoff_slots %}<th class="r">Playoff</th>{% endif %}
+        <th class="r">Releg</th>
+        <th class="r">Avg</th>
+      </tr></thead>
+      <tbody>
+      {% for r in rows %}
+      <tr>
+        {% if live %}<td class="c muted">{{ r.now_pos }}</td>{% endif %}
+        <td class="l">{{ r.team }}</td>
+        {% if live %}<td class="r muted">{{ r.now_pts }}</td>{% endif %}
+        <td class="r"><strong>{{ r.exp_pts }}</strong> <span class="range">{{ r.p10 }}&ndash;{{ r.p90 }}</span></td>
+        <td class="r"><span class="lt-bar" style="width:{{ (r.title*0.5)|round(0)|int }}px"></span>{{ r.title }}%{% if r.title_ci and r.title > 0 and r.title < 100 %}<span class="ci">&plusmn;{{ r.title_ci }}</span>{% endif %}</td>
+        <td class="r">{{ r.ucl }}%</td>
+        {% if rules.uel_slots %}<td class="r">{{ r.uel }}%</td>{% endif %}
+        {% if rules.playoff_slots %}<td class="r">{{ r.playoff }}%</td>{% endif %}
+        <td class="r {% if r.releg >= 25 %}rel-hi{% endif %}">{{ r.releg }}%</td>
+        <td class="r muted">{{ r.avg_pos }}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted" style="margin-top:.9rem; font-size:.78rem;">
+    Percentages carry a &plusmn; Monte Carlo margin (95%); European tiers are by final league position
+    (an approximation &mdash; cup-winner routes and coefficient reshuffles aren't modelled).</p>
+</div>
+
+<div class="card">
+  <h2>Goals &amp; entertainment <span class="tag">projected season</span></h2>
+  <p class="muted" style="margin:-.4rem 0 1rem; font-size:.82rem;">
+    From the sampled scorelines: projected final goals for / against / difference, and how often each
+    club's matches see both teams score or go over 2.5 goals.</p>
+  <div class="sim-scroll">
+    <table class="sim-proj">
+      <thead><tr><th class="l">Team</th><th class="r">Proj GF</th><th class="r">Proj GA</th>
+        <th class="r">Proj GD</th><th class="r">BTTS</th><th class="r">Over 2.5</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+      <tr><td class="l">{{ r.team }}</td>
+        <td class="r">{{ r.exp_gf }}</td><td class="r">{{ r.exp_ga }}</td>
+        <td class="r">{{ '+' if r.exp_gd > 0 else '' }}{{ r.exp_gd }}</td>
+        <td class="r">{{ r.btts }}%</td><td class="r">{{ r.over25 }}%</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Where each team finishes <span class="tag">Position probability</span></h2>
+  <p class="muted" style="margin:-.4rem 0 1rem; font-size:.82rem;">
+    Share of the {{ "{:,}".format(n_sims) }} simulations in which a club finishes in each position.
+    Darker = more likely; blanks are under 0.5%. The bright diagonal is how tightly the model pins each
+    side's finish.</p>
+  <div class="sim-scroll">
+    <table class="heatmap">
+      <thead>
+        <tr><th class="hm-team">Team</th>
+          {% for p in positions %}<th>{{ p }}</th>{% endfor %}</tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td class="hm-team">{{ r.team }}</td>
+          {% for c in r.cells %}
+            {% if c < 0.5 %}<td class="hm hm0"></td>
+            {% elif c < 2 %}<td class="hm hm1" title="{{ r.team }} — {{ loop.index }}: {{ c }}%">{{ c|round(0)|int }}</td>
+            {% elif c < 5 %}<td class="hm hm2" title="{{ r.team }} — {{ loop.index }}: {{ c }}%">{{ c|round(0)|int }}</td>
+            {% elif c < 10 %}<td class="hm hm3" title="{{ r.team }} — {{ loop.index }}: {{ c }}%">{{ c|round(0)|int }}</td>
+            {% elif c < 20 %}<td class="hm hm4" title="{{ r.team }} — {{ loop.index }}: {{ c }}%">{{ c|round(0)|int }}</td>
+            {% elif c < 35 %}<td class="hm hm5" title="{{ r.team }} — {{ loop.index }}: {{ c }}%">{{ c|round(0)|int }}</td>
+            {% elif c < 60 %}<td class="hm hm6" title="{{ r.team }} — {{ loop.index }}: {{ c }}%">{{ c|round(0)|int }}</td>
+            {% else %}<td class="hm hm7" title="{{ r.team }} — {{ loop.index }}: {{ c }}%">{{ c|round(0)|int }}</td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="hm-legend"><span>Less likely</span>
+    <i class="hm1"></i><i class="hm2"></i><i class="hm3"></i><i class="hm4"></i>
+    <i class="hm5"></i><i class="hm6"></i><i class="hm7"></i><span>More likely</span></div>
+  <p class="muted" style="margin-top:1rem; font-size:.8rem;">
+    A Monte Carlo projection built on the model's per-match probabilities &mdash; it aggregates them
+    across a season, it doesn't change any single-match prediction. Each fixture's scoreline is sampled
+    from the Dixon-Coles grid conditional on the model's calibrated result, so the table ranks on points
+    &rarr; goal difference &rarr; goals-for like a real one (head-to-head tie-breaks are approximated).</p>
+</div>
+{% elif selected and not error %}
+<div class="card"><p class="muted">No teams with data for this league.</p></div>
+{% endif %}
+{% endblock %}

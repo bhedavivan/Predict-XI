@@ -50,16 +50,24 @@ def _poisson_pmf(k: int, lam: float) -> float:
 
 
 def _tau(i: int, j: int, lam_home: float, lam_away: float, rho: float) -> float:
-    """Dixon-Coles correlation adjustment for low-scoring cells."""
+    """Dixon-Coles correlation adjustment for low-scoring cells.
+
+    Floored at 0: with rho<0 the (0,1)/(1,0) terms (1 + lam*rho) go negative
+    once lam exceeds 1/|rho| (=10 at rho=-0.1), which would make a scoreline
+    cell's probability negative. In practice clipped attack/defense keep
+    expected goals under ~9.4 so this never triggers, but flooring makes the
+    invariant explicit rather than relying on a downstream max(p, 0)."""
     if i == 0 and j == 0:
-        return 1 - lam_home * lam_away * rho
-    if i == 0 and j == 1:
-        return 1 + lam_home * rho
-    if i == 1 and j == 0:
-        return 1 + lam_away * rho
-    if i == 1 and j == 1:
-        return 1 - rho
-    return 1.0
+        t = 1 - lam_home * lam_away * rho
+    elif i == 0 and j == 1:
+        t = 1 + lam_home * rho
+    elif i == 1 and j == 0:
+        t = 1 + lam_away * rho
+    elif i == 1 and j == 1:
+        t = 1 - rho
+    else:
+        return 1.0
+    return max(t, 0.0)
 
 
 def expected_goals(home_attack: float, home_defense: float,

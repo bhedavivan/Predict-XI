@@ -19,30 +19,9 @@ load_env()
 API_TOKEN = os.getenv("API_TOKEN", "")
 BASE_URL = "https://api.football-data.org/v4"
 
-# All 12 leagues from Predict-XI plus additional major leagues
-LEAGUE_CODES = {
-    "PL": "Premier League",
-    "SA": "Serie A",
-    "BL1": "Bundesliga",
-    "PD": "Primera Division",
-    "FL1": "Ligue 1",
-    "DED": "Eredivisie",
-    "PPL": "Primeira Liga",
-    "ELC": "Championship",
-    "BSA": "Campeonato Brasileiro Série A",
-    "CL": "UEFA Champions League",
-    "EC": "European Championship",
-    "WC": "FIFA World Cup",
-    "FL2": "Ligue 2",
-    "PD2": "Segunda Division",
-    "BL2": "2. Bundesliga",
-    "ELC2": "League One",
-    "ELC3": "League Two",
-    "SA2": "Serie B",
-    "PPL2": "Liga Portugal 2",
-    "DED2": "Eerste Divisie",
-    # NOTE: Brazilian Serie B (BSA2) is deliberately absent. The
-    # football-data.co.uk BRA feed carries Serie A only, so there is no
-    # training data for Serie B — listing it would offer fixtures the model
-    # can only answer with neutral defaults. Serie A (BSA) is supported.
-}
+# The Fixtures dropdown / live-API allow-list = the top-flight leagues the free
+# football-data.org tier serves, in strength order, plus the cups. Sourced from
+# the canonical registry (leagues.py) so names never diverge from the rest of the
+# app (this is where "La Liga" vs "Primera Division" used to disagree).
+from leagues import fixtures_leagues
+LEAGUE_CODES = fixtures_leagues()

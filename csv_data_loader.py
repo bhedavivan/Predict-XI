@@ -9,6 +9,7 @@ import csv
 import io
 import json
 import os
+import re
 import time
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Tuple
@@ -27,8 +28,17 @@ CSV_BASE_URL = "https://raw.githubusercontent.com/footballcsv/cache.footballdata
 FD_COUK_BASE_URL = "https://www.football-data.co.uk/mmz4281"
 
 # Available seasons. 2024-25/2025-26 only come from football-data.co.uk —
-# the footballcsv mirror 404s on both for every league.
+# the footballcsv mirror 404s on both for every league. Extended back to
+# 2012-13 (the earliest the "new leagues" feed carries) to roughly double the
+# match count and, just as importantly, give Elo / Dixon-Coles ratings a long
+# warm-up so they are well-formed by the recent holdout the app is scored on.
+# A season/league combo a source doesn't cover just yields no matches (the
+# loader falls through and returns []), so extending the range never corrupts
+# data — it only adds what exists. Recency weighting (see model_trainer)
+# down-weights the older rows so they help rating warm-up and coverage without
+# letting a 2013 regime dominate a 2026 prediction.
 AVAILABLE_SEASONS = [
+    "2012-13", "2013-14", "2014-15", "2015-16", "2016-17", "2017-18", "2018-19",
     "2019-20", "2020-21", "2021-22", "2022-23", "2023-24", "2024-25", "2025-26"
 ]
 
@@ -80,11 +90,39 @@ FD_COUK_NEW_BASE_URL = "https://www.football-data.co.uk/new"
 FD_COUK_NEW_LEAGUE_MAP = {
     "ru.1": "RUS", "pl.1": "POL", "at.1": "AUT", "ch.1": "SWZ",
     "dk.1": "DNK", "ro.1": "ROU", "mx.1": "MEX", "br.1": "BRA",
+    # Added leagues (all verified 200 OK, all calendar-year — see below).
+    "no.1": "NOR",   # Eliteserien
+    "se.1": "SWE",   # Allsvenskan
+    "fi.1": "FIN",   # Veikkausliiga
+    "ie.1": "IRL",   # League of Ireland Premier Division
+    "us.1": "USA",   # MLS
+    "jp.1": "JPN",   # J1 League
+    "cn.1": "CHN",   # Chinese Super League
+    "ar.1": "ARG",   # Argentine Primera (file pools Liga Profesional + Copa de la Liga)
 }
 
-# Leagues played on a calendar-year season (Feb-Dec) rather than Europe's
-# split Aug-May year, so this feed labels them "2026" not "2025/2026".
-CALENDAR_YEAR_LEAGUES = {"br.1"}
+# Leagues whose season is NOT Europe's split Aug-May year. For these the feed
+# labels seasons by (mostly) a single calendar year. VERIFIED per league by
+# inspecting the feed's Season column; a calendar-year league MISSING from this
+# set silently ingests zero matches (recurring-bug shape), so every one added
+# above is listed here. NB: matching for these leagues is by TRAILING YEAR (see
+# parse_fd_couk_new_csv), not exact string — Argentina in particular mixes
+# calendar labels ("2020") with legacy split-year labels ("2016/2017") in the
+# SAME file, and trailing-year matching captures both without double-counting
+# (each Season string's trailing year maps it to exactly one of our slots).
+CALENDAR_YEAR_LEAGUES = {
+    "br.1", "no.1", "se.1", "fi.1", "ie.1", "us.1", "jp.1", "cn.1", "ar.1",
+}
+
+# Hand-verified name canonicalization for the new-leagues feed, which ships a
+# few clubs under two spellings (case / hyphen), splitting one club's Elo/form
+# history across two team_stats keys. Explicit and verified — NOT fuzzy
+# matching (which this project rejects). Extend only after confirming a real
+# duplicate in team_stats.json.
+NEW_LEAGUE_NAME_CANON = {
+    "Ham-Kam": "HamKam",
+    "Colon Santa FE": "Colon Santa Fe",
+}
 
 
 def _fd_couk_new_season_label(season: str, league_code: str = "") -> str:
@@ -103,48 +141,16 @@ def _fd_couk_new_season_label(season: str, league_code: str = "") -> str:
 # Keys MUST match the actual filenames in footballcsv/cache.footballdata
 # (verified against the repo — e.g. Spain is "es.1" not "esp.1",
 # Scotland is "sco.1" not "sc.1").
-LEAGUE_CODE_MAP = {
-    # England
-    "eng.1": "PL",      # Premier League
-    "eng.2": "ELC",     # Championship
-    "eng.3": "ELC2",    # League One
-    "eng.4": "ELC3",    # League Two
-    "eng.5": "ENG5",    # National League
-    # Spain
-    "es.1": "PD",       # La Liga
-    "es.2": "PD2",      # Segunda Division
-    # Germany
-    "de.1": "BL1",      # Bundesliga
-    "de.2": "BL2",      # 2. Bundesliga
-    # Italy
-    "it.1": "SA",       # Serie A
-    "it.2": "SA2",      # Serie B
-    # France
-    "fr.1": "FL1",      # Ligue 1
-    "fr.2": "FL2",      # Ligue 2
-    # Other top divisions available in the repo
-    "nl.1": "DED",      # Eredivisie
-    "pt.1": "PPL",      # Primeira Liga
-    "be.1": "BEL1",     # Belgian Pro League
-    "tr.1": "TUR1",     # Turkish Super Lig
-    "gr.1": "GRE1",     # Greek Super League
-    "ru.1": "RUS1",     # Russian Premier League
-    "pl.1": "POL1",     # Polish Ekstraklasa
-    "at.1": "AUT1",     # Austrian Bundesliga
-    "ch.1": "SUI1",     # Swiss Super League
-    "dk.1": "DEN1",     # Danish Superliga
-    "ro.1": "ROU1",     # Romanian Liga I
-    "mx.1": "MEX1",     # Liga MX
-    "br.1": "BSA",      # Campeonato Brasileiro Serie A (calendar-year season)
-    # Scotland
-    "sco.1": "SCO1",    # Scottish Premiership
-    "sco.2": "SCO2",    # Scottish Championship
-    "sco.3": "SCO3",    # Scottish League One
-    "sco.4": "SCO4",    # Scottish League Two
-}
+# The training league set is the canonical top-flight registry (leagues.py):
+# csv_code -> our internal code. This is the single source of truth — lower
+# divisions are intentionally absent (the app rates top flights only), and the
+# ~21 Transfermarkt-sourced leagues (Saudi, Croatia, K League, …) are included.
+import leagues as _leagues
 
-# Reverse mapping for display
+LEAGUE_CODE_MAP = dict(_leagues.CODE_BY_CSV)
 LEAGUE_NAME_MAP = {v: k for k, v in LEAGUE_CODE_MAP.items()}
+# csv_code -> Transfermarkt gesamtspielplan comp code(s), for the scraped leagues.
+_TM_RESULT_COMPS = dict(_leagues.TM_RESULT_COMPS)
 
 # Cache directory
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data_cache")
@@ -311,15 +317,26 @@ def parse_fd_couk_new_csv(csv_content: str, season: str, league_code: str) -> Li
     matches = []
     reader = csv.DictReader(io.StringIO(csv_content))
     season_label = _fd_couk_new_season_label(season, league_code)
+    is_calendar = league_code in CALENDAR_YEAR_LEAGUES
 
     for row in reader:
         try:
-            if row.get('Season', '').strip() != season_label:
+            row_season = row.get('Season', '').strip()
+            if is_calendar:
+                # season_label is the target calendar year (e.g. "2017"). Match
+                # by the Season string's TRAILING year so both "2017" and the
+                # legacy "2016/2017" map to it — Argentina mixes both formats in
+                # one file. Each Season string has one trailing year -> one
+                # target, so no match is dropped and none is double-counted.
+                m = re.search(r'(\d{4})\s*$', row_season)
+                if not m or m.group(1) != season_label:
+                    continue
+            elif row_season != season_label:
                 continue
 
             date_str = row.get('Date', '').strip()
-            home_team = row.get('Home', '').strip()
-            away_team = row.get('Away', '').strip()
+            home_team = NEW_LEAGUE_NAME_CANON.get(row.get('Home', '').strip(), row.get('Home', '').strip())
+            away_team = NEW_LEAGUE_NAME_CANON.get(row.get('Away', '').strip(), row.get('Away', '').strip())
             if not date_str or not home_team or not away_team:
                 continue
 
@@ -483,6 +500,43 @@ def parse_csv_matches(csv_content: str, season: str, league_code: str) -> List[D
     return matches
 
 
+def _tm_saison_id(season: str, calendar_year: bool) -> int:
+    """Map our internal season string to a Transfermarkt saison_id (the season's
+    start year). Calendar-year leagues (South American, K League, …) use the end
+    year, mirroring the football-data.co.uk new-feed calendar handling: internal
+    '2023-24' -> saison_id 2024 for a calendar league, 2023 otherwise."""
+    start = int(season[:4])
+    return start + 1 if calendar_year else start
+
+
+def load_tm_results(season: str, league_code: str, tm_code: str) -> List[Dict[str, Any]]:
+    """Match results for a Transfermarkt-sourced league-season, as normalized
+    match dicts (the same shape the CSV parsers emit). Reads the scraper's
+    on-disk cache; scrapes on a miss (polite, cached)."""
+    from transfermarkt_scraper import results_for
+    lg = _leagues.BY_CSV.get(league_code)
+    year = _tm_saison_id(season, bool(lg and lg.calendar_year))
+    try:
+        rows = results_for(tm_code, year)
+    except Exception:
+        return []
+    our_code = LEAGUE_CODE_MAP.get(league_code, league_code)
+    out = []
+    for date_iso, home, away, hg, ag in rows:
+        out.append({
+            "utcDate": date_iso,
+            "status": "FINISHED",
+            "homeTeam": {"name": home},
+            "awayTeam": {"name": away},
+            "score": {"fullTime": {"home": int(hg), "away": int(ag)}},
+            "competition": {"code": our_code},
+            "season": season,
+            "league_code": league_code,
+            "stats": {},
+        })
+    return out
+
+
 def load_season_league_data(season: str, league_code: str) -> List[Dict[str, Any]]:
     """
     Load and parse match data for a specific season and league.
@@ -511,6 +565,15 @@ def load_season_league_data(season: str, league_code: str) -> List[Dict[str, Any
                 return matches
         # Nothing for this season in the new-leagues feed either — fall
         # through to the stale-but-still-useful footballcsv mirror.
+
+    # Leagues with no free bulk feed (Saudi, Croatia, K League, …) are scraped
+    # from Transfermarkt's gesamtspielplan (results). The polite scraper caches
+    # each season's HTML on disk, so training re-reads cache instantly.
+    tm_code = _TM_RESULT_COMPS.get(league_code)
+    if tm_code:
+        matches = load_tm_results(season, league_code, tm_code)
+        if matches:
+            return matches
 
     csv_content = load_csv_from_cache_or_fetch(season, league_code)
     if not csv_content:
@@ -611,13 +674,28 @@ def load_and_process_data(
     try:
         import transfermarkt_data
         import club_mapping
-        team_leagues = {}
-        for r in rows:
+        # Tag each team with the most-recent league that Transfermarkt actually
+        # COVERS (falling back to its latest league if none). Transfermarkt has
+        # only first divisions, and a club's TM record sits in whichever top
+        # flight it belongs to; a promoted/relegated club that has ever been
+        # top-flight should still match (its point-in-time value_at then handles
+        # each date). The old first-seen `setdefault` stranded such clubs in a
+        # stale lower division with no TM comp (Monaco was in Ligue 2 in 2012-13,
+        # Leeds in the Championship until 2020) so they never matched despite
+        # being in TM; picking the covered league recovers ~40 top-flight clubs.
+        from collections import defaultdict as _dd
+        _covered = set(club_mapping.LEAGUE_TO_TM_COMP)
+        _seq = _dd(list)
+        for r in rows:  # chronological
             comp = r.get("competition", "")
-            team_leagues.setdefault(r["home_team"], {"league": comp})
-            team_leagues.setdefault(r["away_team"], {"league": comp})
-        club_map = club_mapping.build_club_mapping(
-            team_leagues, transfermarkt_data.load_table("clubs"))
+            _seq[r["home_team"]].append(comp)
+            _seq[r["away_team"]].append(comp)
+        team_leagues = {}
+        for _team, _cs in _seq.items():
+            _cov = [c for c in _cs if c in _covered]
+            team_leagues[_team] = {"league": _cov[-1] if _cov else _cs[-1]}
+        _tm_clubs = transfermarkt_data.load_table("clubs")
+        club_map = club_mapping.build_club_mapping(team_leagues, _tm_clubs)
         squad_values = transfermarkt_data.get_index()
         covered = sum(1 for t in team_leagues if t in club_map)
         print(f"Squad values: {len(club_map)} clubs mapped "
@@ -627,9 +705,33 @@ def load_and_process_data(
               f"continuing without them")
         squad_values, club_map = None, None
 
+    # ClubElo cross-league ratings (free, keyless). Same optional-enrichment
+    # contract: any failure falls back to has_clubelo=0 and everything else
+    # still trains. Only European leagues are covered.
+    clubelo = None
+    try:
+        import clubelo_data
+        clubelo = clubelo_data.get_index()
+        print(f"ClubElo: index built ({len(clubelo.snapshots)} countries)")
+    except Exception as e:  # noqa: BLE001 - optional enrichment, never fatal
+        print(f"ClubElo unavailable ({type(e).__name__}: {e}); continuing without it")
+        clubelo = None
+
+    # Player-performance stats (Transfermarkt appearances) — resolved via the
+    # same club_map as squad value. Same optional-enrichment contract.
+    pstats = None
+    try:
+        import player_stats
+        pstats = player_stats.get_index()
+        print(f"Player stats: index built ({len(pstats.series)} club series)")
+    except Exception as e:  # noqa: BLE001 - optional enrichment, never fatal
+        print(f"Player stats unavailable ({type(e).__name__}: {e}); continuing without them")
+        pstats = None
+
     # Add form features
     rows = add_form_features(rows, n_matches=n_matches,
-                              squad_values=squad_values, club_map=club_map)
+                              squad_values=squad_values, club_map=club_map,
+                              clubelo=clubelo, pstats=pstats)
     print(f"Features added. Total rows: {len(rows)}")
 
     # Prepare training data
@@ -637,13 +739,20 @@ def load_and_process_data(
     print(f"Training samples prepared: {len(X)}")
 
     # Compute team stats for prediction
-    team_stats = compute_team_stats(rows, squad_values=squad_values, club_map=club_map)
+    team_stats = compute_team_stats(rows, squad_values=squad_values, club_map=club_map,
+                                     clubelo=clubelo, pstats=pstats)
+    # NOTE: current-season league reassignment (promoted/relegated teams) is a
+    # SEPARATE post-step — see current_leagues.py, which uses the live
+    # football-data.org fixtures API. Transfermarkt's domestic_competition_id
+    # was tried and rejected: it retains recently-relegated clubs (so GB1 lists
+    # ~37 clubs, not the current 20), which would mislabel them as top-flight.
 
     # Per-row leagues are exposed as an attribute rather than a 5th return
     # value so the long-standing 4-tuple contract (main.py and the training
     # scripts all unpack it) keeps working. Callers that persist data read
     # this and hand it to save_processed_data(leagues=...).
     load_and_process_data.last_leagues = [m["league"] for m in row_meta]
+    load_and_process_data.last_dates = [m["date"] for m in row_meta]
     load_and_process_data.last_h2h = getattr(add_form_features, "last_h2h", {})
 
     return X, y, feature_names, team_stats
@@ -656,12 +765,15 @@ def save_processed_data(
     team_stats: Dict[str, Any],
     path: str = "processed_data.json",
     leagues: Optional[List[str]] = None,
+    dates: Optional[List[str]] = None,
 ):
     """Save processed training data and team stats to JSON file.
 
     `leagues` is parallel to X and lets evaluate.py break results down per
     competition — a single global accuracy across 30 leagues hides how
-    differently the model performs in each.
+    differently the model performs in each. `dates` (also parallel to X) lets
+    the trainer compute recency weights and lets evaluate.py reason about the
+    holdout's time span.
     """
     data = {
         "X": X,
@@ -669,6 +781,7 @@ def save_processed_data(
         "feature_names": feature_names,
         "team_stats": team_stats,
         "leagues": leagues or [],
+        "dates": dates or [],
         "saved_at": datetime.utcnow().isoformat() + "Z",
     }
     with open(path, "w") as f:

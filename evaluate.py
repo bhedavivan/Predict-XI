@@ -37,6 +37,14 @@ DRAW_CLASS = 0
 LABELS = {-1: "Away Win", 0: "Draw", 1: "Home Win"}
 
 
+def _load_json(name):
+    try:
+        with open(os.path.join(_SCRIPT_DIR, name)) as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+
+
 def _macro_f1(y_true: np.ndarray, y_pred: np.ndarray, classes: List[int]) -> float:
     f1s = []
     for c in classes:
@@ -54,6 +62,21 @@ def _recall(y_true: np.ndarray, y_pred: np.ndarray, cls: int) -> float:
     if not denom:
         return float("nan")
     return float(np.sum((y_true == cls) & (y_pred == cls)) / denom)
+
+
+# RPS is defined once, in model_trainer, and reused here so the training-time
+# and evaluation-time scores can never drift apart (this project has repeatedly
+# been bitten by two copies of the same logic diverging).
+from model_trainer import _rps
+
+
+def _log_loss(y_true: np.ndarray, proba: np.ndarray, classes) -> float:
+    idx = {c: i for i, c in enumerate(classes)}
+    y = np.asarray(y_true)
+    if len(y) == 0:
+        return float("nan")
+    p = np.clip(proba[np.arange(len(y)), [idx[v] for v in y]], 1e-15, 1.0)
+    return float(np.mean(-np.log(p)))
 
 
 def per_league_breakdown(y_true, y_pred, leagues, classes, min_matches=100) -> List[dict]:
@@ -136,18 +159,28 @@ def _score_rule(y_true, proba, classes, draw_idx, non_draw, cls_arr, t=None) -> 
     }
 
 
+# How much overall accuracy we'll trade to give the draw class a real voice.
+# Without odds, draw probability tops out ~0.31, so a draw is never the argmax
+# and plain accuracy is maximised by never predicting one — but that makes the
+# draw class useless. Optimising MACRO-F1 (which counts the draw class equally)
+# within this accuracy budget lets the model predict draws at roughly their
+# true base rate; the budget stops it running away to "predict draws for half
+# the fixtures" at barely-above-chance precision.
+DRAW_ACC_TOLERANCE = 0.04
+
+
 def draw_threshold_curve(y_true, proba, classes) -> dict:
-    """Measure the accuracy vs draw-recall trade-off of forcing more draws.
+    """Choose the draw-probability threshold that maximises MACRO-F1 within a
+    small accuracy budget (DRAW_ACC_TOLERANCE), validated out-of-sample.
 
     Rule: predict Draw when P(draw) >= t, else argmax over the other two.
 
     The threshold is chosen on the FIRST half of this slice and scored on the
-    SECOND half. That split is essential, not ceremony: predicted draw
-    probabilities are tightly clustered (median ~0.34, max ~0.48), so the
-    decision boundary sits inside a very dense region where a 0.02 shift
-    swings thousands of predictions. Picking t on the same data it's scored
-    on produced an apparent +3.6pt accuracy gain that is pure selection
-    bias. Only a gain that survives on unseen data counts.
+    SECOND half — essential, not ceremony: predicted draw probabilities are
+    tightly clustered, so the boundary sits in a dense region where a 0.01
+    shift swings thousands of predictions, and tuning+scoring on the same slice
+    inflates the gain. Only a macro-F1 gain that survives on unseen data (while
+    keeping accuracy within budget) is adopted.
     """
     classes = list(classes)
     draw_idx = classes.index(DRAW_CLASS)
@@ -163,10 +196,12 @@ def draw_threshold_curve(y_true, proba, classes) -> dict:
                 for t in grid]
     tune_base = _score_rule(tune_y, tune_p, classes, draw_idx, non_draw, cls_arr, None)
 
-    # Best on the tuning half by macro-F1, but never at the cost of accuracy —
-    # the same guard rail that rejected v7's round-1 rating-constant winner.
+    # Best macro-F1 on the tuning half, allowing accuracy to fall by at most the
+    # budget (draws are worth a few points of accuracy; a model that never says
+    # "draw" is not).
     viable = [p for p in tune_pts
-              if p["accuracy"] >= tune_base["accuracy"] and p["macro_f1"] > tune_base["macro_f1"]]
+              if p["accuracy"] >= tune_base["accuracy"] - DRAW_ACC_TOLERANCE
+              and p["macro_f1"] > tune_base["macro_f1"]]
     viable.sort(key=lambda p: -p["macro_f1"])
     chosen = viable[0]["threshold"] if viable else None
 
@@ -174,22 +209,25 @@ def draw_threshold_curve(y_true, proba, classes) -> dict:
     test_chosen = (_score_rule(test_y, test_p, classes, draw_idx, non_draw, cls_arr, chosen)
                    if chosen is not None else None)
 
+    # Survives if macro-F1 still improves out-of-sample and accuracy stays
+    # within budget there too.
     holds_up = bool(
         test_chosen
-        and test_chosen["accuracy"] >= test_base["accuracy"]
         and test_chosen["macro_f1"] > test_base["macro_f1"]
+        and test_chosen["accuracy"] >= test_base["accuracy"] - DRAW_ACC_TOLERANCE
     )
     if chosen is None:
-        verdict = ("keep argmax — no threshold beat it on the tuning half without "
-                   "costing accuracy.")
+        verdict = ("keep argmax — no threshold improved macro-F1 on the tuning half "
+                   "within the accuracy budget.")
     elif holds_up:
-        verdict = (f"adopt threshold {chosen:.2f} — the gain survived on held-out data "
-                   f"(macro-F1 {test_base['macro_f1']} -> {test_chosen['macro_f1']}).")
+        verdict = (f"adopt threshold {chosen:.2f} — macro-F1 improved out-of-sample "
+                   f"({test_base['macro_f1']} -> {test_chosen['macro_f1']}) for "
+                   f"{test_base['accuracy']} -> {test_chosen['accuracy']} accuracy "
+                   f"(draw recall {test_base['draw_recall']} -> {test_chosen['draw_recall']}).")
     else:
-        verdict = (f"keep argmax — threshold {chosen:.2f} looked good while tuning but did "
-                   f"NOT survive on unseen data (macro-F1 {test_base['macro_f1']} -> "
-                   f"{test_chosen['macro_f1']}, accuracy {test_base['accuracy']} -> "
-                   f"{test_chosen['accuracy']}). Selection bias, not signal.")
+        verdict = (f"keep argmax — threshold {chosen:.2f} improved tuning macro-F1 but did "
+                   f"NOT survive out-of-sample (macro-F1 {test_base['macro_f1']} -> "
+                   f"{test_chosen['macro_f1']}). Selection bias, not signal.")
 
     return {
         "method": "threshold tuned on first half of holdout, scored on second half",
@@ -217,21 +255,31 @@ def main():
     model = MatchPredictorModel()
     if not model.load():
         raise SystemExit("No trained model found.")
-
-    n_hold = max(int(len(X) * HOLDOUT_FRACTION), 1)
-    # The shipped calibrator is fitted on the first half of the holdout, so
-    # scoring here uses only the second half. Reporting over the whole slice
-    # would quietly grade the calibrator on its own fitting data — the same
-    # selection bias that inflated the draw-threshold result by +3.6pt.
-    half = n_hold // 2
-    n_test = n_hold - half
-    Xte, yte = X[-n_test:], y[-n_test:]
-    lg_te = leagues[-n_test:] if len(leagues) == len(X) else ["unknown"] * n_test
-
-    # Must go through the model's own calibration, not the raw pipeline —
-    # otherwise this reports numbers no user ever sees.
-    proba = model.apply_calibration(model.pipeline.predict_proba(Xte))
     classes = list(model.classes)
+
+    # Prefer the leak-free holdout predictions written at training time: those
+    # come from an EVAL pipeline that never trained on these rows, so per-league
+    # accuracy and the reliability curve reflect real out-of-sample behaviour.
+    # Falling back to re-scoring the shipped (all-data) pipeline on its own tail
+    # would be in-sample and optimistic — the whole point of the fix.
+    holdout = _load_json("holdout_eval.json")
+    if holdout and holdout.get("proba"):
+        proba = np.asarray(holdout["proba"], dtype=np.float64)
+        yte = np.asarray(holdout["y"])
+        cal_hi = int(holdout.get("cal_hi", len(X) - len(yte)))
+        n_test = len(yte)
+        lg_te = leagues[cal_hi:cal_hi + n_test] if len(leagues) == len(X) else ["unknown"] * n_test
+        print("Using leak-free holdout_eval.json (out-of-sample eval pipeline).")
+    else:
+        n_hold = max(int(len(X) * HOLDOUT_FRACTION), 1)
+        half = n_hold // 2
+        n_test = n_hold - half
+        Xte, yte = X[-n_test:], y[-n_test:]
+        lg_te = leagues[-n_test:] if len(leagues) == len(X) else ["unknown"] * n_test
+        proba = model.apply_calibration(model.pipeline.predict_proba(Xte))
+        print("WARNING: holdout_eval.json missing; falling back to IN-SAMPLE tail "
+              "(optimistic). Retrain to regenerate the leak-free holdout.")
+
     pred = np.asarray(classes)[proba.argmax(axis=1)]
 
     threshold = getattr(model, "draw_threshold", None)
@@ -246,10 +294,22 @@ def main():
     out = {
         "holdout_matches": int(n_test),
         "holdout_fraction": HOLDOUT_FRACTION,
-        "draw_threshold": threshold,
+        # The scalar threshold the shipped model actually uses. Named distinctly
+        # from the "draw_threshold" analysis curve below — a plain
+        # "draw_threshold" key appeared twice and the dict literal silently kept
+        # only the last (the curve), so this scalar never reached evaluation.json.
+        "draw_threshold_shipped": threshold,
         # "overall" reflects the SHIPPED decision rule (threshold if one is
         # set). The argmax figures are kept alongside so the effect of the
         # rule is visible rather than folded invisibly into one number.
+        # RPS and log-loss are properties of the PROBABILITIES, so they are
+        # the same under argmax or the draw-threshold rule (the rule only
+        # changes the discrete pick). They are the primary metrics here:
+        # accuracy is dominated by the home class and dead-ceilinged, whereas
+        # RPS/log-loss are what the literature reports and what actually moves
+        # when calibration or features improve.
+        "rps": round(_rps(yte, proba, classes), 4),
+        "log_loss": round(_log_loss(yte, proba, classes), 4),
         "overall": {
             "accuracy": round(float(np.mean(rule_pred == yte)), 4),
             "macro_f1": round(_macro_f1(yte, rule_pred, classes), 4),
@@ -268,6 +328,8 @@ def main():
         json.dump(out, f, indent=2)
 
     print(f"Holdout: {n_test} matches")
+    print(f"RPS={out['rps']}  log_loss={out['log_loss']}  "
+          f"(primary; lower is better, ~0.19-0.21 is published no-odds SOTA)")
     print(f"Overall: acc={out['overall']['accuracy']} "
           f"macro_f1={out['overall']['macro_f1']} draw_recall={out['overall']['draw_recall']}")
     print("\nPer-league (best to worst):")

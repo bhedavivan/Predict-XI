@@ -4,63 +4,67 @@ Soccer match-outcome predictor. Rates every team with a running **Elo** and a ro
 **Dixon-Coles** attack/defense model, and predicts **Home Win / Draw / Away Win** with a
 calibrated **sklearn ensemble** (RandomForest + HistGradientBoosting + LogisticRegression).
 
-Trained on **68,228 matches** across seven seasons (through 2025-26) and **all 30** divisions,
+Trained on **168,154 matches** across fourteen seasons (2012-13 → 2025-26) and **38** divisions,
 enriched with squad market values so transfer activity moves predictions.
 
 ---
 
-## Model (v8)
+## Model (v4.0)
 
-Two numbers matter here, and they measure different things:
+**Read RPS, not accuracy.** On a 3-way outcome, accuracy is dominated by the home class and is
+effectively dead-ceilinged — the de-vigged bookmakers themselves get only ~50% top-1 on this broad
+league mix. The metric that actually measures skill is the **Ranked Probability Score** (the
+ordinal proper scoring rule the football-prediction literature reports). The result that matters:
+this model's probabilities sit **at the no-odds ceiling**.
 
-| Metric | Value | Notes |
+| Metric | Value | Reference |
 |---|---|---|
-| **Accuracy (shipped rule)** | **53.2%** | held-out matches, draw-threshold decision rule |
-| **Draw recall (shipped rule)** | **62.6%** | was 32.4% under plain argmax |
-| Macro F1 (shipped rule) | **0.528** | balances all three classes |
-| Accuracy (argmax) | 49.8% | same model, largest-probability rule |
-| Accuracy (purged CV) | 46.1% | averaged over earlier folds too — a harder slice |
-| Baseline | 43.2% | always-predict-home |
-| Log-loss | 1.005 | below uniform (1.099) → calibrated |
-| Brier score | 0.201 | multiclass |
-| Training matches | 68,228 | 30 leagues × up to 7 seasons (2019-20 → 2025-26) |
-| Teams rated | 707 | by Elo + Dixon-Coles + squad value |
-| Features | 82 | all retained; tuned `SelectKBest` chose "keep all" |
-| Shipped model size | 40 MB | (`model.joblib`, via Git LFS) |
+| **RPS (holdout, leak-free)** | **0.2112** | de-vigged Bet365 **0.2044**; published no-odds SOTA ~0.19–0.21 |
+| RPS (purged CV) | 0.2157 | same band |
+| Log-loss (holdout) | 1.0234 | market 1.0036 |
+| Accuracy (holdout, leak-free) | 48.9% | de-vigged market 50.1% on the same mix |
+| Accuracy (purged CV) | 45.5% | always-home baseline 44.0% |
+| Training matches | 168,154 | 38 leagues × up to 14 seasons (2012-13 → 2025-26) |
+| Teams rated | 1,110 | Elo + Dixon-Coles + squad value |
+| Features | 90 | incl. draw-signal + ClubElo cross-league; `clubelo_expected`/`clubelo_diff` are top-5 |
+| Shipped model size | ~49 MB | `model.joblib`, committed directly (no Git LFS) |
 
-> **Why two accuracy numbers?** The purged-CV figure (46.1%) averages over earlier time folds,
-> where Elo/Dixon-Coles ratings are still warming up and squad-value coverage is thinner. The
-> held-out figure (53.2%) is the most recent 20% of matches — the regime the app actually runs in.
-> Both are reported because quoting only the flattering one would be dishonest.
+All numbers above are **genuinely out-of-sample**: metrics and the probability calibrator come from
+a separate pipeline trained only on data *before* the holdout, and the OOS predictions are saved to
+`holdout_eval.json`. `python odds_benchmark.py` prints the market ceiling; `python evaluate.py`
+regenerates the per-league + calibration breakdown.
 
-### The draw decision rule
+> **Why lower than v8's "53.2%"?** That figure was optimistic — the model was scored (and
+> calibrated) on rows it had trained on. An audit caught the leak; the honest out-of-sample number
+> is ~49% on a much harder, broader league set. The probabilities being at the market's RPS is the
+> real, defensible achievement — not a higher accuracy headline. Anything claiming much higher on
+> no-odds cross-league prediction is usually leaking future information.
 
-The single biggest win in v8 was not a new feature — it was noticing that **argmax is the wrong
-decision rule here**. P(draw) never exceeds ~0.48 in practice, because a draw is rarely the most
-likely *single* outcome even when it's the best call. So taking the largest probability
-systematically under-predicts draws no matter how well calibrated the probabilities are.
+### Draws are hard without odds — but the class isn't left dead
 
-Predicting Draw once P(draw) clears a threshold (0.35) fixes this:
+Out-of-sample the model can't push P(draw) above ~0.31, so a draw is never the single most likely
+outcome (the same reason bookmakers rarely make a draw the favourite). Plain accuracy is therefore
+maximised by never predicting one — which makes the class useless. Instead the draw threshold is
+tuned to maximise **macro-F1 within a bounded accuracy budget** (0.29), validated out-of-sample:
+this restores **draw recall 0 → ~28%** and macro-F1 **0.36 → 0.43** for a ~3-point accuracy cost,
+predicting draws at roughly their true base rate. v8's "62.6% recall" was an in-sample-leak
+artifact; ~28% recall at ~29% precision is the honest no-odds reality.
 
-| Rule | Accuracy | Macro F1 | Draw recall |
-|---|---|---|---|
-| Argmax (largest probability) | 49.8% | 0.477 | 32.4% |
-| **Draw threshold ≥ 0.35 (shipped)** | **53.2%** | **0.528** | **62.6%** |
+### ClubElo cross-league ratings
 
-Validated across 5 disjoint folds of held-out data — **every fold improved**, mean +3.3 points of
-accuracy. The threshold is tuned on data disjoint from where it is scored, because tuning and
-scoring on the same slice inflated the apparent gain by ~3.6 points of pure selection bias. The
-displayed probabilities are left untouched: they are well calibrated, and rescaling them to force
-argmax agreement would corrupt honest numbers to paper over a decision-rule problem.
+In-league Elo can't compare a Bundesliga side to a Premier League side — but the app's whole point
+is arbitrary cross-league matchups. `clubelo_data.py` adds ClubElo's free, keyless, point-in-time
+cross-competition ratings (Man City 1971 vs Bayern 2001 on one scale), wired on both paths behind a
+`has_clubelo` flag with safe league-constrained name matching. `clubelo_expected`/`clubelo_diff` are
+top-5 features. Overall holdout RPS is flat because that holdout is same-league-heavy; ClubElo earns
+its keep on the cross-league predictions the holdout barely contains.
 
-> **Why not higher still?** Football outcomes depend on things no pre-match feature set captures
-> (a deflected shot, a red card, a bad refereeing call). Bookmakers — with far more inputs than we
-> have — land in the 50-55% range on this exact 3-way problem, so this is now in credible company.
-> Anything claiming much higher on this task is usually leaking future information.
+### Why this prediction (explainability)
 
-> **On the older 48% figure.** An early version reported 48%, which looks close to today's number
-> but was not a comparable model: it predicted draws **0.7%** of the time, effectively ignoring a
-> third of all possible outcomes to farm the majority classes.
+The Predict page shows the drivers behind each forecast — in-league Elo, cross-league ClubElo,
+Dixon-Coles expected goals, recent form, squad value, goal difference — with the favoured side
+highlighted, plus head-to-head and the Dixon-Coles scoreline split. These are the exact quantities
+the model reads (no bookmaker odds), so the "why" always matches the "what".
 
 ### Squad market value
 
@@ -72,18 +76,19 @@ signal is learned from history rather than hand-set, which is what separates it 
 - Source: [`dcaribou/transfermarkt-datasets`](https://github.com/dcaribou/transfermarkt-datasets)
   (CC0-1.0, refreshed weekly) — a published dataset, not scraped.
 - Values are point-in-time: a match only ever sees valuations published **before** it.
-- `squad_value_diff` landed as the **5th most important feature** in the model.
-- Coverage is 48% of training matches (Transfermarkt covers first tiers; our lower divisions have
-  no counterpart). Uncovered matches get an explicit `has_squad_value=0` flag so the model learns
-  to disregard the block rather than reading 0 as "worthless squad".
+- Coverage is ~34% of training matches after the data expansion (518/1,110 clubs mapped) —
+  Transfermarkt covers first tiers, and the added lower/exotic divisions have thin or no coverage.
+  Uncovered matches get an explicit `has_squad_value=0` flag so the model learns to disregard the
+  block rather than reading 0 as "worthless squad".
 - Latency: Transfermarkt revalues squads a few times a year, so a signing shows up within weeks,
   not the same day.
 
 ### Where the model actually works
 
-A single global accuracy averages over very different competitions. On held-out matches it ranges
-from **61.9% (Bundesliga)** down to **~40% (Scottish Championship)** — the dashboard shows the full
-per-league table plus a calibration curve. Run `python evaluate.py` to regenerate it.
+A single global accuracy averages over very different competitions. On the leak-free holdout it
+ranges from **~57% (Eliteserien, Russian Premier, Primeira Liga)** down to **~40% (Scottish lower
+tiers, Argentina)** — bigger talent gaps make top divisions more predictable. Run
+`python evaluate.py` to regenerate the full per-league + calibration breakdown.
 
 **Ensemble vs stacking** — trained head-to-head on identical data (purged 5-fold CV, on the
 62,131-match dataset of the round they were compared in; ensemble has been carried forward and
@@ -165,8 +170,9 @@ The free tier allows 10 requests/minute and covers all the major leagues used he
 pip install -r requirements.txt
 ```
 
-That's it — Flask is the only third-party dependency (for the web UI). The model itself is
-pure standard library.
+Dependencies are scikit-learn, pandas, numpy, joblib, threadpoolctl (the ML stack) and Flask
+(the web UI) — see `requirements.txt`. `model.joblib` is committed directly (~35–45 MB, no Git
+LFS needed).
 
 ---
 
@@ -181,7 +187,11 @@ Open **http://localhost:5000**. The app ships with a pre-trained model, so it wo
 - **Dashboard** — live model performance stats.
 - **Predict a matchup** — pick a league and team independently on each side (any two teams, any
   two leagues — no shared-league constraint) instead of scrolling a single 600+ team dropdown,
-  and get calibrated Home/Draw/Away probabilities.
+  and get calibrated Home/Draw/Away probabilities, plus a "Why this prediction" driver breakdown.
+- **Simulate a season** — Monte Carlo: play a league's full double round-robin thousands of times
+  from the model's calibrated match probabilities and read off title / top-4 / relegation odds.
+  (`python simulate_season.py PL` for the CLI.) It aggregates the model's per-match predictions —
+  it does not sharpen any single match.
 - **Browse live fixtures** — pick a league to pull upcoming fixtures from football-data.org
   (needs an API token) and predict any of them in one click.
 
@@ -249,7 +259,9 @@ so re-running it again soon after (e.g. to try a different `--model-type`) is mu
 | `csv_data_loader.py` | Loads historical CSVs from football-data.co.uk (primary) and footballcsv/cache.footballdata (fallback) |
 | `api_client.py` | football-data.org live-fixtures client |
 | `config.py` | API token loading + league codes |
-| `model.json` / `model.joblib` | Shipped trained model (metadata + sklearn pipeline, via Git LFS) |
+| `model.json` / `model.joblib` | Shipped trained model (metadata + sklearn pipeline, committed directly ~35–45 MB) |
+| `holdout_eval.json` | Leak-free out-of-sample holdout predictions the dashboard/evaluate.py score |
+| `odds_benchmark.py` | Offline de-vigged bookmaker RPS/log-loss reference (odds are never a feature) |
 | `model_metrics.json` | Metrics shown on the dashboard |
 | `model_comparison.json` | Ensemble vs stacking head-to-head, from the most recent full retrain |
 | `team_stats.json` | Latest per-team stats/Elo/Dixon-Coles ratings for predictions |
@@ -274,4 +286,4 @@ so re-running it again soon after (e.g. to try a different `--model-type`) is mu
 - Python 3.8+
 - Flask (web UI only)
 - scikit-learn, numpy, pandas, joblib, threadpoolctl (see `requirements.txt`)
-- [Git LFS](https://git-lfs.com/) to clone `model.joblib` (26 MB)
+- `model.joblib` is committed directly (no Git LFS) — a normal `git clone` gets it

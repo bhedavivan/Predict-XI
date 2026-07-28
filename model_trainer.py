@@ -4,6 +4,7 @@ import os
 import random
 import warnings
 from collections import Counter
+from functools import partial
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -19,8 +20,10 @@ import numpy as np
 
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Model version
-MODEL_VERSION = "3.0.0"
+# Model version. 4.0.0: 167k matches / 38 leagues / 85 features, RPS + log-loss
+# as primary metrics, leak-free honest-holdout evaluation + out-of-sample
+# calibrator, recency weighting (ablated → off), and the new draw-signal features.
+MODEL_VERSION = "4.0.0"
 
 
 # ─── Backward-compatible from-scratch models ───────────────────────────────
@@ -298,7 +301,12 @@ def _build_sklearn_pipeline(model_type: str, n_features: int, use_feature_select
     # _SELECT_K_GRID rather than an assumption.
     steps = []
     if use_feature_selection and select_k is not None and 0 < select_k < n_features:
-        steps.append(("select", SelectKBest(mutual_info_classif, k=select_k)))
+        # mutual_info_classif uses a kNN estimator with random jitter; without a
+        # fixed random_state the selected features (and thus the shipped model
+        # and its feature_importances_) vary run to run. Pin it like every other
+        # estimator so model.joblib is reproducible.
+        steps.append(("select", SelectKBest(
+            partial(mutual_info_classif, random_state=42), k=select_k)))
     steps.append(("scaler", StandardScaler()))
 
     def _rf(overrides=None):
@@ -355,48 +363,74 @@ def _build_sklearn_pipeline(model_type: str, n_features: int, use_feature_select
     return Pipeline(steps)
 
 
-def _select_best(param_grid: list, build_fn, X, y, n_folds: int, purge_gap: int):
+def _select_best(param_grid: list, build_fn, X, y, n_folds: int, purge_gap: int,
+                  recency_weights=None):
     """Pick the candidate from `param_grid` with the best purged-CV macro-F1
     (not accuracy) — macro-F1 penalizes a model that ignores the draw class
     to chase overall accuracy, which is exactly the failure mode being fixed.
     `build_fn(params)` must return an unfit Pipeline for a given candidate.
+    `recency_weights` (parallel to X) is threaded through so the search scores
+    candidates under the SAME weighting the final fit uses — otherwise tuning
+    would optimize for uniform weights and the final model for recency-weighted.
     """
     best_params, best_score = param_grid[0], -1.0
     for params in param_grid:
         pipe = build_fn(params)
-        res = _evaluate_pipeline(pipe, X, y, n_folds=n_folds, purge_gap=purge_gap)
+        res = _evaluate_pipeline(pipe, X, y, n_folds=n_folds, purge_gap=purge_gap,
+                                 recency_weights=recency_weights)
         score = res.get("macro_f1")
         if score is not None and score > best_score:
             best_score, best_params = score, params
     return best_params, best_score
 
 
-def _evaluate_pipeline(pipe, X, y, n_folds=5, purge_gap=0):
-    """Time-series cross-validation with purging. Returns metrics dict."""
+def _evaluate_pipeline(pipe, X, y, n_folds=5, purge_gap=0, burn_in_folds=0,
+                        recency_weights=None):
+    """Time-series cross-validation with purging. Returns metrics dict.
+
+    `burn_in_folds` drops the earliest N folds from the REPORTED means. The
+    ratings features (Elo, Dixon-Coles) start every team at a neutral anchor
+    and need dozens of matches to become meaningful, so the first folds score
+    a model reading half-warmed ratings — that is a measurement artifact of
+    cold ratings, not the model's true skill, and averaging it in is what
+    dragged the old purged-CV number ~11pt below the recent-holdout number.
+    The folds still TRAIN chronologically; only their scores are excluded.
+
+    `recency_weights` (parallel to X) is multiplied into the balanced class
+    weights so recent matches count for more — see MatchPredictorModel.train.
+    """
     rows_acc = []
     auc_scores = []
     f1_scores = []
+    rps_scores = []
     confusion = np.zeros((len(np.unique(y)), len(np.unique(y))), dtype=int)
     classes = sorted(np.unique(y))
     class_to_idx = {c: i for i, c in enumerate(classes)}
 
-    for tr, te in _purged_time_series_split(len(X), n_folds, purge_gap):
+    for fold_i, (tr, te) in enumerate(_purged_time_series_split(len(X), n_folds, purge_gap)):
         ytr, yte = y[tr], y[te]
         if len(np.unique(ytr)) < 2 or len(te) == 0:
             continue
         with warnings.catch_warnings(), threadpool_limits(limits=1):
             warnings.simplefilter("ignore")
             # Balanced sample weights so every leg of the pipeline (not just
-            # a hand-picked one) corrects for the draw-minority class.
-            sw = compute_sample_weight("balanced", ytr)
+            # a hand-picked one) corrects for the draw-minority class,
+            # optionally scaled by recency (per-class renormalized) so recent
+            # matches weigh more without disturbing the class balance.
+            sw = _blend_sample_weights(
+                ytr, np.asarray(recency_weights)[tr] if recency_weights is not None else None)
             try:
                 pipe.fit(X[tr], ytr, clf__sample_weight=sw)
             except TypeError:
                 pipe.fit(X[tr], ytr)
         pred = pipe.predict(X[te])
         proba = pipe.predict_proba(X[te])
+        # A burned-in fold is trained (ratings carry forward) but not scored.
+        if fold_i < burn_in_folds:
+            continue
         rows_acc.append(float(np.mean(pred == yte)))
         f1_scores.append(float(f1_score(yte, pred, average="macro")))
+        rps_scores.append(_rps(yte, proba, pipe.classes_))
 
         if len(classes) == 2:
             from sklearn.metrics import roc_auc_score
@@ -419,7 +453,7 @@ def _evaluate_pipeline(pipe, X, y, n_folds=5, purge_gap=0):
     if not rows_acc:
         return {
             "accuracy": float("nan"), "accuracy_std": float("nan"), "auc": float("nan"),
-            "macro_f1": None, "confusion_matrix": confusion.tolist(),
+            "macro_f1": None, "rps": None, "confusion_matrix": confusion.tolist(),
             "n_folds_used": 0, "fold_scores": [],
         }
 
@@ -428,10 +462,52 @@ def _evaluate_pipeline(pipe, X, y, n_folds=5, purge_gap=0):
         "accuracy_std": float(np.std(rows_acc)),
         "auc": float(np.mean(auc_scores)) if auc_scores else float("nan"),
         "macro_f1": float(np.mean(f1_scores)),
+        "rps": float(np.mean(rps_scores)) if rps_scores else None,
         "confusion_matrix": confusion.tolist(),
         "n_folds_used": len(rows_acc),
         "fold_scores": rows_acc,
     }
+
+
+def _rps(y_true, proba, classes) -> float:
+    """Ranked Probability Score — the proper scoring rule for ORDERED
+    outcomes, which Home/Draw/Away are (Draw sits between the two wins on a
+    strength axis). Unlike accuracy (dominated by the home class and
+    dead-ceilinged on this problem) or log-loss (ignores ordinality), RPS
+    penalises a confident Home prediction more when the truth is Away than
+    when it is Draw. It is the metric football-prediction literature reports,
+    so it is what lets us compare against the ~0.19-0.21 published ceiling.
+    Lower is better. Classes must be passed in ascending ordinal order."""
+    classes = np.asarray(list(classes))
+    y = np.asarray(y_true)
+    P = np.asarray(proba, dtype=np.float64)
+    if len(y) == 0 or P.shape[1] < 2:
+        return float("nan")
+    onehot = (classes[None, :] == y[:, None]).astype(np.float64)
+    cum_p = np.cumsum(P, axis=1)[:, :-1]
+    cum_o = np.cumsum(onehot, axis=1)[:, :-1]
+    return float(np.mean(np.sum((cum_p - cum_o) ** 2, axis=1) / (P.shape[1] - 1)))
+
+
+def _blend_sample_weights(y_sub, recency_sub):
+    """Balanced class weights, optionally scaled by recency. Recency is
+    renormalized PER CLASS so it reweights matches WITHIN a class (recent >
+    old) without disturbing the class balance the balanced weights set up — a
+    plain global rescale would let recency silently reweight the classes (e.g.
+    if draws skew older), undoing the draw-minority correction."""
+    sw = compute_sample_weight("balanced", y_sub)
+    if recency_sub is None:
+        return sw
+    sw = sw * np.asarray(recency_sub, dtype=np.float64)
+    out = np.zeros_like(sw)
+    classes = np.unique(y_sub)
+    target = len(sw) / len(classes)
+    for c in classes:
+        m = y_sub == c
+        s = sw[m].sum()
+        if s > 0:
+            out[m] = sw[m] * (target / s)
+    return out
 
 
 def _majority_baseline(ytr, yte):
@@ -504,6 +580,10 @@ class MatchPredictorModel:
         # read as a suspiciously perfect score rather than a missing one.
         self.log_loss_: Optional[float] = None
         self.brier_: Optional[float] = None
+        # RPS on the tail holdout (holdout) and averaged over warm CV folds
+        # (cv_rps). None = not computed, kept distinguishable from a real 0.0.
+        self.rps_: Optional[float] = None
+        self.cv_rps: Optional[float] = None
         self.test_samples: int = 0
         self.tuning_notes: Dict[str, Any] = {}
         self.select_k_: Optional[int] = None
@@ -518,11 +598,30 @@ class MatchPredictorModel:
         # stated probability means what it says.
         self.calibrator = None
         self.class_prior_ = None
+        self.calib_shrinkage_ = None
+        self.calib_C_ = None
+        self.recency_halflife_days = None
+        # Dixon-Coles output blend: mix the DC H/D/A vector (already features)
+        # into the ensemble output before calibration. The weight is TUNED on the
+        # leak-free holdout, so it self-selects 0 (a no-op) whenever the blend
+        # doesn't improve RPS — it can only help or do nothing.
+        self.dc_blend_weight = None
+        self.dc_prob_idx = None
+        # Out-of-sample calibrated predictions on the honest holdout (from the
+        # eval pipeline that never trained on them). Persisted so evaluate.py
+        # and the dashboard report leak-free numbers instead of re-scoring the
+        # all-data model on its own tail.
+        self._holdout = None
 
     def _fit_sklearn(self, X, y, feature_names, cv_folds=5, purge_gap=0,
                       tree_params_override=None, voting_weights_override=None,
-                      select_k_override=-1):
-        """Fit sklearn pipeline with time-series CV."""
+                      select_k_override=-1, recency_weights=None, burn_in_folds=0,
+                      calibrate=False, calibrate_frac=0.2):
+        """Fit sklearn pipeline with time-series CV.
+
+        `recency_weights` (parallel to X) down-weights older matches in both
+        the CV folds and the final refit. `burn_in_folds` excludes the coldest
+        early CV folds from the reported score (ratings warm-up artifact)."""
         X_arr, y_arr = _to_numpy(X, y)
         n_features = X_arr.shape[1]
 
@@ -541,11 +640,20 @@ class MatchPredictorModel:
         tuning_folds = min(cv_folds, 3)
         tree_params, voting_weights = tree_params_override, voting_weights_override
         self.tuning_notes = {}
-        tuning_cap = 8000
+        # Tune on a recency-capped, time-ordered subsample (purged CV needs the
+        # rows in date order, so this can't be a random sample). The cap must
+        # span at least a full annual cycle of every league: an 8k tail in a
+        # mid-year retrain is almost entirely summer-calendar leagues
+        # (MLS/Scandinavia/Japan/Argentina) with the European winter absent, so
+        # hyperparameters got tuned on an unrepresentative slice. ~25k rows
+        # reaches back ~1.5 years and includes every league's full season.
+        tuning_cap = 25000
         if len(X_arr) > tuning_cap:
             Xt, yt = X_arr[-tuning_cap:], y_arr[-tuning_cap:]
+            rec_t = np.asarray(recency_weights)[-tuning_cap:] if recency_weights is not None else None
         else:
             Xt, yt = X_arr, y_arr
+            rec_t = recency_weights
 
         # `select_k_override=-1` is the "not specified" sentinel, since None
         # is itself a meaningful value here (= keep all features).
@@ -564,7 +672,7 @@ class MatchPredictorModel:
             select_k, k_score = _select_best(
                 _SELECT_K_GRID,
                 lambda k: _build_sklearn_pipeline(probe_type, n_features, select_k=k),
-                Xt, yt, tuning_folds, purge_gap)
+                Xt, yt, tuning_folds, purge_gap, recency_weights=rec_t)
             self.tuning_notes["select_k"] = {
                 "k": select_k if select_k is not None else "all",
                 "n_features": int(n_features),
@@ -576,7 +684,7 @@ class MatchPredictorModel:
                 tree_params, score = _select_best(
                     grid,
                     lambda p: _build_sklearn_pipeline(actual_model_type, n_features, tree_params=p, select_k=select_k),
-                    Xt, yt, tuning_folds, purge_gap)
+                    Xt, yt, tuning_folds, purge_gap, recency_weights=rec_t)
                 self.tuning_notes[actual_model_type] = {"params": tree_params, "cv_macro_f1": round(score, 4)}
             elif actual_model_type in ("ensemble", "stacking"):
                 # Both combiners (fixed-weight voting and the stacking
@@ -585,15 +693,15 @@ class MatchPredictorModel:
                 best_rf, rf_score = _select_best(
                     _RF_GRID,
                     lambda p: _build_sklearn_pipeline("rf", n_features, tree_params=p, select_k=select_k),
-                    Xt, yt, tuning_folds, purge_gap)
+                    Xt, yt, tuning_folds, purge_gap, recency_weights=rec_t)
                 best_histgb, histgb_score = _select_best(
                     _HISTGB_GRID,
                     lambda p: _build_sklearn_pipeline("histgb", n_features, tree_params=p, select_k=select_k),
-                    Xt, yt, tuning_folds, purge_gap)
+                    Xt, yt, tuning_folds, purge_gap, recency_weights=rec_t)
                 best_lr, lr_score = _select_best(
                     _LR_GRID,
                     lambda p: _build_sklearn_pipeline("logreg", n_features, tree_params=p, select_k=select_k),
-                    Xt, yt, tuning_folds, purge_gap)
+                    Xt, yt, tuning_folds, purge_gap, recency_weights=rec_t)
                 tree_params = {"rf": best_rf, "histgb": best_histgb, "lr": best_lr}
                 self.tuning_notes.update({
                     "rf": {"params": best_rf, "cv_macro_f1": round(rf_score, 4)},
@@ -605,7 +713,7 @@ class MatchPredictorModel:
                         _VOTING_WEIGHT_GRID,
                         lambda w: _build_sklearn_pipeline("ensemble", n_features, tree_params=tree_params,
                                                           voting_weights=w, select_k=select_k),
-                        Xt, yt, tuning_folds, purge_gap)
+                        Xt, yt, tuning_folds, purge_gap, recency_weights=rec_t)
                     self.tuning_notes["voting_weights"] = {"weights": voting_weights, "cv_macro_f1": round(weight_score, 4)}
 
         self.select_k_ = select_k
@@ -614,14 +722,21 @@ class MatchPredictorModel:
         pipe = _build_sklearn_pipeline(actual_model_type, n_features,
                                         tree_params=tree_params, voting_weights=voting_weights,
                                         select_k=select_k)
+        # Remember the winning config so the honest-holdout step can rebuild an
+        # identically-configured EVAL pipeline that excludes the holdout.
+        self._fit_config = dict(model_type=actual_model_type, n_features=n_features,
+                                tree_params=tree_params, voting_weights=voting_weights,
+                                select_k=select_k)
 
-        # Evaluate on the full dataset (balanced sample weights applied inside)
-        cv_res = _evaluate_pipeline(pipe, X_arr, y_arr, n_folds=cv_folds, purge_gap=purge_gap)
+        # Evaluate on the full dataset (balanced sample weights applied inside,
+        # scaled by recency; coldest folds burned in and excluded from score)
+        cv_res = _evaluate_pipeline(pipe, X_arr, y_arr, n_folds=cv_folds, purge_gap=purge_gap,
+                                     burn_in_folds=burn_in_folds, recency_weights=recency_weights)
 
         # Refit on all data
         with warnings.catch_warnings(), threadpool_limits(limits=1):
             warnings.simplefilter("ignore")
-            sw_full = compute_sample_weight("balanced", y_arr)
+            sw_full = _blend_sample_weights(y_arr, recency_weights)
             try:
                 pipe.fit(X_arr, y_arr, clf__sample_weight=sw_full)
             except TypeError:
@@ -629,12 +744,14 @@ class MatchPredictorModel:
 
         self.pipeline = pipe
         self.classes = sorted(np.unique(y_arr).tolist())
+        self._init_dc_blend_idx(feature_names)
         self.accuracy_ = cv_res["accuracy"]
         self.cv_mean = cv_res["accuracy"]
         self.cv_std = cv_res["accuracy_std"]
         self.confusion_matrix = cv_res["confusion_matrix"]
         self._cv_scores = cv_res.get("fold_scores", [])
         self.macro_f1_ = cv_res.get("macro_f1")
+        self.cv_rps = cv_res.get("rps")
 
         # Feature importances from the underlying classifier (unwraps
         # CalibratedClassifierCV / VotingClassifier to reach the tree legs)
@@ -659,25 +776,106 @@ class MatchPredictorModel:
         maj_class = Counter(y_arr.tolist()).most_common(1)[0][0]
         self.baseline_accuracy = float(np.mean(y_arr == maj_class))
 
-        # Probabilistic metrics on a genuine, untouched holdout (last 20%,
-        # never seen during CV-fold fitting order-wise since it's the tail)
-        n = len(X_arr)
-        test_size = max(int(n * 0.2), 1)
-        self.test_samples = 0
-        if test_size > 0 and n - test_size > 0:
-            Xte = X_arr[-test_size:]
-            yte = y_arr[-test_size:]
-            self.test_samples = int(test_size)
-            try:
-                proba = pipe.predict_proba(Xte)
-                self._compute_prob_metrics(yte, proba)
-            except Exception as e:
-                print(f"WARNING: holdout log-loss/Brier computation failed ({e}); "
-                      f"reporting them as unavailable rather than a misleading 0.0.")
-                self.log_loss_ = None
-                self.brier_ = None
+        # Honest holdout: probabilistic metrics AND (optionally) the calibrator
+        # are computed via a separate EVAL pipeline trained on everything BEFORE
+        # the holdout, never on it. The old code scored `pipe` — refit on ALL
+        # data — on its own tail, so the reported RPS/log-loss/Brier and the
+        # calibrator were in-sample and optimistic. `pipe` still ships trained
+        # on all data (keeps the most recent matches); only the measurement and
+        # calibrator use the leak-free eval pipeline.
+        self._honest_holdout(X_arr, y_arr, calibrate_frac, recency_weights, calibrate)
 
         return cv_res
+
+    def _honest_holdout(self, X_arr, y_arr, calibrate_frac, recency_weights, calibrate):
+        """Leak-free holdout evaluation + calibration.
+
+        Split the tail into a calibration slice and a disjoint test slice, fit
+        an eval pipeline (identical config) on everything BEFORE both, fit the
+        calibrator on the eval pipeline's OUT-OF-SAMPLE calibration-slice probs,
+        and score CALIBRATED metrics on the test slice — none of which the eval
+        pipeline trained on. The shipped self.pipeline (all data) reuses this
+        calibrator; eval and shipped pipelines differ only by the ~20% tail, so
+        the calibrator transfers, while the numbers stop being optimistic.
+        """
+        n = len(X_arr)
+        n_hold = max(int(n * calibrate_frac), 1)
+        n_test = n_hold - n_hold // 2
+        cal_lo, cal_hi = n - n_hold, n - n_test
+        self.test_samples = 0
+
+        # Too little data for a real split (unit tests, tiny fixtures): fall back
+        # to the pipeline's own tail. Optimistic, but only ever hit below the
+        # threshold where an honest split isn't possible anyway.
+        if cal_lo < 200 or n_test < 20:
+            try:
+                if calibrate:
+                    self.fit_calibration(X_arr[cal_lo:cal_hi], y_arr[cal_lo:cal_hi])
+                proba = self.apply_calibration(self.pipeline.predict_proba(X_arr[-n_test:]))
+                self._compute_prob_metrics(y_arr[-n_test:], proba)
+                self.test_samples = int(n_test)
+            except Exception:
+                self.log_loss_ = self.brier_ = self.rps_ = None
+            return
+
+        cfg = self._fit_config
+        eval_pipe = _build_sklearn_pipeline(cfg["model_type"], cfg["n_features"],
+                                            tree_params=cfg["tree_params"],
+                                            voting_weights=cfg["voting_weights"], select_k=cfg["select_k"])
+        with warnings.catch_warnings(), threadpool_limits(limits=1):
+            warnings.simplefilter("ignore")
+            sw = _blend_sample_weights(
+                y_arr[:cal_lo],
+                np.asarray(recency_weights)[:cal_lo] if recency_weights is not None else None)
+            try:
+                eval_pipe.fit(X_arr[:cal_lo], y_arr[:cal_lo], clf__sample_weight=sw)
+            except TypeError:
+                eval_pipe.fit(X_arr[:cal_lo], y_arr[:cal_lo])
+
+        if calibrate:
+            cal_X, cal_y = X_arr[cal_lo:cal_hi], y_arr[cal_lo:cal_hi]
+            if self.dc_prob_idx:
+                # Tune the DC blend weight on the leak-free test slice (the eval
+                # pipeline never saw cal/test). For each weight, fit the
+                # calibrator on the blended calibration probs and score the
+                # blended+calibrated test-slice RPS; keep the best. w=0 wins if
+                # the blend doesn't help, so this can only help or no-op.
+                raw_cal = eval_pipe.predict_proba(cal_X)
+                raw_test = eval_pipe.predict_proba(X_arr[cal_hi:])
+                best_w, best_rps = 0.0, float("inf")
+                for w in (0.0, 0.1, 0.2, 0.3, 0.4, 0.5):
+                    self.dc_blend_weight = w
+                    self._fit_calibrator_on(
+                        self._calib_logspace(self._blend_dc(raw_cal, cal_X)), np.asarray(cal_y))
+                    P = self.apply_calibration(self._blend_dc(raw_test, X_arr[cal_hi:]))
+                    r = _rps(y_arr[cal_hi:], P, self.classes)
+                    if r < best_rps:
+                        best_rps, best_w = r, w
+                self.dc_blend_weight = best_w
+                # Final calibrator at the chosen weight.
+                self._fit_calibrator_on(
+                    self._calib_logspace(self._blend_dc(raw_cal, cal_X)), np.asarray(cal_y))
+            else:
+                # Calibrator fit on the eval pipeline's OUT-OF-SAMPLE probs.
+                self.fit_calibration(cal_X, cal_y, pipeline=eval_pipe)
+
+        try:
+            raw_test = eval_pipe.predict_proba(X_arr[cal_hi:])
+            proba_test = self.apply_calibration(self._blend_dc(raw_test, X_arr[cal_hi:]))
+            self._compute_prob_metrics(y_arr[cal_hi:], proba_test)
+            self.test_samples = int(n_test)
+            # Persist the OOS calibrated predictions so evaluate.py / dashboard
+            # report leak-free per-league + reliability numbers.
+            self._holdout = {
+                "proba": np.asarray(proba_test, dtype=np.float64).round(6).tolist(),
+                "y": [int(v) for v in y_arr[cal_hi:]],
+                "cal_hi": int(cal_hi), "n_test": int(n_test),
+                "classes": [int(c) for c in self.classes],
+            }
+        except Exception as e:
+            print(f"WARNING: honest-holdout metric computation failed ({e}); "
+                  f"reporting them as unavailable rather than a misleading 0.0.")
+            self.log_loss_ = self.brier_ = self.rps_ = None
 
     def _compute_prob_metrics(self, y_true, proba):
         """Compute log-loss and Brier score."""
@@ -699,6 +897,9 @@ class MatchPredictorModel:
         
         self.log_loss_ = ll / n
         self.brier_ = brier / (n * len(classes))
+        # RPS on the same holdout — the ordinal proper scoring rule the
+        # football-prediction literature reports (see _rps).
+        self.rps_ = _rps(y_true, proba, classes)
 
     def _fit_legacy(self, X, y, feature_names, cv_folds, temporal):
         """Fit using the old from-scratch models (backward compat)."""
@@ -835,17 +1036,66 @@ class MatchPredictorModel:
                 cm[class_to_idx[true]][class_to_idx[pred]] += 1
         return cm
 
+    @staticmethod
+    def _recency_weights(sample_dates, halflife_days):
+        """Exponential time-decay weight per match: 0.5**(age/halflife), with
+        age measured in days back from the most recent match. A half-life of
+        e.g. 540 days means a match two half-lives (~3 years) old counts a
+        quarter as much as last week's. Returns None (no reweighting) when
+        dates or a half-life aren't supplied. Whether this actually helps is
+        an empirical question — it is gated on an out-of-sample RPS delta, not
+        assumed — because the Elo/DC/EWMA features already encode recency and
+        classifier-level decay can double-count it."""
+        if not sample_dates or not halflife_days:
+            return None
+        import datetime as _dt
+
+        def _parse(d):
+            try:
+                return _dt.datetime.fromisoformat(str(d).replace("Z", "+00:00")).replace(tzinfo=None)
+            except (ValueError, AttributeError):
+                return None
+
+        parsed = [_parse(d) for d in sample_dates]
+        valid = [p for p in parsed if p is not None]
+        if not valid:
+            return None
+        latest = max(valid)
+        w = np.full(len(parsed), np.nan, dtype=np.float64)
+        for i, p in enumerate(parsed):
+            if p is not None:
+                age = max((latest - p).days, 0)
+                w[i] = 0.5 ** (age / float(halflife_days))
+        # A row with an unparseable/missing date must NOT default to the maximum
+        # weight (that would treat an unknown date as "most recent"). Give it the
+        # smallest observed weight — treat unknown-age as old — so a bad date can
+        # never inflate a row's influence.
+        if np.isnan(w).any():
+            w[np.isnan(w)] = np.nanmin(w)
+        return w
+
     def train(self, X, y, feature_names: Optional[List[str]] = None,
               cv_folds: int = 5, temporal: bool = True,
               tree_params_override: Optional[dict] = None,
               voting_weights_override: Optional[list] = None,
-              select_k_override: int = -1):
+              select_k_override: int = -1,
+              sample_dates: Optional[List[str]] = None,
+              recency_halflife_days: Optional[float] = None,
+              burn_in_folds: int = 0,
+              calibrate: bool = False,
+              calibrate_frac: float = 0.2):
         """`*_override` skip the hyperparameter/voting-weight search and fit
         directly with the given config (e.g. re-using a config a previous
         tuning run already found) — same final evaluate+refit, just without
         re-paying for the search. `select_k_override` uses -1 as its
-        "unspecified" sentinel because None means "keep all features"."""
+        "unspecified" sentinel because None means "keep all features".
+
+        `sample_dates` (parallel to X) + `recency_halflife_days` enable
+        exponential recency weighting; `burn_in_folds` excludes the coldest
+        early CV folds from the reported CV score (ratings warm-up artifact)."""
         self.feature_names = feature_names or [f"feature_{i}" for i in range(len(X[0]) if X else 0)]
+        recency_weights = self._recency_weights(sample_dates, recency_halflife_days)
+        self.recency_halflife_days = recency_halflife_days
 
         purge_gap = 0
         if temporal and len(X) > 50:
@@ -858,14 +1108,20 @@ class MatchPredictorModel:
             cv_res = self._fit_sklearn(X, y, self.feature_names, cv_folds=cv_folds, purge_gap=purge_gap,
                                         tree_params_override=tree_params_override,
                                         voting_weights_override=voting_weights_override,
-                                        select_k_override=select_k_override)
+                                        select_k_override=select_k_override,
+                                        recency_weights=recency_weights,
+                                        burn_in_folds=burn_in_folds,
+                                        calibrate=calibrate, calibrate_frac=calibrate_frac)
             self.eval_method = "temporal" if temporal else "shuffled"
             self.training_samples = len(X)
             self.class_distribution = {c: int(y.count(c)) for c in self.classes}
             if not self.confusion_matrix or len(self.confusion_matrix) != len(self.classes):
                 self.confusion_matrix = [[0]*len(self.classes) for _ in self.classes]
             self.trained = True
-        
+            # Calibration is folded in by _fit_sklearn's honest-holdout step
+            # (calibrate flag threaded through), so one train() call reproduces
+            # the shipped calibrated model — no separate bolt-on step.
+
         self.trained_at = datetime.utcnow().isoformat() + "Z"
         return self.get_metrics()
 
@@ -891,6 +1147,10 @@ class MatchPredictorModel:
             "baseline_accuracy": round(self.baseline_accuracy, 4),
             "log_loss": round(self.log_loss_, 4) if self.log_loss_ is not None else None,
             "brier": round(self.brier_, 4) if self.brier_ is not None else None,
+            # RPS: holdout (proper ordinal score, ~0.19-0.21 is published SOTA)
+            # and the warm-fold CV mean. Both None if not computed.
+            "rps": round(self.rps_, 4) if self.rps_ is not None else None,
+            "cv_rps": round(self.cv_rps, 4) if self.cv_rps is not None else None,
             "eval_method": self.eval_method,
             "classification_report": report,
             # test_samples is the tail slice held out for log-loss/Brier
@@ -915,11 +1175,20 @@ class MatchPredictorModel:
     def predict(self, features):
         if not self.trained:
             raise RuntimeError("Model not trained yet. Call train() first.")
-        
+
+        # Fail loudly on a feature-count mismatch (stale artifact vs a changed
+        # feature builder) rather than letting sklearn raise a cryptic error or,
+        # worse, silently predicting from a misaligned vector.
+        if self.feature_names and len(features) != len(self.feature_names):
+            raise ValueError(
+                f"Feature count mismatch: got {len(features)} features but the model "
+                f"expects {len(self.feature_names)}. The saved model and the feature "
+                f"builder are out of sync — retrain.")
+
         if self.pipeline is not None:
             X = np.asarray([features], dtype=np.float64)
-            proba = self.pipeline.predict_proba(X)[0]
-            proba = self.apply_calibration(proba.reshape(1, -1))[0]
+            proba = self._blend_dc(self.pipeline.predict_proba(X), X)
+            proba = self.apply_calibration(proba)[0]
             cls_probs = {self.classes[i]: float(proba[i]) for i in range(len(self.classes))}
         elif hasattr(self, "nb_model") and self.nb_model:
             proba_dicts = self._proba_list_legacy([features])
@@ -970,42 +1239,146 @@ class MatchPredictorModel:
             "argmax_prediction": self.label_map.get(argmax_pred, str(argmax_pred)),
         }
 
-    # Weight kept on the empirical class prior when shrinking calibrated
-    # probabilities. The calibrator is well behaved on average but a linear
-    # map over log-probabilities extrapolates without bound at the tails,
-    # producing things like a 0.1% or 100% draw chance. No real football match
-    # is that certain, so a small amount of the base rate is mixed back in.
-    CALIBRATION_SHRINKAGE = 0.06
+    def predict_proba_batch(self, feature_rows):
+        """Calibrated H/D/A probabilities for many fixtures in one pass — the
+        same numbers predict() reports under 'probabilities', but vectorised so
+        the season simulator can price hundreds of fixtures in a single sklearn
+        call instead of hundreds of separate predict() round-trips. No draw
+        threshold is applied: the simulator samples outcomes and needs the
+        honest, untouched split. Returns a list of {label: prob} dicts."""
+        if not self.trained:
+            raise RuntimeError("Model not trained yet. Call train() first.")
+        if not feature_rows:
+            return []
+        if self.feature_names and len(feature_rows[0]) != len(self.feature_names):
+            raise ValueError(
+                f"Feature count mismatch: got {len(feature_rows[0])} features but the "
+                f"model expects {len(self.feature_names)} — retrain.")
+        if self.pipeline is not None:
+            X = np.asarray(feature_rows, dtype=np.float64)
+            proba = self.apply_calibration(self._blend_dc(self.pipeline.predict_proba(X), X))
+            return [{self.label_map.get(self.classes[i], self.classes[i]): float(row[i])
+                     for i in range(len(self.classes))} for row in proba]
+        # Legacy naive-bayes path: no vectorised predict, so map per row.
+        return [{self.label_map.get(c, c): p for c, p in d.items()}
+                for d in self._proba_list_legacy(feature_rows)]
+
+    # A linear (Dirichlet) map over log-probabilities extrapolates without
+    # bound at the tails, producing things like a 0.1% or 100% draw chance —
+    # no real football match is that certain. Two guards, both measured rather
+    # than hand-tuned: (1) clip the raw probabilities into this band before the
+    # log so the map's INPUT can't be extreme (bounds derived from the fact
+    # that no single outcome's true frequency is below ~1% or above ~99% on
+    # this data); (2) mix a little of the empirical base rate back in, with the
+    # blend weight SELECTED per fit by log-loss on an inner split rather than
+    # left at a hand-picked constant.
+    CALIB_CLIP_LO = 0.01
+    CALIB_CLIP_HI = 0.99
+    CALIBRATION_SHRINKAGE = 0.06  # fallback only, when the inner split is too small to select
+
+    def _calib_logspace(self, proba):
+        return np.log(np.clip(np.asarray(proba, dtype=np.float64),
+                              self.CALIB_CLIP_LO, self.CALIB_CLIP_HI))
+
+    def _init_dc_blend_idx(self, feature_names):
+        """Locate the Dixon-Coles H/D/A probability columns so their vector can
+        be blended into the ensemble output. None (blend disabled) if absent."""
+        names = feature_names or []
+        try:
+            self.dc_prob_idx = {1: names.index("dc_home_prob"),
+                                0: names.index("dc_draw_prob"),
+                                -1: names.index("dc_away_prob")}
+        except (ValueError, AttributeError):
+            self.dc_prob_idx = None
+
+    def _blend_dc(self, proba, feature_rows):
+        """Blend the DC H/D/A vector into the ensemble probabilities (probability
+        space) BEFORE calibration. Identity when no weight is set or the DC
+        columns are absent, so it's safe on legacy models and tiny fixtures."""
+        w = getattr(self, "dc_blend_weight", None)
+        if not w or not self.dc_prob_idx:
+            return proba
+        P = np.asarray(proba, dtype=np.float64)
+        single = P.ndim == 1
+        if single:
+            P = P.reshape(1, -1)
+        X = np.asarray(feature_rows, dtype=np.float64)
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
+        dc = np.column_stack([X[:, self.dc_prob_idx[c]] for c in self.classes])
+        s = dc.sum(axis=1, keepdims=True)
+        s[s <= 0] = 1.0
+        dc = dc / s
+        out = (1.0 - w) * P + w * dc
+        out = out / out.sum(axis=1, keepdims=True)
+        return out[0] if single else out
 
     def apply_calibration(self, proba):
         """Map raw pipeline probabilities onto calibrated ones. Identity when
         no calibrator has been fitted, so older models still load and run."""
         if self.calibrator is None:
             return proba
-        logp = np.log(np.clip(proba, 1e-9, 1.0))
+        logp = self._calib_logspace(proba)
         out = self.calibrator.predict_proba(logp)
         prior = getattr(self, "class_prior_", None)
-        if prior is not None:
+        w = getattr(self, "calib_shrinkage_", None)
+        if w is None:
             w = self.CALIBRATION_SHRINKAGE
+        if prior is not None and w > 0:
             out = (1.0 - w) * out + w * np.asarray(prior)
             out = out / out.sum(axis=1, keepdims=True)
         return out
 
-    def fit_calibration(self, X_holdout, y_holdout):
+    @staticmethod
+    def _logloss_proba(y_true, P, classes):
+        idx = {c: i for i, c in enumerate(classes)}
+        n = len(y_true)
+        if n == 0:
+            return float("inf")
+        s = 0.0
+        for i in range(n):
+            s += -math.log(max(P[i, idx[y_true[i]]], 1e-15))
+        return s / n
+
+    def _fit_calibrator_on(self, logp, y_arr):
+        """Fit the Dirichlet calibrator on clipped log-probabilities `logp`,
+        selecting the L2 strength C and the prior-blend weight by log-loss on an
+        inner 70/30 split (not hand-picked) — regularizing the off-diagonal
+        terms ODIR-style and stopping the map over-fitting a small slice."""
+        n = len(y_arr)
+        cut = int(n * 0.7)
+        best = None
+        if cut >= 30 and (n - cut) >= 20 and len(np.unique(y_arr[:cut])) == len(self.classes):
+            for C in (0.1, 0.3, 1.0, 3.0):
+                clf = LogisticRegression(C=C, max_iter=2000).fit(logp[:cut], y_arr[:cut])
+                base = clf.predict_proba(logp[cut:])
+                prior = np.array([(y_arr[:cut] == c).mean() for c in clf.classes_])
+                for w in (0.0, 0.03, 0.06, 0.10):
+                    P = (1.0 - w) * base + w * prior
+                    P = P / P.sum(axis=1, keepdims=True)
+                    ll = self._logloss_proba(y_arr[cut:], P, list(clf.classes_))
+                    if best is None or ll < best[0]:
+                        best = (ll, C, w)
+        C, w = (best[1], best[2]) if best else (1.0, self.CALIBRATION_SHRINKAGE)
+        self.calibrator = LogisticRegression(C=C, max_iter=2000).fit(logp, y_arr)
+        self.class_prior_ = [float((y_arr == c).mean()) for c in self.calibrator.classes_]
+        self.calib_C_ = C
+        self.calib_shrinkage_ = w
+        return self.calibrator
+
+    def fit_calibration(self, X_holdout, y_holdout, pipeline=None):
         """Fit recalibration on matches held out from this call.
 
-        Deliberately a separate step rather than part of train(): it must see
-        data the caller controls, and keeping it explicit makes it obvious
-        that skipping it leaves the model uncalibrated rather than silently
-        half-configured.
+        `pipeline` defaults to self.pipeline but the honest-holdout step passes
+        an EVAL pipeline that never trained on X_holdout, so the calibrator sees
+        genuinely out-of-sample probabilities instead of memorized ones.
         """
-        if self.pipeline is None:
+        pipe = pipeline if pipeline is not None else self.pipeline
+        if pipe is None:
             return None
-        raw = self.pipeline.predict_proba(np.asarray(X_holdout, dtype=np.float64))
-        logp = np.log(np.clip(raw, 1e-9, 1.0))
-        y_arr = np.asarray(y_holdout)
-        self.calibrator = LogisticRegression(max_iter=2000).fit(logp, y_arr)
-        self.class_prior_ = [float((y_arr == c).mean()) for c in self.classes]
+        X = np.asarray(X_holdout, dtype=np.float64)
+        raw = self._blend_dc(pipe.predict_proba(X), X)   # blend-aware
+        self._fit_calibrator_on(self._calib_logspace(raw), np.asarray(y_holdout))
         return self.calibrator
 
     def save(self, path: str = None):
@@ -1023,6 +1396,8 @@ class MatchPredictorModel:
             "accuracy": self.accuracy_,
             "log_loss": self.log_loss_,
             "brier": self.brier_,
+            "rps": self.rps_,
+            "cv_rps": self.cv_rps,
             "cv_mean": self.cv_mean,
             "cv_std": self.cv_std,
             "eval_method": self.eval_method,
@@ -1032,16 +1407,39 @@ class MatchPredictorModel:
             "label_map": self.label_map,
             "draw_threshold": self.draw_threshold,
             "class_prior": getattr(self, "class_prior_", None),
+            "calib_shrinkage": getattr(self, "calib_shrinkage_", None),
+            "calib_C": getattr(self, "calib_C_", None),
+            "dc_blend_weight": getattr(self, "dc_blend_weight", None),
+            "recency_halflife_days": getattr(self, "recency_halflife_days", None),
         }
         
         with open(path, "w") as f:
             json.dump(metadata, f, indent=2)
-        
+
+        # Persist the leak-free holdout predictions next to the model so
+        # evaluate.py grades on genuinely out-of-sample rows.
+        if getattr(self, "_holdout", None):
+            holdout_path = os.path.join(os.path.dirname(os.path.abspath(path)), "holdout_eval.json")
+            try:
+                with open(holdout_path, "w") as f:
+                    json.dump(self._holdout, f)
+            except OSError:
+                pass
+
         # Save sklearn pipeline separately
         if self.pipeline is not None:
             joblib_path = path.replace(".json", ".joblib") if path.endswith(".json") else path + ".joblib"
             try:
                 joblib.dump(self.pipeline, joblib_path)
+                # Size guard: model.joblib is committed directly (no Git LFS),
+                # so it must stay under GitHub's 100MB hard limit. Warn early if
+                # a hyperparameter choice bloats it (RF tree count/depth is the
+                # usual culprit — see the _RF_GRID note).
+                mb = os.path.getsize(joblib_path) / 1e6
+                if mb > 90:
+                    print(f"WARNING: {os.path.basename(joblib_path)} is {mb:.0f}MB — "
+                          f"approaching GitHub's 100MB limit. Reduce RF n_estimators/max_depth "
+                          f"or re-enable Git LFS before committing.")
             except Exception:
                 pass
         if self.calibrator is not None:
@@ -1074,6 +1472,7 @@ class MatchPredictorModel:
         self.trained_at = data.get("trained_at")
         self.training_samples = data.get("training_samples", 0)
         self.feature_names = data.get("feature_names", [])
+        self._init_dc_blend_idx(self.feature_names)   # locate DC cols for the output blend
         self.classes = [int(c) if not isinstance(c, int) else c for c in data.get("classes", [])]
         self.baseline_accuracy = data.get("baseline_accuracy", 0.0)
         self.accuracy_ = data.get("accuracy", 0.0)
@@ -1081,6 +1480,8 @@ class MatchPredictorModel:
         # computed", which must stay distinguishable from a real 0.0.
         self.log_loss_ = data.get("log_loss")
         self.brier_ = data.get("brier")
+        self.rps_ = data.get("rps")
+        self.cv_rps = data.get("cv_rps")
         self.cv_mean = data.get("cv_mean", 0.0)
         self.cv_std = data.get("cv_std", 0.0)
         self.eval_method = data.get("eval_method", "temporal")
@@ -1089,6 +1490,10 @@ class MatchPredictorModel:
         raw_label_map = data.get("label_map", {-1: "Away Win", 0: "Draw", 1: "Home Win"})
         self.draw_threshold = data.get("draw_threshold")
         self.class_prior_ = data.get("class_prior")
+        self.calib_shrinkage_ = data.get("calib_shrinkage")
+        self.calib_C_ = data.get("calib_C")
+        self.dc_blend_weight = data.get("dc_blend_weight")
+        self.recency_halflife_days = data.get("recency_halflife_days")
         self.label_map = {}
         for k, v in raw_label_map.items():
             try:
@@ -1105,6 +1510,13 @@ class MatchPredictorModel:
         
         # Load sklearn pipeline if available
         joblib_path = path.replace(".json", ".joblib") if path.endswith(".json") else path + ".joblib"
+        # SECURITY: joblib.load is pickle-based and executes arbitrary code in
+        # the file, so model.joblib is a TRUST BOUNDARY — only ever load the
+        # model that ships with the repo or one produced by this project's own
+        # training. Never point load() at a model.joblib from an untrusted
+        # source (that is equivalent to running its author's code). There is no
+        # safe way to "validate" a pickle before loading; the mitigation is
+        # provenance, not inspection.
         if SKLEARN_AVAILABLE and os.path.exists(joblib_path):
             try:
                 self.pipeline = joblib.load(joblib_path)

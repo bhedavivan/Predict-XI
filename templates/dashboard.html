@@ -15,19 +15,20 @@
   <h2>Model performance <span class="tag">v{{ metrics.get('version','3.0') }} &middot; {{ metrics.get('model_type', 'ensemble') }}</span></h2>
   {% if metrics %}
   <div class="stat-grid">
-    <div class="stat"><div class="v">{{ (metrics.accuracy*100)|round(1) }}%</div>
-      <div class="l">Accuracy</div><div class="sub">{{ metrics.get('eval_method','temporal') }} CV</div></div>
-    <div class="stat"><div class="v">+{{ ((metrics.accuracy-metrics.baseline_accuracy)*100)|round(1) }}</div>
-      <div class="l">Lift vs baseline</div><div class="sub">over always-home</div></div>
+    <div class="stat"><div class="v">{{ metrics.rps if metrics.rps is not none else '—' }}</div>
+      <div class="l">RPS <span class="tag">primary</span></div>
+      <div class="sub">holdout; market ≈ 0.204, SOTA 0.19–0.21</div></div>
     <div class="stat"><div class="v">{{ metrics.log_loss if metrics.log_loss is not none else '—' }}</div>
       <div class="l">Log-loss</div>
-      <div class="sub">{% if metrics.log_loss is none %}unavailable{% elif metrics.log_loss < 1.0986 %}calibrated{% else %}ok{% endif %} (&lt;1.099)</div></div>
+      <div class="sub">{% if metrics.log_loss is none %}unavailable{% elif metrics.log_loss < 1.0986 %}below uniform{% else %}ok{% endif %} (&lt;1.099)</div></div>
+    <div class="stat"><div class="v">{{ (metrics.accuracy*100)|round(1) }}%</div>
+      <div class="l">Accuracy</div><div class="sub">{{ metrics.get('eval_method','temporal') }} CV (baseline {{ (metrics.baseline_accuracy*100)|round(0)|int }}%)</div></div>
     <div class="stat"><div class="v">{{ metrics.get('macro_f1', '—') }}</div>
-      <div class="l">Macro F1</div><div class="sub">rewards draw recall too</div></div>
+      <div class="l">Macro F1</div><div class="sub">3-class balance</div></div>
     <div class="stat"><div class="v">{{ "{:,}".format(metrics.training_samples) }}</div>
-      <div class="l">Matches trained</div><div class="sub">{{ "{:,}".format(metrics.get('test_samples', 0)) }} held out</div></div>
+      <div class="l">Matches trained</div><div class="sub">{{ metrics.get('n_teams', 0) }} teams · {{ n_train_leagues }} leagues</div></div>
     <div class="stat"><div class="v">{{ metrics.get('n_teams', 0) }}</div>
-      <div class="l">Teams rated</div><div class="sub">by Elo + form</div></div>
+      <div class="l">Teams rated</div><div class="sub">Elo + Dixon-Coles + value</div></div>
   </div>
   {% else %}
   <p class="muted">No trained model found. Run
@@ -36,26 +37,6 @@
 </div>
 
 {% if evaluation %}
-<div class="card">
-  <h2>Where the model actually works <span class="tag">{{ "{:,}".format(evaluation.holdout_matches) }} held-out matches</span></h2>
-  <p class="muted" style="margin-bottom:1rem;">One global accuracy figure averages over very
-     different competitions. Higher-scoring, more predictable leagues sit at the top.</p>
-  <div class="league-table">
-    <div class="lt-head">
-      <span>League</span><span>Matches</span><span>Accuracy</span><span>Macro F1</span><span>Draw recall</span>
-    </div>
-    {% for r in evaluation.per_league %}
-    <div class="lt-row{% if r.pooled %} pooled{% endif %}">
-      <span class="lt-name">{{ league_names.get(r.league, r.league) }}</span>
-      <span>{{ r.matches }}</span>
-      <span><span class="lt-bar" style="width:{{ (r.accuracy*140)|round(0)|int }}px"></span>{{ (r.accuracy*100)|round(1) }}%</span>
-      <span>{{ r.macro_f1 }}</span>
-      <span>{{ (r.draw_recall*100)|round(1) }}%</span>
-    </div>
-    {% endfor %}
-  </div>
-</div>
-
 <div class="card">
   <h2>Are the probabilities honest? <span class="tag">calibration</span></h2>
   <p class="muted" style="margin-bottom:1rem;">When the model says 60%, does it happen 60% of the
