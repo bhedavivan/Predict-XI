@@ -18,6 +18,10 @@ import pi_ratings
 # paths and covered by the feature-alignment tests, like Elo/Dixon-Coles/ClubElo.
 INCLUDE_PI_RATINGS = True
 
+# Competition codes loaded ONLY to warm up ratings, never scored in training.
+# Set by main.py when the promoted-team warm-up is enabled (2nd divisions).
+WARMUP_COMPETITION_CODES = set()
+
 # Player-performance features (goals+assists/cards per game from Transfermarkt
 # appearances) were built, wired, and ABLATED — and they do not help: a
 # leak-free retrain moved RPS 0.2108 -> 0.2111 (marginally worse), the features
@@ -727,6 +731,11 @@ def prepare_training_data(rows: list, return_meta: bool = False):
     y = []
     meta = []
     for row in rows:
+        # Warm-up leagues (2nd divisions) are loaded so their matches update the
+        # rolling ratings chronologically, but they are NOT scored — a promoted
+        # club's top-flight matches simply inherit the warmed ratings as features.
+        if WARMUP_COMPETITION_CODES and row.get("competition") in WARMUP_COMPETITION_CODES:
+            continue
         if any(row.get(col) is None for col in base_form_cols + elo_cols):
             continue
         if all(row.get(col, 0) == 0 for col in base_form_cols):
@@ -1128,7 +1137,7 @@ def save_data(rows: list, path: str = "matches_data.json"):
 
 def load_data(path: str = "matches_data.json") -> list:
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return []

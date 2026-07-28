@@ -32,7 +32,7 @@ app.jinja_env.filters['urlencode'] = lambda s: urllib.parse.quote(str(s), safe='
 
 def _load_json(name):
     try:
-        with open(os.path.join(SCRIPT_DIR, name)) as f:
+        with open(os.path.join(SCRIPT_DIR, name), encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return None
@@ -266,6 +266,7 @@ def simulate():
     rows, positions = [], []
     err, lname, mode, as_of, remaining, live = "", "", "", "", 0, False
     rules, n_sims_used = {}, 0
+    tier_top, tier_second = "UCL", "UEL"
     if league_code:
         lname = league_name(league_code)
         try:
@@ -284,6 +285,7 @@ def simulate():
             remaining = out.get("remaining", 0)
             rules = out.get("rules", {})
             n_sims_used = out.get("n_sims", 0)
+            tier_top, tier_second = leagues.tier_labels(league_code)
             title = np.asarray(out["title_prob"])
             meanpos = np.asarray(out["mean_position"])
             order = list(np.argsort(-title + meanpos * 1e-6))
@@ -325,7 +327,8 @@ def simulate():
     return render_template("simulate.html", active="simulate", leagues=league_opts,
                            selected=league_code, league_name=lname, rows=rows,
                            positions=positions, mode=mode, live=live, as_of=as_of,
-                           remaining=remaining, rules=rules, n_sims=n_sims_used, error=err)
+                           remaining=remaining, rules=rules, n_sims=n_sims_used,
+                           tier_top=tier_top, tier_second=tier_second, error=err)
 
 
 @app.route("/fixtures")
@@ -375,6 +378,30 @@ def fixtures():
             "away_predict": a_res,
             "date": date_str,
         })
+
+    # Inline model prediction per fixture (batched) + a difficulty colour, so
+    # the schedule reads at a glance which games are one-sided vs coin-flips.
+    try:
+        model = get_model()
+        if model is not None:
+            h2h = build_h2h_map()
+            idx, feats = [], []
+            for i, m in enumerate(fixtures_list):
+                if m["home_predict"] in stats and m["away_predict"] in stats:
+                    idx.append(i)
+                    feats.append(prepare_prediction_features(m["home_predict"], m["away_predict"], stats, h2h))
+            if feats:
+                for i, pr in zip(idx, model.predict_proba_batch(feats)):
+                    p = {"Home": pr.get("Home Win", 0.0), "Draw": pr.get("Draw", 0.0),
+                         "Away": pr.get("Away Win", 0.0)}
+                    fav = max(p, key=p.get)
+                    top = p[fav]
+                    fixtures_list[i].update({
+                        "fav": fav, "fav_pct": round(top * 100),
+                        "diff": "strong" if top >= 0.55 else ("mid" if top >= 0.42 else "open"),
+                    })
+    except Exception:
+        pass   # predictions are a nice-to-have; never break the fixtures list
 
     return render_template(
         "fixtures.html", active="fixtures", leagues=LEAGUE_CODES, selected=league_code,

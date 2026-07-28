@@ -4,6 +4,24 @@
 strength-ranked and consistently named everywhere; pi-ratings + a Dixon-Coles output blend added to
 the model; a much deeper Monte Carlo simulator; and a bring-your-own play-style/live-squad adapter.
 
+## What changed in v5.1
+
+- **Squad values for every league.** The Transfermarkt value scraper now covers the 21 new top-flight
+  leagues too (Al-Hilal €195m, Al Ahly €38m…); `apply_squad_values.py` fills them by exact TM-name
+  match. Coverage **720 → 982 clubs**.
+- **Promoted-team warm-up.** The big-five second divisions are loaded as rating warm-up only (fed
+  through the feature loop, excluded from scoring), so a promoted club (Sunderland, Leeds) arrives in
+  the top flight with real Elo/Dixon-Coles/pi history instead of a cold 1500 — and PL is a full 20
+  again (was 19 when promoted clubs were missing).
+- **Confederation-aware simulator tiers.** A Brazilian league shows "Libertadores/Sudamericana", an
+  Asian one "AFC CL", not "UCL/UEL" (`leagues.tier_labels`).
+- **Difficulty-coloured fixtures.** Each upcoming match shows the model's pick with a green/amber/grey
+  chip (one-sided → coin-flip).
+- **RPS-aware ensemble tuning.** Model selection factors in RPS (macro-F1 − weighted RPS), not just
+  macro-F1. Holdout RPS held at 0.206 (at the no-odds ceiling; warm-up's gain is on promoted teams).
+- **Encoding fix.** All JSON reads/writes now specify `encoding="utf-8"` — the accented new-league
+  names had broken serving on Windows (cp1252).
+
 ## What changed in v5.0
 
 - **Single source of truth for leagues (`leagues.py`).** Every league now has one canonical display

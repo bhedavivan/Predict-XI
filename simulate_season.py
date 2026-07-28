@@ -296,10 +296,10 @@ def _price_fixtures(pairs, stats, h2h, model, idx) -> list:
 
 def _load_stats_h2h_model():
     from model_trainer import MatchPredictorModel
-    with open(os.path.join(_DIR, "team_stats.json")) as f:
+    with open(os.path.join(_DIR, "team_stats.json"), encoding="utf-8") as f:
         stats = json.load(f)
     try:
-        with open(os.path.join(_DIR, "h2h_stats.json")) as f:
+        with open(os.path.join(_DIR, "h2h_stats.json"), encoding="utf-8") as f:
             h2h = json.load(f)
     except (OSError, ValueError):
         h2h = {}
@@ -420,7 +420,7 @@ def _build_hypothetical_bundle(league_code, model, stats, h2h) -> dict:
     the team_stats league label."""
     current = {}
     try:
-        with open(os.path.join(_DIR, "current_leagues.json")) as f:
+        with open(os.path.join(_DIR, "current_leagues.json"), encoding="utf-8") as f:
             current = json.load(f)
     except (OSError, ValueError):
         current = {}
@@ -481,7 +481,7 @@ def simulate_league(league_code: str, n_sims: int = 20000, force: bool = False,
     bundle = None
     if not force and os.path.exists(path):
         try:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 cached = json.load(f)
             if cached.get("sig") == sig and (time.time() - cached.get("computed_at", 0)) < SIM_CACHE_TTL:
                 bundle = cached
@@ -494,7 +494,7 @@ def simulate_league(league_code: str, n_sims: int = 20000, force: bool = False,
         bundle["computed_at"] = time.time()
         os.makedirs(_CACHE_DIR, exist_ok=True)
         try:
-            with open(path, "w") as f:
+            with open(path, "w", encoding="utf-8") as f:
                 json.dump(bundle, f)
         except OSError:
             pass

@@ -344,6 +344,53 @@ def load_scraped_values() -> dict:
         return {}
 
 
+_NEWVAL_PATH = os.path.join(_CACHE_DIR, "tm_newleague_values.json")
+
+
+def build_new_league_values(seasons=None) -> dict:
+    """Scrape CURRENT squad values for the Transfermarkt-sourced top-flight
+    leagues (Saudi, K-League, Egypt, …) whose values the CC0 dataset lacks.
+    Keyed by TM club NAME — which equals our team_stats key for these leagues
+    (both come from Transfermarkt), so the serving fill is an exact-name lookup.
+    Uses the last completed season (pre-season values are in flux). Persists to
+    tm_newleague_values.json. Returns {tm_name: value_eur}."""
+    import leagues
+    if seasons is None:
+        ref = _reference_season()
+        seasons = [ref, ref - 1, ref + 1]   # completed first; upcoming last resort
+    out = {}
+    for lg in leagues.REGISTRY:
+        if lg.source != "tm":
+            continue
+        code = lg.tm_code.split("+")[0]     # split-season leagues: use the main code
+        vals = {}
+        for y in seasons:
+            try:
+                rows = scrape_competition(code, y)
+            except Exception as e:
+                print(f"  {lg.code} ({code}) {y}: skipped ({e})")
+                continue
+            if rows:
+                for _cid, name, val in rows:
+                    vals.setdefault(name, val)
+                break
+        out.update(vals)
+        print(f"  {lg.code} ({code}): {len(vals)} club values")
+    os.makedirs(_CACHE_DIR, exist_ok=True)
+    with open(_NEWVAL_PATH, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=2)
+    print(f"\nWrote {len(out)} club values -> {os.path.relpath(_NEWVAL_PATH)}")
+    return out
+
+
+def load_new_league_values() -> dict:
+    try:
+        with open(_NEWVAL_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return {}
+
+
 def main():
     comps = [a for a in sys.argv[1:] if a.isalnum()] or None
     print("Scraping Transfermarkt second-division squad values "

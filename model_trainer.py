@@ -373,15 +373,26 @@ def _select_best(param_grid: list, build_fn, X, y, n_folds: int, purge_gap: int,
     candidates under the SAME weighting the final fit uses — otherwise tuning
     would optimize for uniform weights and the final model for recency-weighted.
     """
-    best_params, best_score = param_grid[0], -1.0
+    # RPS-aware selection: rank by macro-F1 MINUS a weighted RPS, so among
+    # candidates of comparable draw-handling the one with the better (lower) RPS
+    # wins — RPS is the model's real target. macro-F1 still dominates (it guards
+    # the draw class), and the retrain's leak-free holdout validates the result.
+    RPS_WEIGHT = 2.0
+    best_params, best_blend, best_f1 = param_grid[0], -1e9, None
     for params in param_grid:
         pipe = build_fn(params)
         res = _evaluate_pipeline(pipe, X, y, n_folds=n_folds, purge_gap=purge_gap,
                                  recency_weights=recency_weights)
-        score = res.get("macro_f1")
-        if score is not None and score > best_score:
-            best_score, best_params = score, params
-    return best_params, best_score
+        f1 = res.get("macro_f1")
+        if f1 is None:
+            continue
+        rps = res.get("rps")
+        blend = f1 - RPS_WEIGHT * rps if rps is not None else f1
+        if blend > best_blend:
+            best_blend, best_params, best_f1 = blend, params, f1
+    # Return the winner's macro-F1 (not the blend) so the logged tuning notes
+    # stay interpretable.
+    return best_params, (best_f1 if best_f1 is not None else -1.0)
 
 
 def _evaluate_pipeline(pipe, X, y, n_folds=5, purge_gap=0, burn_in_folds=0,
@@ -1421,7 +1432,7 @@ class MatchPredictorModel:
         if getattr(self, "_holdout", None):
             holdout_path = os.path.join(os.path.dirname(os.path.abspath(path)), "holdout_eval.json")
             try:
-                with open(holdout_path, "w") as f:
+                with open(holdout_path, "w", encoding="utf-8") as f:
                     json.dump(self._holdout, f)
             except OSError:
                 pass
@@ -1461,7 +1472,7 @@ class MatchPredictorModel:
             path = os.path.join(_SCRIPT_DIR, "model.json")
         
         try:
-            with open(path) as f:
+            with open(path, encoding="utf-8") as f:
                 data = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             return False

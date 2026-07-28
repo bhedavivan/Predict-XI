@@ -152,6 +152,17 @@ LEAGUE_NAME_MAP = {v: k for k, v in LEAGUE_CODE_MAP.items()}
 # csv_code -> Transfermarkt gesamtspielplan comp code(s), for the scraped leagues.
 _TM_RESULT_COMPS = dict(_leagues.TM_RESULT_COMPS)
 
+# Second divisions used ONLY to warm up team ratings (Elo/Dixon-Coles/pi) so a
+# promoted club arrives in the top flight with real form instead of a cold
+# 1500 anchor. Loaded alongside the top flights, run through the feature loop
+# chronologically, but EXCLUDED from the scored training set (data_processor.
+# WARMUP_COMPETITION_CODES). Not in LEAGUE_CODE_MAP (they are not rated leagues).
+WARMUP_CODE_MAP = {"eng.2": "ELC", "es.2": "PD2", "de.2": "BL2",
+                   "it.2": "SA2", "fr.2": "FL2"}
+WARMUP_CSV_CODES = list(WARMUP_CODE_MAP)
+# Merged view used only to resolve a match's competition code when parsing.
+_CODE_MAP = {**LEAGUE_CODE_MAP, **WARMUP_CODE_MAP}
+
 # Cache directory
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data_cache")
 CACHE_TTL = 86400  # 24 hours in seconds
@@ -365,7 +376,7 @@ def parse_fd_couk_new_csv(csv_content: str, season: str, league_code: str) -> Li
                 "homeTeam": {"name": home_team},
                 "awayTeam": {"name": away_team},
                 "score": {"fullTime": {"home": home_score, "away": away_score}},
-                "competition": {"code": LEAGUE_CODE_MAP.get(league_code, league_code)},
+                "competition": {"code": _CODE_MAP.get(league_code, league_code)},
                 "season": season,
                 "league_code": league_code,
                 "stats": {},
@@ -486,7 +497,7 @@ def parse_csv_matches(csv_content: str, season: str, league_code: str) -> List[D
                         "away": away_score
                     }
                 },
-                "competition": {"code": LEAGUE_CODE_MAP.get(league_code, league_code)},
+                "competition": {"code": _CODE_MAP.get(league_code, league_code)},
                 "season": season,
                 "league_code": league_code,
                 "stats": stats,
@@ -520,7 +531,7 @@ def load_tm_results(season: str, league_code: str, tm_code: str) -> List[Dict[st
         rows = results_for(tm_code, year)
     except Exception:
         return []
-    our_code = LEAGUE_CODE_MAP.get(league_code, league_code)
+    our_code = _CODE_MAP.get(league_code, league_code)
     out = []
     for date_iso, home, away, hg, ag in rows:
         out.append({
@@ -634,7 +645,7 @@ def get_available_leagues_for_season(season: str) -> List[str]:
 
 def get_league_display_name(league_code: str) -> str:
     """Get human-readable league name."""
-    standard_code = LEAGUE_CODE_MAP.get(league_code, league_code)
+    standard_code = _CODE_MAP.get(league_code, league_code)
     return standard_code
 
 
@@ -791,7 +802,7 @@ def save_processed_data(
 def load_processed_data(path: str = "processed_data.json") -> Optional[Dict[str, Any]]:
     """Load processed training data from JSON file."""
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         return None

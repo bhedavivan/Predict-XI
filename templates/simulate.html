@@ -54,8 +54,8 @@
         {% if live %}<th class="r">Pts</th>{% endif %}
         <th class="r">Proj pts</th>
         <th class="r">Title</th>
-        <th class="r" title="Top places qualifying for the confederation's top competition (approx, by league position)">UCL</th>
-        {% if rules.uel_slots %}<th class="r" title="Secondary European qualification (approx)">UEL</th>{% endif %}
+        <th class="r" title="Top places qualifying for the confederation's premier club competition (approx, by league position)">{{ tier_top }}</th>
+        {% if rules.uel_slots and tier_second %}<th class="r" title="Secondary continental qualification (approx)">{{ tier_second }}</th>{% endif %}
         {% if rules.playoff_slots %}<th class="r">Playoff</th>{% endif %}
         <th class="r">Releg</th>
         <th class="r">Avg</th>
@@ -69,7 +69,7 @@
         <td class="r"><strong>{{ r.exp_pts }}</strong> <span class="range">{{ r.p10 }}&ndash;{{ r.p90 }}</span></td>
         <td class="r"><span class="lt-bar" style="width:{{ (r.title*0.5)|round(0)|int }}px"></span>{{ r.title }}%{% if r.title_ci and r.title > 0 and r.title < 100 %}<span class="ci">&plusmn;{{ r.title_ci }}</span>{% endif %}</td>
         <td class="r">{{ r.ucl }}%</td>
-        {% if rules.uel_slots %}<td class="r">{{ r.uel }}%</td>{% endif %}
+        {% if rules.uel_slots and tier_second %}<td class="r">{{ r.uel }}%</td>{% endif %}
         {% if rules.playoff_slots %}<td class="r">{{ r.playoff }}%</td>{% endif %}
         <td class="r {% if r.releg >= 25 %}rel-hi{% endif %}">{{ r.releg }}%</td>
         <td class="r muted">{{ r.avg_pos }}</td>

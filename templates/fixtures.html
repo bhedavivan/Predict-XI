@@ -29,8 +29,11 @@
         <div class="teams">{{ m.home_team }} <span class="muted">vs</span> {{ m.away_team }}</div>
         <div class="date">{{ m.date }}</div>
       </div>
-      <a class="btn" style="width:auto; padding:.5rem 1rem; font-size:.86rem;"
-         href="/predict?home={{ m.home_predict|urlencode }}&away={{ m.away_predict|urlencode }}">Predict</a>
+      <div style="display:flex; align-items:center; gap:.6rem;">
+        {% if m.fav %}<span class="diff diff-{{ m.diff }}" title="Model pick">{{ m.fav }} {{ m.fav_pct }}%</span>{% endif %}
+        <a class="btn" style="width:auto; padding:.5rem 1rem; font-size:.86rem;"
+           href="/predict?home={{ m.home_predict|urlencode }}&away={{ m.away_predict|urlencode }}">Predict</a>
+      </div>
     </div>
     {% endfor %}
   </div>

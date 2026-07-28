@@ -324,7 +324,7 @@ def main():
         "reliability": reliability_curve(yte, proba, classes),
         "draw_threshold": draw_threshold_curve(yte, proba, classes),
     }
-    with open(os.path.join(_SCRIPT_DIR, "evaluation.json"), "w") as f:
+    with open(os.path.join(_SCRIPT_DIR, "evaluation.json"), "w", encoding="utf-8") as f:
         json.dump(out, f, indent=2)
 
     print(f"Holdout: {n_test} matches")

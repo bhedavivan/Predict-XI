@@ -203,15 +203,15 @@ def save_artifacts(metrics: dict, team_stats: dict, h2h_map: dict = None):
     # docs), not additional data, so the total is just train_samples.
     metrics_out["training_samples"] = metrics.get("train_samples", 0)
     metrics_out["n_teams"] = len(team_stats)
-    with open(os.path.join(_SCRIPT_DIR, "model_metrics.json"), "w") as f:
+    with open(os.path.join(_SCRIPT_DIR, "model_metrics.json"), "w", encoding="utf-8") as f:
         json.dump(metrics_out, f, indent=2)
-    with open(os.path.join(_SCRIPT_DIR, "team_stats.json"), "w") as f:
+    with open(os.path.join(_SCRIPT_DIR, "team_stats.json"), "w", encoding="utf-8") as f:
         json.dump(team_stats, f, indent=2)
     # Head-to-head is a property of a PAIR, so it cannot live on team_stats.
     # Persisted separately and loaded by the app; without it every live
     # prediction silently received h2h=0.
     if h2h_map:
-        with open(os.path.join(_SCRIPT_DIR, "h2h_stats.json"), "w") as f:
+        with open(os.path.join(_SCRIPT_DIR, "h2h_stats.json"), "w", encoding="utf-8") as f:
             json.dump(h2h_map, f)
 
 
@@ -419,7 +419,14 @@ def main():
             train_codes = args.train
         else:
             if args.all_leagues:
-                train_codes = list(LEAGUE_CODE_MAP.keys())
+                # Top flights (scored) + second divisions (rating warm-up only:
+                # loaded and fed through the feature loop, excluded from scoring
+                # so promoted clubs carry real form into the top flight).
+                import csv_data_loader as _cdl
+                import data_processor as _dp
+                train_codes = list(LEAGUE_CODE_MAP.keys()) + _cdl.WARMUP_CSV_CODES
+                _dp.WARMUP_COMPETITION_CODES = set(_cdl.WARMUP_CODE_MAP.values())
+                print(f"Warm-up leagues (unscored): {_cdl.WARMUP_CSV_CODES}")
             else:
                 # Cold-start default: the strongest handful of top flights.
                 import leagues as _lg

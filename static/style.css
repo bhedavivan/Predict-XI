@@ -160,6 +160,13 @@ option { color: var(--text); background: var(--panel-2); }
 .lt-bar { display:inline-block; height:6px; border-radius:999px; background: var(--accent);
   margin-right:.5rem; vertical-align:middle; opacity:.75; }
 
+/* ── Fixtures difficulty chip ────────────────────────────────────────── */
+.diff { font-size:.74rem; font-weight:700; padding:.2rem .5rem; border-radius:999px;
+  white-space:nowrap; border:1px solid var(--border); }
+.diff-strong { color:#0b1220; background: var(--home); border-color: var(--home); }   /* one-sided */
+.diff-mid { color:#0b1220; background: var(--draw); border-color: var(--draw); }       /* leaning */
+.diff-open { color: var(--text); background: var(--panel-2); }                          /* coin-flip */
+
 /* ── Season simulator ────────────────────────────────────────────────── */
 .sim-proj { width:100%; border-collapse:collapse; font-size:.85rem; min-width:520px; }
 .sim-proj th { color: var(--muted); font-size:.72rem; text-transform:uppercase; letter-spacing:.03em;

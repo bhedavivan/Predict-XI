@@ -79,14 +79,14 @@ def apply_to_team_stats(team_stats: dict, membership: dict) -> int:
 
 
 def main():
-    with open(os.path.join(_DIR, "team_stats.json")) as f:
+    with open(os.path.join(_DIR, "team_stats.json"), encoding="utf-8") as f:
         team_stats = json.load(f)
     print("Fetching current-season membership from football-data.org ...")
     membership = fetch_current_membership(team_stats)
     moved = apply_to_team_stats(team_stats, membership)
-    with open(os.path.join(_DIR, "team_stats.json"), "w") as f:
+    with open(os.path.join(_DIR, "team_stats.json"), "w", encoding="utf-8") as f:
         json.dump(team_stats, f, indent=2)
-    with open(os.path.join(_DIR, "current_leagues.json"), "w") as f:
+    with open(os.path.join(_DIR, "current_leagues.json"), "w", encoding="utf-8") as f:
         json.dump(membership, f, indent=2)
     print(f"\nReassigned {moved} teams to their current league.")
     print("Sizes:", {k: len(v) for k, v in sorted(membership.items())})

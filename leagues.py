@@ -151,6 +151,50 @@ LEAGUE_RULES = {
 }
 
 
+# Confederation per country, and the labels for its top/secondary continental
+# club competitions — so the simulator shows "Libertadores" for a Brazilian
+# league, not "UCL". The slot COUNTS come from LEAGUE_RULES (approximate); these
+# are just the names. (Second-competition label "" => that league shows no
+# secondary continental tier.)
+_CONFED_BY_COUNTRY = {
+    # UEFA
+    "England": "UEFA", "Spain": "UEFA", "Germany": "UEFA", "Italy": "UEFA",
+    "France": "UEFA", "Portugal": "UEFA", "Netherlands": "UEFA", "Belgium": "UEFA",
+    "Turkey": "UEFA", "Greece": "UEFA", "Russia": "UEFA", "Switzerland": "UEFA",
+    "Austria": "UEFA", "Scotland": "UEFA", "Denmark": "UEFA", "Ukraine": "UEFA",
+    "Croatia": "UEFA", "Czechia": "UEFA", "Serbia": "UEFA", "Norway": "UEFA",
+    "Poland": "UEFA", "Sweden": "UEFA", "Romania": "UEFA", "Hungary": "UEFA",
+    "Israel": "UEFA",
+    # CONMEBOL
+    "Brazil": "CONMEBOL", "Argentina": "CONMEBOL", "Colombia": "CONMEBOL",
+    "Chile": "CONMEBOL", "Uruguay": "CONMEBOL", "Ecuador": "CONMEBOL",
+    "Paraguay": "CONMEBOL", "Peru": "CONMEBOL",
+    # AFC
+    "Saudi Arabia": "AFC", "South Korea": "AFC", "Japan": "AFC", "China": "AFC",
+    "Qatar": "AFC", "UAE": "AFC", "India": "AFC", "Australia": "AFC",
+    # CAF
+    "Egypt": "CAF", "South Africa": "CAF", "Morocco": "CAF",
+    # CONCACAF
+    "Mexico": "CONCACAF", "USA": "CONCACAF",
+}
+
+_CONFED_LABELS = {
+    "UEFA": ("UCL", "UEL"),
+    "CONMEBOL": ("Libertadores", "Sudamericana"),
+    "AFC": ("AFC CL", ""),
+    "CAF": ("CAF CL", ""),
+    "CONCACAF": ("CCC", ""),   # CONCACAF Champions Cup
+}
+
+
+def tier_labels(code):
+    """(top_continental_label, secondary_label) for a league, by confederation.
+    Defaults to the European UCL/UEL when the country isn't mapped."""
+    lg = BY_CODE.get(code)
+    conf = _CONFED_BY_COUNTRY.get(lg.country) if lg else None
+    return _CONFED_LABELS.get(conf, ("UCL", "UEL"))
+
+
 def league_rules(code, n_teams):
     """Rules for a league, clamped so the qualification + relegation bands always
     leave at least one mid-table place (guards tiny/hypothetical fields)."""

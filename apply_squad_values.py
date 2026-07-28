@@ -77,25 +77,46 @@ def match_scraped_values(team_stats: dict, store: dict, only_missing: bool = Tru
     return out
 
 
+def apply_new_league_values(team_stats: dict) -> int:
+    """Fill squad values for the Transfermarkt-sourced top-flight leagues (Saudi,
+    K-League, Egypt, …) that the CC0 dataset doesn't cover. Their team_stats keys
+    ARE the TM club names, so this is a safe exact-name lookup — no fuzzy match.
+    Returns the number of clubs filled."""
+    from transfermarkt_scraper import load_new_league_values
+    import leagues
+    vals = load_new_league_values()
+    if not vals:
+        return 0
+    tm_league_codes = {lg.code for lg in leagues.REGISTRY if lg.source == "tm"}
+    n = 0
+    for team, s in team_stats.items():
+        if s.get("league") in tm_league_codes and s.get("matches_played", 0) > 0:
+            v = vals.get(team)
+            if v:
+                s["squad_value_eur"] = float(v)
+                n += 1
+    return n
+
+
 def main():
     with open(os.path.join(_DIR, "team_stats.json"), encoding="utf-8") as f:
         team_stats = json.load(f)
-    store = load_scraped_values()
-    if not store:
-        raise SystemExit("No scraped values found — run `python transfermarkt_scraper.py` first.")
 
-    # only_missing=False: second-division values come solely from this scraper,
-    # so always refresh them (idempotent, and lets corrected scrapes take effect).
-    values = match_scraped_values(team_stats, store, only_missing=False)
+    # Second divisions (only present if the app still trains them).
+    store = load_scraped_values()
+    values = match_scraped_values(team_stats, store, only_missing=False) if store else {}
     for team, val in values.items():
         team_stats[team]["squad_value_eur"] = val
+
+    # New top-flight leagues (Saudi, K-League, …) — exact TM-name lookup.
+    n_new = apply_new_league_values(team_stats)
 
     with open(os.path.join(_DIR, "team_stats.json"), "w", encoding="utf-8") as f:
         json.dump(team_stats, f, indent=2, ensure_ascii=False)
 
     with_val = sum(1 for s in team_stats.values()
                    if s.get("matches_played", 0) > 0 and s.get("squad_value_eur"))
-    print(f"Attached second-division squad values to {len(values)} clubs.")
+    print(f"Attached squad values: {len(values)} second-division + {n_new} new top-flight clubs.")
     print(f"team_stats now has squad values for {with_val} clubs.")
 
 
