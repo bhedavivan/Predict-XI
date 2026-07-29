@@ -4,6 +4,20 @@
 strength-ranked and consistently named everywhere; pi-ratings + a Dixon-Coles output blend added to
 the model; a much deeper Monte Carlo simulator; and a bring-your-own play-style/live-squad adapter.
 
+## API-Football live team-news (built, blocked on the free plan)
+
+`player_sync.py` spends the API-Football budget (100 req/day) only on injuries for
+imminent fixtures and writes `data_cache/player_data.json`, which the `/predict`
+live nudge already reads (serving never calls the API — budget-safe). **But the
+FREE plan is capped at seasons 2022-2024** (verified: "Free plans do not have
+access to this season, try from 2022 to 2024"), so it cannot serve the current
+season — the live nudge needs a plan with current-season access (or another
+current source). The sync + adapter are dormant and switch on the moment that
+exists: `python player_sync.py teams` then `python player_sync.py injuries`. A
+*historical* injury feature from 2022-2024 was deliberately NOT built — it would
+be populated in training but always zero at serving (no current data on free) =
+the train/serve skew trap.
+
 ## What changed in v5.2
 
 - **Live track record (`track_record.py`, `/track`).** Logs a dated forecast for every upcoming

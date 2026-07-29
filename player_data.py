@@ -118,15 +118,16 @@ class ApiFootballSource(PlayerDataSource):
         self.token = token
 
     def availability(self, club: str, on_date: str) -> Optional[Dict]:
-        if not self.token:
-            return None
-        # Intentionally not implemented against a live endpoint here: doing so
-        # blind (no key to verify field names / rate limits) would be guesswork.
-        # Wire the real /injuries + /players call when a key is available and
-        # return the dict shape documented in `player_availability_features`.
-        raise NotImplementedError(
-            "ApiFootballSource.availability: implement the /injuries call once "
-            "PLAYER_API_TOKEN is set and the response shape is verified.")
+        # Serving never calls the API live (budget). Injuries are fetched OFFLINE
+        # by player_sync.py into data_cache/player_data.json, which the
+        # FilePlayerDataSource reads. Inert here by design.
+        #
+        # NOTE on the FREE API-Football plan (verified 2026-07): it only serves
+        # seasons 2022-2024 ("Free plans do not have access to this season, try
+        # from 2022 to 2024"), so it CANNOT provide current-season team news —
+        # the live nudge needs a plan with current-season access (or another
+        # current source). player_sync.py switches on the moment that exists.
+        return None
 
 
 # ─── Shared feature helper (same pattern as squad_value_feature_dict) ─────────
@@ -176,15 +177,13 @@ def style_feature_dict(home_style: Optional[Dict], away_style: Optional[Dict]) -
 
 
 def get_source() -> Optional[PlayerDataSource]:
-    """Return the best available player-data source, or None. Prefers a local
-    bring-your-own-data JSON file; falls back to the API-Football adapter when a
-    token is set; otherwise None (the /predict path then runs unchanged)."""
+    """Return the serving-time player-data source, or None. ALWAYS the local
+    JSON file — never a live API call, which would spend the (rate-limited)
+    request budget on every page view. The file is produced OFFLINE by
+    player_sync.py (API-Football) or hand-provided by the user. Returns None when
+    there's no data, so /predict runs unchanged."""
     f = FilePlayerDataSource()
-    if f.available():
-        return f
-    if PLAYER_API_TOKEN:
-        return ApiFootballSource()
-    return None
+    return f if f.available() else None
 
 
 def live_availability_adjustment(home_avail: Optional[Dict], away_avail: Optional[Dict],
