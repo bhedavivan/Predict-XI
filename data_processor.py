@@ -745,7 +745,8 @@ def prepare_training_data(rows: list, return_meta: bool = False):
         # Kept parallel to X so downstream evaluation can slice results by
         # competition. Rows are filtered above, so leagues must be collected
         # here rather than reconstructed later.
-        meta.append({"league": row.get("competition", ""), "date": row.get("date", "")})
+        meta.append({"league": row.get("competition", ""), "date": row.get("date", ""),
+                     "home_team": row.get("home_team", ""), "away_team": row.get("away_team", "")})
 
     if return_meta:
         return X, y, feature_cols, meta

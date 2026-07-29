@@ -58,11 +58,19 @@ class _Budget:
         return self.used < self.cap
 
 
+_last_req = [0.0]
+_MIN_INTERVAL = 7.0   # free tier caps ~10 requests/minute; ~8.5/min stays safe
+
+
 def _get(path, params, budget):
     if not _TOKEN:
         raise SystemExit("PLAYER_API_TOKEN not set in .env.")
     if not budget.ok():
         raise RuntimeError("request budget exhausted")
+    wait = _MIN_INTERVAL - (time.time() - _last_req[0])
+    if wait > 0:
+        time.sleep(wait)
+    _last_req[0] = time.time()
     url = f"{_HOST}{path}?" + urllib.parse.urlencode(params)
     req = urllib.request.Request(url, headers={"x-apisports-key": _TOKEN})
     budget.used += 1
@@ -200,14 +208,92 @@ def sync_injuries(days_ahead=4, cap=80):
     return availability
 
 
+_STYLES = os.path.join(_CACHE, "team_styles.json")   # {season: {our_key: {metrics}}}
+
+
+def _style_metrics(st):
+    """Derive durable play-style metrics from a /teams/statistics response."""
+    games = (st.get("fixtures", {}).get("played", {}) or {}).get("total") or 0
+    if not games:
+        return None
+    forms = st.get("lineups") or []
+    primary = max(forms, key=lambda f: f.get("played", 0))["formation"] if forms else ""
+    try:
+        def_shape = int(primary.split("-")[0])          # 3/4/5-at-the-back tendency
+    except (ValueError, IndexError):
+        def_shape = 4
+
+    def _sum(block):
+        return sum((v or {}).get("total") or 0 for v in (block or {}).values())
+    cards = _sum(st.get("cards", {}).get("yellow")) + _sum(st.get("cards", {}).get("red"))
+    gmin = (st.get("goals", {}).get("for", {}) or {}).get("minute", {}) or {}
+    total_for = _sum(gmin)
+    late = ((gmin.get("76-90") or {}).get("total") or 0) + ((gmin.get("91-105") or {}).get("total") or 0)
+    return {
+        "def_shape": def_shape,
+        "cards_pg": round(cards / games, 3),
+        "late_share": round(late / total_for, 3) if total_for else 0.0,
+    }
+
+
+def sync_styles(league_codes, seasons, cap=95):
+    """Collect durable team play-style profiles (formation, discipline, goal
+    timing) from /teams/statistics for the given leagues+seasons (must be seasons
+    the plan can access — free = 2022-2024). 1 request per team. Writes
+    team_styles.json keyed by {season: {our_team_key: metrics}}."""
+    from team_aliases import resolve_team_name
+    stats = _load_team_stats()
+    budget = _Budget(cap)
+    try:
+        with open(_STYLES, encoding="utf-8") as f:
+            out = json.load(f)
+    except (OSError, ValueError):
+        out = {}
+    for code in league_codes:
+        lid = API_LEAGUE_ID.get(code)
+        if not lid:
+            continue
+        for season in seasons:
+            teams = _get("/teams", {"league": lid, "season": season}, budget)
+            if not teams:
+                print(f"  {code} {season}: no teams (season not on plan?)")
+                continue
+            got = 0
+            for t in teams:
+                if not budget.ok():
+                    break
+                team = t.get("team", {})
+                key = resolve_team_name(team.get("name", ""), stats) or (team.get("name") if team.get("name") in stats else None)
+                if not key:
+                    continue
+                if key in out.get(str(season), {}):
+                    continue   # already collected (resume-friendly, saves requests)
+                resp = _get("/teams/statistics", {"team": team.get("id"), "league": lid, "season": season}, budget)
+                m = _style_metrics(resp) if resp else None
+                if m:
+                    out.setdefault(str(season), {})[key] = m
+                    got += 1
+            print(f"  {code} {season}: {got} team styles ({budget.used} reqs used)")
+    os.makedirs(_CACHE, exist_ok=True)
+    with open(_STYLES, "w", encoding="utf-8") as f:
+        json.dump(out, f, indent=2, ensure_ascii=False)
+    print(f"\nWrote styles for {sum(len(v) for v in out.values())} team-seasons -> "
+          f"{os.path.relpath(_STYLES)} ({budget.used} requests used)")
+    return out
+
+
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else "injuries"
     if cmd == "teams":
         build_team_map()
     elif cmd == "injuries":
         sync_injuries(int(sys.argv[2]) if len(sys.argv) > 2 else 4)
+    elif cmd == "styles":
+        codes = sys.argv[2].split(",") if len(sys.argv) > 2 else ["PL", "PD"]
+        yrs = [int(y) for y in sys.argv[3].split(",")] if len(sys.argv) > 3 else [2023, 2024]
+        sync_styles(codes, yrs)
     else:
-        print("usage: python player_sync.py [teams | injuries [days_ahead]]")
+        print("usage: python player_sync.py [teams | injuries [days] | styles [codes] [seasons]]")
 
 
 if __name__ == "__main__":

@@ -18,6 +18,17 @@ exists: `python player_sync.py teams` then `python player_sync.py injuries`. A
 be populated in training but always zero at serving (no current data on free) =
 the train/serve skew trap.
 
+**Play-style (tested, not integrated).** Play-style IS a durable trait (usable for
+random matchups, unlike transient injuries), and it's collectable from the
+accessible 2022-2024 seasons — `player_sync.py styles` pulls formation / cards /
+goal-timing profiles from `/teams/statistics` (paced under the 10 req/min cap,
+resume-safe). A leak-free temporal-split ablation on the PL sample (760 matches,
+39% style-covered) moved RPS by only **−0.0015 — within noise**, matching the
+prior that style is redundant with the strength/form the model already has
+(player-stats, squad-mix, recency were all ablated OFF for the same reason). So it
+is NOT integrated. The collector + experiment stay for a future richer style feed
+(possession/xG, not formation/cards) where real signal might live.
+
 ## What changed in v5.2
 
 - **Live track record (`track_record.py`, `/track`).** Logs a dated forecast for every upcoming
