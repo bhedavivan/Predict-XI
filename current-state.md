@@ -4,6 +4,15 @@
 strength-ranked and consistently named everywhere; pi-ratings + a Dixon-Coles output blend added to
 the model; a much deeper Monte Carlo simulator; and a bring-your-own play-style/live-squad adapter.
 
+## What changed in v5.2
+
+- **Live track record (`track_record.py`, `/track`).** Logs a dated forecast for every upcoming
+  fixture BEFORE kickoff, settles it against the real result once played, and scores the running
+  accuracy / RPS / log-loss / calibration — the honest, out-of-sample proof the model works in the
+  wild (the holdout RPS is a past-data measurement; this accumulates forward). Keyed by the API's
+  stable match id (exact settle, no name guessing). Run `python track_record.py log` / `settle`
+  periodically; the `/track` page displays it. Seeded with 271 predictions for the 2026-27 season.
+
 ## What changed in v5.1
 
 - **Squad values for every league.** The Transfermarkt value scraper now covers the 21 new top-flight

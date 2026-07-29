@@ -331,6 +331,18 @@ def simulate():
                            tier_top=tier_top, tier_second=tier_second, error=err)
 
 
+@app.route("/track")
+def track():
+    """Live prediction track record: how the model's dated, pre-kickoff forecasts
+    have actually held up once the matches were played."""
+    try:
+        from track_record import score
+        s = score()
+    except Exception as e:
+        s = {"n_logged": 0, "n_pending": 0, "n_settled": 0, "error": str(e)}
+    return render_template("track.html", active="track", s=s, league_name=league_name)
+
+
 @app.route("/fixtures")
 def fixtures():
     league_code = request.args.get("league", "").strip()

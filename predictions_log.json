@@ -1,0 +1,5422 @@
+[
+  {
+    "match_id": 560542,
+    "utc_date": "2026-08-21T19:00:00Z",
+    "league": "PL",
+    "home": "Arsenal",
+    "away": "Coventry",
+    "home_display": "Arsenal",
+    "away_display": "Coventry",
+    "probs": {
+      "Home Win": 0.7752,
+      "Draw": 0.1513,
+      "Away Win": 0.0735
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560543,
+    "utc_date": "2026-08-22T11:30:00Z",
+    "league": "PL",
+    "home": "Hull",
+    "away": "Man United",
+    "home_display": "Hull",
+    "away_display": "Manchester United",
+    "probs": {
+      "Home Win": 0.1231,
+      "Draw": 0.1737,
+      "Away Win": 0.7032
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560544,
+    "utc_date": "2026-08-22T14:00:00Z",
+    "league": "PL",
+    "home": "Ipswich",
+    "away": "Sunderland",
+    "home_display": "Ipswich",
+    "away_display": "Sunderland",
+    "probs": {
+      "Home Win": 0.3432,
+      "Draw": 0.2989,
+      "Away Win": 0.3579
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560545,
+    "utc_date": "2026-08-22T14:00:00Z",
+    "league": "PL",
+    "home": "Nott'm Forest",
+    "away": "Leeds",
+    "home_display": "Nottingham Forest",
+    "away_display": "Leeds",
+    "probs": {
+      "Home Win": 0.4381,
+      "Draw": 0.2926,
+      "Away Win": 0.2694
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560546,
+    "utc_date": "2026-08-22T14:00:00Z",
+    "league": "PL",
+    "home": "Everton",
+    "away": "Crystal Palace",
+    "home_display": "Everton",
+    "away_display": "Crystal Palace",
+    "probs": {
+      "Home Win": 0.4139,
+      "Draw": 0.2872,
+      "Away Win": 0.2989
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560547,
+    "utc_date": "2026-08-22T16:30:00Z",
+    "league": "PL",
+    "home": "Brentford",
+    "away": "Tottenham",
+    "home_display": "Brentford",
+    "away_display": "Tottenham",
+    "probs": {
+      "Home Win": 0.4907,
+      "Draw": 0.275,
+      "Away Win": 0.2343
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560548,
+    "utc_date": "2026-08-23T13:00:00Z",
+    "league": "PL",
+    "home": "Man City",
+    "away": "Bournemouth",
+    "home_display": "Manchester City",
+    "away_display": "Bournemouth",
+    "probs": {
+      "Home Win": 0.5463,
+      "Draw": 0.2576,
+      "Away Win": 0.1961
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560549,
+    "utc_date": "2026-08-23T13:00:00Z",
+    "league": "PL",
+    "home": "Brighton",
+    "away": "Aston Villa",
+    "home_display": "Brighton",
+    "away_display": "Aston Villa",
+    "probs": {
+      "Home Win": 0.3811,
+      "Draw": 0.2818,
+      "Away Win": 0.3371
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560550,
+    "utc_date": "2026-08-23T15:30:00Z",
+    "league": "PL",
+    "home": "Newcastle",
+    "away": "Liverpool",
+    "home_display": "Newcastle",
+    "away_display": "Liverpool",
+    "probs": {
+      "Home Win": 0.3838,
+      "Draw": 0.276,
+      "Away Win": 0.3402
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560551,
+    "utc_date": "2026-08-24T19:00:00Z",
+    "league": "PL",
+    "home": "Fulham",
+    "away": "Chelsea",
+    "home_display": "Fulham",
+    "away_display": "Chelsea",
+    "probs": {
+      "Home Win": 0.41,
+      "Draw": 0.2852,
+      "Away Win": 0.3049
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560555,
+    "utc_date": "2026-08-28T19:00:00Z",
+    "league": "PL",
+    "home": "Crystal Palace",
+    "away": "Man City",
+    "home_display": "Crystal Palace",
+    "away_display": "Manchester City",
+    "probs": {
+      "Home Win": 0.1769,
+      "Draw": 0.2276,
+      "Away Win": 0.5955
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560552,
+    "utc_date": "2026-08-29T11:30:00Z",
+    "league": "PL",
+    "home": "Liverpool",
+    "away": "Nott'm Forest",
+    "home_display": "Liverpool",
+    "away_display": "Nottingham Forest",
+    "probs": {
+      "Home Win": 0.4712,
+      "Draw": 0.2775,
+      "Away Win": 0.2513
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560560,
+    "utc_date": "2026-08-29T14:00:00Z",
+    "league": "PL",
+    "home": "Bournemouth",
+    "away": "Everton",
+    "home_display": "Bournemouth",
+    "away_display": "Everton",
+    "probs": {
+      "Home Win": 0.5433,
+      "Draw": 0.2539,
+      "Away Win": 0.2028
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560561,
+    "utc_date": "2026-08-29T14:00:00Z",
+    "league": "PL",
+    "home": "Coventry",
+    "away": "Hull",
+    "home_display": "Coventry",
+    "away_display": "Hull",
+    "probs": {
+      "Home Win": 0.6072,
+      "Draw": 0.2214,
+      "Away Win": 0.1714
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560558,
+    "utc_date": "2026-08-29T16:30:00Z",
+    "league": "PL",
+    "home": "Tottenham",
+    "away": "Newcastle",
+    "home_display": "Tottenham",
+    "away_display": "Newcastle",
+    "probs": {
+      "Home Win": 0.3285,
+      "Draw": 0.286,
+      "Away Win": 0.3855
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560554,
+    "utc_date": "2026-08-30T13:00:00Z",
+    "league": "PL",
+    "home": "Sunderland",
+    "away": "Fulham",
+    "home_display": "Sunderland",
+    "away_display": "Fulham",
+    "probs": {
+      "Home Win": 0.2802,
+      "Draw": 0.2919,
+      "Away Win": 0.4279
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560556,
+    "utc_date": "2026-08-30T13:00:00Z",
+    "league": "PL",
+    "home": "Chelsea",
+    "away": "Brighton",
+    "home_display": "Chelsea",
+    "away_display": "Brighton",
+    "probs": {
+      "Home Win": 0.3785,
+      "Draw": 0.291,
+      "Away Win": 0.3305
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560559,
+    "utc_date": "2026-08-30T13:00:00Z",
+    "league": "PL",
+    "home": "Leeds",
+    "away": "Brentford",
+    "home_display": "Leeds",
+    "away_display": "Brentford",
+    "probs": {
+      "Home Win": 0.4183,
+      "Draw": 0.2858,
+      "Away Win": 0.2958
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560553,
+    "utc_date": "2026-08-30T15:30:00Z",
+    "league": "PL",
+    "home": "Man United",
+    "away": "Ipswich",
+    "home_display": "Manchester United",
+    "away_display": "Ipswich",
+    "probs": {
+      "Home Win": 0.7315,
+      "Draw": 0.1743,
+      "Away Win": 0.0942
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560557,
+    "utc_date": "2026-08-31T19:00:00Z",
+    "league": "PL",
+    "home": "Aston Villa",
+    "away": "Arsenal",
+    "home_display": "Aston Villa",
+    "away_display": "Arsenal",
+    "probs": {
+      "Home Win": 0.2605,
+      "Draw": 0.2726,
+      "Away Win": 0.4669
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560566,
+    "utc_date": "2026-09-04T19:00:00Z",
+    "league": "PL",
+    "home": "Ipswich",
+    "away": "Liverpool",
+    "home_display": "Ipswich",
+    "away_display": "Liverpool",
+    "probs": {
+      "Home Win": 0.2137,
+      "Draw": 0.2519,
+      "Away Win": 0.5344
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560571,
+    "utc_date": "2026-09-05T11:30:00Z",
+    "league": "PL",
+    "home": "Newcastle",
+    "away": "Bournemouth",
+    "home_display": "Newcastle",
+    "away_display": "Bournemouth",
+    "probs": {
+      "Home Win": 0.3801,
+      "Draw": 0.281,
+      "Away Win": 0.3389
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560562,
+    "utc_date": "2026-09-05T14:00:00Z",
+    "league": "PL",
+    "home": "Nott'm Forest",
+    "away": "Tottenham",
+    "home_display": "Nottingham Forest",
+    "away_display": "Tottenham",
+    "probs": {
+      "Home Win": 0.5095,
+      "Draw": 0.2716,
+      "Away Win": 0.2189
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560563,
+    "utc_date": "2026-09-05T14:00:00Z",
+    "league": "PL",
+    "home": "Man City",
+    "away": "Coventry",
+    "home_display": "Manchester City",
+    "away_display": "Coventry",
+    "probs": {
+      "Home Win": 0.7548,
+      "Draw": 0.1544,
+      "Away Win": 0.0908
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560564,
+    "utc_date": "2026-09-05T14:00:00Z",
+    "league": "PL",
+    "home": "Brighton",
+    "away": "Leeds",
+    "home_display": "Brighton",
+    "away_display": "Leeds",
+    "probs": {
+      "Home Win": 0.4518,
+      "Draw": 0.2875,
+      "Away Win": 0.2607
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560565,
+    "utc_date": "2026-09-05T14:00:00Z",
+    "league": "PL",
+    "home": "Brentford",
+    "away": "Sunderland",
+    "home_display": "Brentford",
+    "away_display": "Sunderland",
+    "probs": {
+      "Home Win": 0.527,
+      "Draw": 0.2698,
+      "Away Win": 0.2032
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560568,
+    "utc_date": "2026-09-05T14:00:00Z",
+    "league": "PL",
+    "home": "Fulham",
+    "away": "Crystal Palace",
+    "home_display": "Fulham",
+    "away_display": "Crystal Palace",
+    "probs": {
+      "Home Win": 0.4429,
+      "Draw": 0.2849,
+      "Away Win": 0.2722
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560569,
+    "utc_date": "2026-09-05T16:30:00Z",
+    "league": "PL",
+    "home": "Hull",
+    "away": "Aston Villa",
+    "home_display": "Hull",
+    "away_display": "Aston Villa",
+    "probs": {
+      "Home Win": 0.1534,
+      "Draw": 0.2045,
+      "Away Win": 0.6421
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560567,
+    "utc_date": "2026-09-06T13:00:00Z",
+    "league": "PL",
+    "home": "Everton",
+    "away": "Man United",
+    "home_display": "Everton",
+    "away_display": "Manchester United",
+    "probs": {
+      "Home Win": 0.292,
+      "Draw": 0.2777,
+      "Away Win": 0.4303
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560570,
+    "utc_date": "2026-09-06T15:30:00Z",
+    "league": "PL",
+    "home": "Arsenal",
+    "away": "Chelsea",
+    "home_display": "Arsenal",
+    "away_display": "Chelsea",
+    "probs": {
+      "Home Win": 0.65,
+      "Draw": 0.2037,
+      "Away Win": 0.1462
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560572,
+    "utc_date": "2026-09-12T14:00:00Z",
+    "league": "PL",
+    "home": "Crystal Palace",
+    "away": "Ipswich",
+    "home_display": "Crystal Palace",
+    "away_display": "Ipswich",
+    "probs": {
+      "Home Win": 0.5357,
+      "Draw": 0.2605,
+      "Away Win": 0.2039
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560573,
+    "utc_date": "2026-09-12T14:00:00Z",
+    "league": "PL",
+    "home": "Liverpool",
+    "away": "Fulham",
+    "home_display": "Liverpool",
+    "away_display": "Fulham",
+    "probs": {
+      "Home Win": 0.4698,
+      "Draw": 0.2816,
+      "Away Win": 0.2487
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560574,
+    "utc_date": "2026-09-12T14:00:00Z",
+    "league": "PL",
+    "home": "Aston Villa",
+    "away": "Nott'm Forest",
+    "home_display": "Aston Villa",
+    "away_display": "Nottingham Forest",
+    "probs": {
+      "Home Win": 0.4665,
+      "Draw": 0.2751,
+      "Away Win": 0.2583
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560576,
+    "utc_date": "2026-09-12T14:00:00Z",
+    "league": "PL",
+    "home": "Bournemouth",
+    "away": "Brentford",
+    "home_display": "Bournemouth",
+    "away_display": "Brentford",
+    "probs": {
+      "Home Win": 0.4785,
+      "Draw": 0.2806,
+      "Away Win": 0.2409
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560581,
+    "utc_date": "2026-09-12T14:00:00Z",
+    "league": "PL",
+    "home": "Chelsea",
+    "away": "Hull",
+    "home_display": "Chelsea",
+    "away_display": "Hull",
+    "probs": {
+      "Home Win": 0.7121,
+      "Draw": 0.1846,
+      "Away Win": 0.1033
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560575,
+    "utc_date": "2026-09-12T16:30:00Z",
+    "league": "PL",
+    "home": "Tottenham",
+    "away": "Everton",
+    "home_display": "Tottenham",
+    "away_display": "Everton",
+    "probs": {
+      "Home Win": 0.3503,
+      "Draw": 0.289,
+      "Away Win": 0.3607
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560577,
+    "utc_date": "2026-09-12T19:00:00Z",
+    "league": "PL",
+    "home": "Sunderland",
+    "away": "Arsenal",
+    "home_display": "Sunderland",
+    "away_display": "Arsenal",
+    "probs": {
+      "Home Win": 0.1457,
+      "Draw": 0.2118,
+      "Away Win": 0.6425
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560578,
+    "utc_date": "2026-09-13T13:00:00Z",
+    "league": "PL",
+    "home": "Coventry",
+    "away": "Brighton",
+    "home_display": "Coventry",
+    "away_display": "Brighton",
+    "probs": {
+      "Home Win": 0.2625,
+      "Draw": 0.2779,
+      "Away Win": 0.4596
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560580,
+    "utc_date": "2026-09-13T15:30:00Z",
+    "league": "PL",
+    "home": "Man United",
+    "away": "Man City",
+    "home_display": "Manchester United",
+    "away_display": "Manchester City",
+    "probs": {
+      "Home Win": 0.333,
+      "Draw": 0.2933,
+      "Away Win": 0.3737
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560579,
+    "utc_date": "2026-09-14T19:00:00Z",
+    "league": "PL",
+    "home": "Leeds",
+    "away": "Newcastle",
+    "home_display": "Leeds",
+    "away_display": "Newcastle",
+    "probs": {
+      "Home Win": 0.4445,
+      "Draw": 0.2837,
+      "Away Win": 0.2718
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560591,
+    "utc_date": "2026-09-18T19:00:00Z",
+    "league": "PL",
+    "home": "Brentford",
+    "away": "Chelsea",
+    "home_display": "Brentford",
+    "away_display": "Chelsea",
+    "probs": {
+      "Home Win": 0.4369,
+      "Draw": 0.2825,
+      "Away Win": 0.2806
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560587,
+    "utc_date": "2026-09-19T11:30:00Z",
+    "league": "PL",
+    "home": "Tottenham",
+    "away": "Aston Villa",
+    "home_display": "Tottenham",
+    "away_display": "Aston Villa",
+    "probs": {
+      "Home Win": 0.3023,
+      "Draw": 0.2774,
+      "Away Win": 0.4204
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560584,
+    "utc_date": "2026-09-19T14:00:00Z",
+    "league": "PL",
+    "home": "Everton",
+    "away": "Ipswich",
+    "home_display": "Everton",
+    "away_display": "Ipswich",
+    "probs": {
+      "Home Win": 0.572,
+      "Draw": 0.2459,
+      "Away Win": 0.1821
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560585,
+    "utc_date": "2026-09-19T14:00:00Z",
+    "league": "PL",
+    "home": "Leeds",
+    "away": "Crystal Palace",
+    "home_display": "Leeds",
+    "away_display": "Crystal Palace",
+    "probs": {
+      "Home Win": 0.4791,
+      "Draw": 0.2787,
+      "Away Win": 0.2422
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560586,
+    "utc_date": "2026-09-19T14:00:00Z",
+    "league": "PL",
+    "home": "Brighton",
+    "away": "Arsenal",
+    "home_display": "Brighton",
+    "away_display": "Arsenal",
+    "probs": {
+      "Home Win": 0.2119,
+      "Draw": 0.2568,
+      "Away Win": 0.5312
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560588,
+    "utc_date": "2026-09-19T14:00:00Z",
+    "league": "PL",
+    "home": "Newcastle",
+    "away": "Hull",
+    "home_display": "Newcastle",
+    "away_display": "Hull",
+    "probs": {
+      "Home Win": 0.7496,
+      "Draw": 0.1551,
+      "Away Win": 0.0953
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560590,
+    "utc_date": "2026-09-19T14:00:00Z",
+    "league": "PL",
+    "home": "Man City",
+    "away": "Sunderland",
+    "home_display": "Manchester City",
+    "away_display": "Sunderland",
+    "probs": {
+      "Home Win": 0.739,
+      "Draw": 0.1679,
+      "Away Win": 0.0931
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560589,
+    "utc_date": "2026-09-19T16:30:00Z",
+    "league": "PL",
+    "home": "Nott'm Forest",
+    "away": "Coventry",
+    "home_display": "Nottingham Forest",
+    "away_display": "Coventry",
+    "probs": {
+      "Home Win": 0.5947,
+      "Draw": 0.2378,
+      "Away Win": 0.1675
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560582,
+    "utc_date": "2026-09-20T13:00:00Z",
+    "league": "PL",
+    "home": "Bournemouth",
+    "away": "Liverpool",
+    "home_display": "Bournemouth",
+    "away_display": "Liverpool",
+    "probs": {
+      "Home Win": 0.4529,
+      "Draw": 0.2825,
+      "Away Win": 0.2646
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 560583,
+    "utc_date": "2026-09-20T15:30:00Z",
+    "league": "PL",
+    "home": "Fulham",
+    "away": "Man United",
+    "home_display": "Fulham",
+    "away_display": "Manchester United",
+    "probs": {
+      "Home Win": 0.2894,
+      "Draw": 0.285,
+      "Away Win": 0.4256
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564634,
+    "utc_date": "2026-08-15T17:30:00Z",
+    "league": "PD",
+    "home": "Alaves",
+    "away": "Getafe",
+    "home_display": "Alaves",
+    "away_display": "Getafe",
+    "probs": {
+      "Home Win": 0.4172,
+      "Draw": 0.2961,
+      "Away Win": 0.2867
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564633,
+    "utc_date": "2026-08-15T19:30:00Z",
+    "league": "PD",
+    "home": "Sevilla",
+    "away": "Vallecano",
+    "home_display": "Sevilla",
+    "away_display": "Rayo Vallecano",
+    "probs": {
+      "Home Win": 0.3318,
+      "Draw": 0.2991,
+      "Away Win": 0.3691
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564629,
+    "utc_date": "2026-08-16T15:00:00Z",
+    "league": "PD",
+    "home": "Santander",
+    "away": "Villarreal",
+    "home_display": "Santander",
+    "away_display": "Villarreal",
+    "probs": {
+      "Home Win": 0.2656,
+      "Draw": 0.2747,
+      "Away Win": 0.4598
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564632,
+    "utc_date": "2026-08-16T17:00:00Z",
+    "league": "PD",
+    "home": "Espanol",
+    "away": "Levante",
+    "home_display": "Espanyol",
+    "away_display": "Levante",
+    "probs": {
+      "Home Win": 0.3985,
+      "Draw": 0.2941,
+      "Away Win": 0.3074
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564636,
+    "utc_date": "2026-08-16T19:30:00Z",
+    "league": "PD",
+    "home": "Celta",
+    "away": "Osasuna",
+    "home_display": "Celta Vigo",
+    "away_display": "Osasuna",
+    "probs": {
+      "Home Win": 0.4967,
+      "Draw": 0.2699,
+      "Away Win": 0.2333
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564635,
+    "utc_date": "2026-08-17T19:00:00Z",
+    "league": "PD",
+    "home": "La Coruna",
+    "away": "Elche",
+    "home_display": "Deportivo La Coruña",
+    "away_display": "Elche",
+    "probs": {
+      "Home Win": 0.4066,
+      "Draw": 0.2862,
+      "Away Win": 0.3072
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564628,
+    "utc_date": "2026-08-19T19:00:00Z",
+    "league": "PD",
+    "home": "Ath Madrid",
+    "away": "Malaga",
+    "home_display": "Atlético Madrid",
+    "away_display": "Malaga",
+    "probs": {
+      "Home Win": 0.653,
+      "Draw": 0.2064,
+      "Away Win": 0.1406
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564638,
+    "utc_date": "2026-08-20T19:00:00Z",
+    "league": "PD",
+    "home": "Vallecano",
+    "away": "Alaves",
+    "home_display": "Rayo Vallecano",
+    "away_display": "Alaves",
+    "probs": {
+      "Home Win": 0.505,
+      "Draw": 0.2761,
+      "Away Win": 0.219
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564647,
+    "utc_date": "2026-08-21T19:00:00Z",
+    "league": "PD",
+    "home": "Betis",
+    "away": "Sociedad",
+    "home_display": "Real Betis",
+    "away_display": "Real Sociedad",
+    "probs": {
+      "Home Win": 0.5359,
+      "Draw": 0.2566,
+      "Away Win": 0.2075
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564641,
+    "utc_date": "2026-08-22T15:00:00Z",
+    "league": "PD",
+    "home": "Ath Bilbao",
+    "away": "Sevilla",
+    "home_display": "Athletic Bilbao",
+    "away_display": "Sevilla",
+    "probs": {
+      "Home Win": 0.4616,
+      "Draw": 0.2829,
+      "Away Win": 0.2555
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564643,
+    "utc_date": "2026-08-22T17:30:00Z",
+    "league": "PD",
+    "home": "Valencia",
+    "away": "Celta",
+    "home_display": "Valencia",
+    "away_display": "Celta Vigo",
+    "probs": {
+      "Home Win": 0.418,
+      "Draw": 0.2849,
+      "Away Win": 0.2971
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564645,
+    "utc_date": "2026-08-22T19:30:00Z",
+    "league": "PD",
+    "home": "Espanol",
+    "away": "Real Madrid",
+    "home_display": "Espanyol",
+    "away_display": "Real Madrid",
+    "probs": {
+      "Home Win": 0.1595,
+      "Draw": 0.2193,
+      "Away Win": 0.6212
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564646,
+    "utc_date": "2026-08-23T15:00:00Z",
+    "league": "PD",
+    "home": "Ath Madrid",
+    "away": "Villarreal",
+    "home_display": "Atlético Madrid",
+    "away_display": "Villarreal",
+    "probs": {
+      "Home Win": 0.4768,
+      "Draw": 0.2631,
+      "Away Win": 0.2602
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564644,
+    "utc_date": "2026-08-23T17:30:00Z",
+    "league": "PD",
+    "home": "Getafe",
+    "away": "Santander",
+    "home_display": "Getafe",
+    "away_display": "Santander",
+    "probs": {
+      "Home Win": 0.4962,
+      "Draw": 0.278,
+      "Away Win": 0.2258
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564642,
+    "utc_date": "2026-08-23T19:30:00Z",
+    "league": "PD",
+    "home": "Elche",
+    "away": "Barcelona",
+    "home_display": "Elche",
+    "away_display": "Barcelona",
+    "probs": {
+      "Home Win": 0.1759,
+      "Draw": 0.2478,
+      "Away Win": 0.5763
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564639,
+    "utc_date": "2026-08-24T17:30:00Z",
+    "league": "PD",
+    "home": "Osasuna",
+    "away": "Levante",
+    "home_display": "Osasuna",
+    "away_display": "Levante",
+    "probs": {
+      "Home Win": 0.431,
+      "Draw": 0.2862,
+      "Away Win": 0.2828
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564640,
+    "utc_date": "2026-08-24T19:30:00Z",
+    "league": "PD",
+    "home": "Malaga",
+    "away": "La Coruna",
+    "home_display": "Malaga",
+    "away_display": "Deportivo La Coruña",
+    "probs": {
+      "Home Win": 0.4837,
+      "Draw": 0.2711,
+      "Away Win": 0.2452
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564637,
+    "utc_date": "2026-08-25T19:00:00Z",
+    "league": "PD",
+    "home": "Valencia",
+    "away": "Betis",
+    "home_display": "Valencia",
+    "away_display": "Real Betis",
+    "probs": {
+      "Home Win": 0.3755,
+      "Draw": 0.284,
+      "Away Win": 0.3405
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564631,
+    "utc_date": "2026-08-26T19:00:00Z",
+    "league": "PD",
+    "home": "Real Madrid",
+    "away": "Sociedad",
+    "home_display": "Real Madrid",
+    "away_display": "Real Sociedad",
+    "probs": {
+      "Home Win": 0.7134,
+      "Draw": 0.174,
+      "Away Win": 0.1126
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564630,
+    "utc_date": "2026-08-27T19:00:00Z",
+    "league": "PD",
+    "home": "Barcelona",
+    "away": "Ath Bilbao",
+    "home_display": "Barcelona",
+    "away_display": "Athletic Bilbao",
+    "probs": {
+      "Home Win": 0.7661,
+      "Draw": 0.1491,
+      "Away Win": 0.0848
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564654,
+    "utc_date": "2026-08-28T17:00:00Z",
+    "league": "PD",
+    "home": "Santander",
+    "away": "Elche",
+    "home_display": "Santander",
+    "away_display": "Elche",
+    "probs": {
+      "Home Win": 0.4339,
+      "Draw": 0.2814,
+      "Away Win": 0.2847
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564648,
+    "utc_date": "2026-08-28T19:30:00Z",
+    "league": "PD",
+    "home": "Alaves",
+    "away": "Villarreal",
+    "home_display": "Alaves",
+    "away_display": "Villarreal",
+    "probs": {
+      "Home Win": 0.289,
+      "Draw": 0.2782,
+      "Away Win": 0.4327
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564655,
+    "utc_date": "2026-08-29T15:00:00Z",
+    "league": "PD",
+    "home": "Levante",
+    "away": "Betis",
+    "home_display": "Levante",
+    "away_display": "Real Betis",
+    "probs": {
+      "Home Win": 0.3122,
+      "Draw": 0.2803,
+      "Away Win": 0.4075
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564653,
+    "utc_date": "2026-08-29T17:00:00Z",
+    "league": "PD",
+    "home": "Sociedad",
+    "away": "Espanol",
+    "home_display": "Real Sociedad",
+    "away_display": "Espanyol",
+    "probs": {
+      "Home Win": 0.4656,
+      "Draw": 0.2801,
+      "Away Win": 0.2543
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564649,
+    "utc_date": "2026-08-29T19:30:00Z",
+    "league": "PD",
+    "home": "Sevilla",
+    "away": "Ath Madrid",
+    "home_display": "Sevilla",
+    "away_display": "Atlético Madrid",
+    "probs": {
+      "Home Win": 0.2514,
+      "Draw": 0.2736,
+      "Away Win": 0.475
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564656,
+    "utc_date": "2026-08-30T15:00:00Z",
+    "league": "PD",
+    "home": "Real Madrid",
+    "away": "Malaga",
+    "home_display": "Real Madrid",
+    "away_display": "Malaga",
+    "probs": {
+      "Home Win": 0.7611,
+      "Draw": 0.1506,
+      "Away Win": 0.0882
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564651,
+    "utc_date": "2026-08-30T17:30:00Z",
+    "league": "PD",
+    "home": "La Coruna",
+    "away": "Valencia",
+    "home_display": "Deportivo La Coruña",
+    "away_display": "Valencia",
+    "probs": {
+      "Home Win": 0.3377,
+      "Draw": 0.2956,
+      "Away Win": 0.3666
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564652,
+    "utc_date": "2026-08-30T19:30:00Z",
+    "league": "PD",
+    "home": "Celta",
+    "away": "Ath Bilbao",
+    "home_display": "Celta Vigo",
+    "away_display": "Athletic Bilbao",
+    "probs": {
+      "Home Win": 0.4984,
+      "Draw": 0.2679,
+      "Away Win": 0.2337
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564657,
+    "utc_date": "2026-08-31T17:30:00Z",
+    "league": "PD",
+    "home": "Osasuna",
+    "away": "Getafe",
+    "home_display": "Osasuna",
+    "away_display": "Getafe",
+    "probs": {
+      "Home Win": 0.392,
+      "Draw": 0.2984,
+      "Away Win": 0.3096
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564650,
+    "utc_date": "2026-08-31T19:30:00Z",
+    "league": "PD",
+    "home": "Barcelona",
+    "away": "Vallecano",
+    "home_display": "Barcelona",
+    "away_display": "Rayo Vallecano",
+    "probs": {
+      "Home Win": 0.7365,
+      "Draw": 0.1718,
+      "Away Win": 0.0917
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564658,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PD",
+    "home": "Elche",
+    "away": "Sociedad",
+    "home_display": "Elche",
+    "away_display": "Real Sociedad",
+    "probs": {
+      "Home Win": 0.4317,
+      "Draw": 0.283,
+      "Away Win": 0.2854
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564659,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PD",
+    "home": "Valencia",
+    "away": "Barcelona",
+    "home_display": "Valencia",
+    "away_display": "Barcelona",
+    "probs": {
+      "Home Win": 0.1973,
+      "Draw": 0.2532,
+      "Away Win": 0.5494
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564660,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PD",
+    "home": "Vallecano",
+    "away": "Santander",
+    "home_display": "Rayo Vallecano",
+    "away_display": "Santander",
+    "probs": {
+      "Home Win": 0.5597,
+      "Draw": 0.2497,
+      "Away Win": 0.1906
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564661,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PD",
+    "home": "Espanol",
+    "away": "Sevilla",
+    "home_display": "Espanyol",
+    "away_display": "Sevilla",
+    "probs": {
+      "Home Win": 0.4195,
+      "Draw": 0.2955,
+      "Away Win": 0.285
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564662,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PD",
+    "home": "Villarreal",
+    "away": "La Coruna",
+    "home_display": "Villarreal",
+    "away_display": "Deportivo La Coruña",
+    "probs": {
+      "Home Win": 0.6327,
+      "Draw": 0.2152,
+      "Away Win": 0.152
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564663,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PD",
+    "home": "Ath Bilbao",
+    "away": "Ath Madrid",
+    "home_display": "Athletic Bilbao",
+    "away_display": "Atlético Madrid",
+    "probs": {
+      "Home Win": 0.3099,
+      "Draw": 0.2754,
+      "Away Win": 0.4148
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564664,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PD",
+    "home": "Alaves",
+    "away": "Osasuna",
+    "home_display": "Alaves",
+    "away_display": "Osasuna",
+    "probs": {
+      "Home Win": 0.4358,
+      "Draw": 0.2872,
+      "Away Win": 0.277
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564665,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PD",
+    "home": "Getafe",
+    "away": "Celta",
+    "home_display": "Getafe",
+    "away_display": "Celta Vigo",
+    "probs": {
+      "Home Win": 0.3672,
+      "Draw": 0.2972,
+      "Away Win": 0.3357
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564666,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PD",
+    "home": "Malaga",
+    "away": "Levante",
+    "home_display": "Malaga",
+    "away_display": "Levante",
+    "probs": {
+      "Home Win": 0.3932,
+      "Draw": 0.2825,
+      "Away Win": 0.3243
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564667,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PD",
+    "home": "Betis",
+    "away": "Real Madrid",
+    "home_display": "Real Betis",
+    "away_display": "Real Madrid",
+    "probs": {
+      "Home Win": 0.2736,
+      "Draw": 0.2782,
+      "Away Win": 0.4482
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564668,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PD",
+    "home": "Getafe",
+    "away": "La Coruna",
+    "home_display": "Getafe",
+    "away_display": "Deportivo La Coruña",
+    "probs": {
+      "Home Win": 0.4775,
+      "Draw": 0.29,
+      "Away Win": 0.2325
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564669,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PD",
+    "home": "Sevilla",
+    "away": "Valencia",
+    "home_display": "Sevilla",
+    "away_display": "Valencia",
+    "probs": {
+      "Home Win": 0.3502,
+      "Draw": 0.2933,
+      "Away Win": 0.3565
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564670,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PD",
+    "home": "Santander",
+    "away": "Alaves",
+    "home_display": "Santander",
+    "away_display": "Alaves",
+    "probs": {
+      "Home Win": 0.4161,
+      "Draw": 0.2834,
+      "Away Win": 0.3005
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564671,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PD",
+    "home": "Villarreal",
+    "away": "Betis",
+    "home_display": "Villarreal",
+    "away_display": "Real Betis",
+    "probs": {
+      "Home Win": 0.4888,
+      "Draw": 0.2686,
+      "Away Win": 0.2426
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564672,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PD",
+    "home": "Celta",
+    "away": "Malaga",
+    "home_display": "Celta Vigo",
+    "away_display": "Malaga",
+    "probs": {
+      "Home Win": 0.5575,
+      "Draw": 0.2548,
+      "Away Win": 0.1877
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564673,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PD",
+    "home": "Osasuna",
+    "away": "Espanol",
+    "home_display": "Osasuna",
+    "away_display": "Espanyol",
+    "probs": {
+      "Home Win": 0.4495,
+      "Draw": 0.2827,
+      "Away Win": 0.2678
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564674,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PD",
+    "home": "Sociedad",
+    "away": "Ath Madrid",
+    "home_display": "Real Sociedad",
+    "away_display": "Atlético Madrid",
+    "probs": {
+      "Home Win": 0.3041,
+      "Draw": 0.2755,
+      "Away Win": 0.4204
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564675,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PD",
+    "home": "Levante",
+    "away": "Barcelona",
+    "home_display": "Levante",
+    "away_display": "Barcelona",
+    "probs": {
+      "Home Win": 0.1686,
+      "Draw": 0.206,
+      "Away Win": 0.6254
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564676,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PD",
+    "home": "Ath Bilbao",
+    "away": "Elche",
+    "home_display": "Athletic Bilbao",
+    "away_display": "Elche",
+    "probs": {
+      "Home Win": 0.4671,
+      "Draw": 0.282,
+      "Away Win": 0.2509
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564677,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PD",
+    "home": "Real Madrid",
+    "away": "Vallecano",
+    "home_display": "Real Madrid",
+    "away_display": "Rayo Vallecano",
+    "probs": {
+      "Home Win": 0.6344,
+      "Draw": 0.22,
+      "Away Win": 0.1457
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564678,
+    "utc_date": "2026-09-16T15:00:00Z",
+    "league": "PD",
+    "home": "Vallecano",
+    "away": "Espanol",
+    "home_display": "Rayo Vallecano",
+    "away_display": "Espanyol",
+    "probs": {
+      "Home Win": 0.5224,
+      "Draw": 0.2741,
+      "Away Win": 0.2035
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564679,
+    "utc_date": "2026-09-16T15:00:00Z",
+    "league": "PD",
+    "home": "La Coruna",
+    "away": "Sevilla",
+    "home_display": "Deportivo La Coruña",
+    "away_display": "Sevilla",
+    "probs": {
+      "Home Win": 0.3848,
+      "Draw": 0.2941,
+      "Away Win": 0.3211
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564680,
+    "utc_date": "2026-09-16T15:00:00Z",
+    "league": "PD",
+    "home": "Alaves",
+    "away": "Valencia",
+    "home_display": "Alaves",
+    "away_display": "Valencia",
+    "probs": {
+      "Home Win": 0.3909,
+      "Draw": 0.291,
+      "Away Win": 0.3181
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564681,
+    "utc_date": "2026-09-16T15:00:00Z",
+    "league": "PD",
+    "home": "Elche",
+    "away": "Real Madrid",
+    "home_display": "Elche",
+    "away_display": "Real Madrid",
+    "probs": {
+      "Home Win": 0.194,
+      "Draw": 0.2474,
+      "Away Win": 0.5586
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564682,
+    "utc_date": "2026-09-16T15:00:00Z",
+    "league": "PD",
+    "home": "Sociedad",
+    "away": "Celta",
+    "home_display": "Real Sociedad",
+    "away_display": "Celta Vigo",
+    "probs": {
+      "Home Win": 0.3602,
+      "Draw": 0.287,
+      "Away Win": 0.3528
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564683,
+    "utc_date": "2026-09-16T15:00:00Z",
+    "league": "PD",
+    "home": "Malaga",
+    "away": "Villarreal",
+    "home_display": "Malaga",
+    "away_display": "Villarreal",
+    "probs": {
+      "Home Win": 0.2561,
+      "Draw": 0.273,
+      "Away Win": 0.4709
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564684,
+    "utc_date": "2026-09-16T15:00:00Z",
+    "league": "PD",
+    "home": "Ath Madrid",
+    "away": "Osasuna",
+    "home_display": "Atlético Madrid",
+    "away_display": "Osasuna",
+    "probs": {
+      "Home Win": 0.6141,
+      "Draw": 0.2213,
+      "Away Win": 0.1646
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564685,
+    "utc_date": "2026-09-16T15:00:00Z",
+    "league": "PD",
+    "home": "Levante",
+    "away": "Ath Bilbao",
+    "home_display": "Levante",
+    "away_display": "Athletic Bilbao",
+    "probs": {
+      "Home Win": 0.4191,
+      "Draw": 0.2811,
+      "Away Win": 0.2997
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564686,
+    "utc_date": "2026-09-16T15:00:00Z",
+    "league": "PD",
+    "home": "Betis",
+    "away": "Getafe",
+    "home_display": "Real Betis",
+    "away_display": "Getafe",
+    "probs": {
+      "Home Win": 0.5162,
+      "Draw": 0.2765,
+      "Away Win": 0.2073
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564687,
+    "utc_date": "2026-09-16T15:00:00Z",
+    "league": "PD",
+    "home": "Barcelona",
+    "away": "Santander",
+    "home_display": "Barcelona",
+    "away_display": "Santander",
+    "probs": {
+      "Home Win": 0.7546,
+      "Draw": 0.1468,
+      "Away Win": 0.0986
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564688,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PD",
+    "home": "Ath Madrid",
+    "away": "Real Madrid",
+    "home_display": "Atlético Madrid",
+    "away_display": "Real Madrid",
+    "probs": {
+      "Home Win": 0.3009,
+      "Draw": 0.2783,
+      "Away Win": 0.4207
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564689,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PD",
+    "home": "Valencia",
+    "away": "Sociedad",
+    "home_display": "Valencia",
+    "away_display": "Real Sociedad",
+    "probs": {
+      "Home Win": 0.4808,
+      "Draw": 0.2675,
+      "Away Win": 0.2517
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564690,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PD",
+    "home": "Sevilla",
+    "away": "Barcelona",
+    "home_display": "Sevilla",
+    "away_display": "Barcelona",
+    "probs": {
+      "Home Win": 0.1466,
+      "Draw": 0.2051,
+      "Away Win": 0.6483
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564691,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PD",
+    "home": "Ath Bilbao",
+    "away": "Alaves",
+    "home_display": "Athletic Bilbao",
+    "away_display": "Alaves",
+    "probs": {
+      "Home Win": 0.4543,
+      "Draw": 0.2822,
+      "Away Win": 0.2636
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564692,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PD",
+    "home": "Espanol",
+    "away": "Elche",
+    "home_display": "Espanyol",
+    "away_display": "Elche",
+    "probs": {
+      "Home Win": 0.4241,
+      "Draw": 0.2876,
+      "Away Win": 0.2882
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564693,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PD",
+    "home": "Osasuna",
+    "away": "Vallecano",
+    "home_display": "Osasuna",
+    "away_display": "Rayo Vallecano",
+    "probs": {
+      "Home Win": 0.3286,
+      "Draw": 0.2982,
+      "Away Win": 0.3732
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564694,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PD",
+    "home": "Celta",
+    "away": "Santander",
+    "home_display": "Celta Vigo",
+    "away_display": "Santander",
+    "probs": {
+      "Home Win": 0.5419,
+      "Draw": 0.2508,
+      "Away Win": 0.2073
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564695,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PD",
+    "home": "La Coruna",
+    "away": "Betis",
+    "home_display": "Deportivo La Coruña",
+    "away_display": "Real Betis",
+    "probs": {
+      "Home Win": 0.2736,
+      "Draw": 0.2813,
+      "Away Win": 0.4451
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564696,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PD",
+    "home": "Villarreal",
+    "away": "Levante",
+    "home_display": "Villarreal",
+    "away_display": "Levante",
+    "probs": {
+      "Home Win": 0.5896,
+      "Draw": 0.2376,
+      "Away Win": 0.1728
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 564697,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PD",
+    "home": "Getafe",
+    "away": "Malaga",
+    "home_display": "Getafe",
+    "away_display": "Malaga",
+    "probs": {
+      "Home Win": 0.5042,
+      "Draw": 0.2767,
+      "Away Win": 0.2191
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565776,
+    "utc_date": "2026-08-28T18:30:00Z",
+    "league": "BL1",
+    "home": "Bayern Munich",
+    "away": "Stuttgart",
+    "home_display": "Bayern Munich",
+    "away_display": "Stuttgart",
+    "probs": {
+      "Home Win": 0.6901,
+      "Draw": 0.1786,
+      "Away Win": 0.1313
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565777,
+    "utc_date": "2026-08-29T13:30:00Z",
+    "league": "BL1",
+    "home": "RB Leipzig",
+    "away": "M'gladbach",
+    "home_display": "RB Leipzig",
+    "away_display": "Borussia Mönchengladbach",
+    "probs": {
+      "Home Win": 0.5834,
+      "Draw": 0.24,
+      "Away Win": 0.1766
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565778,
+    "utc_date": "2026-08-29T13:30:00Z",
+    "league": "BL1",
+    "home": "Mainz",
+    "away": "Paderborn",
+    "home_display": "Mainz",
+    "away_display": "Paderborn",
+    "probs": {
+      "Home Win": 0.5901,
+      "Draw": 0.2305,
+      "Away Win": 0.1794
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565779,
+    "utc_date": "2026-08-29T13:30:00Z",
+    "league": "BL1",
+    "home": "Union Berlin",
+    "away": "Ein Frankfurt",
+    "home_display": "Union Berlin",
+    "away_display": "Eintracht Frankfurt",
+    "probs": {
+      "Home Win": 0.3577,
+      "Draw": 0.2904,
+      "Away Win": 0.3519
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565780,
+    "utc_date": "2026-08-29T13:30:00Z",
+    "league": "BL1",
+    "home": "Elversberg",
+    "away": "Leverkusen",
+    "home_display": "Elversberg",
+    "away_display": "Leverkusen",
+    "probs": {
+      "Home Win": 0.1886,
+      "Draw": 0.2321,
+      "Away Win": 0.5793
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565783,
+    "utc_date": "2026-08-29T13:30:00Z",
+    "league": "BL1",
+    "home": "FC Koln",
+    "away": "Hoffenheim",
+    "home_display": "FC Köln",
+    "away_display": "Hoffenheim",
+    "probs": {
+      "Home Win": 0.2877,
+      "Draw": 0.2737,
+      "Away Win": 0.4385
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565781,
+    "utc_date": "2026-08-29T16:30:00Z",
+    "league": "BL1",
+    "home": "Dortmund",
+    "away": "Hamburg",
+    "home_display": "Dortmund",
+    "away_display": "Hamburg",
+    "probs": {
+      "Home Win": 0.7346,
+      "Draw": 0.1714,
+      "Away Win": 0.094
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565784,
+    "utc_date": "2026-08-30T13:30:00Z",
+    "league": "BL1",
+    "home": "Freiburg",
+    "away": "Werder Bremen",
+    "home_display": "Freiburg",
+    "away_display": "Werder Bremen",
+    "probs": {
+      "Home Win": 0.5182,
+      "Draw": 0.2609,
+      "Away Win": 0.2209
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565782,
+    "utc_date": "2026-08-30T15:30:00Z",
+    "league": "BL1",
+    "home": "Augsburg",
+    "away": "Schalke 04",
+    "home_display": "Augsburg",
+    "away_display": "Schalke 04",
+    "probs": {
+      "Home Win": 0.5042,
+      "Draw": 0.2725,
+      "Away Win": 0.2233
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565791,
+    "utc_date": "2026-09-04T18:30:00Z",
+    "league": "BL1",
+    "home": "Stuttgart",
+    "away": "FC Koln",
+    "home_display": "Stuttgart",
+    "away_display": "FC Köln",
+    "probs": {
+      "Home Win": 0.6841,
+      "Draw": 0.189,
+      "Away Win": 0.1269
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565785,
+    "utc_date": "2026-09-05T13:30:00Z",
+    "league": "BL1",
+    "home": "Werder Bremen",
+    "away": "RB Leipzig",
+    "home_display": "Werder Bremen",
+    "away_display": "RB Leipzig",
+    "probs": {
+      "Home Win": 0.2328,
+      "Draw": 0.2681,
+      "Away Win": 0.4991
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565787,
+    "utc_date": "2026-09-05T13:30:00Z",
+    "league": "BL1",
+    "home": "Hoffenheim",
+    "away": "Dortmund",
+    "home_display": "Hoffenheim",
+    "away_display": "Dortmund",
+    "probs": {
+      "Home Win": 0.2511,
+      "Draw": 0.2713,
+      "Away Win": 0.4776
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565790,
+    "utc_date": "2026-09-05T13:30:00Z",
+    "league": "BL1",
+    "home": "Leverkusen",
+    "away": "Union Berlin",
+    "home_display": "Leverkusen",
+    "away_display": "Union Berlin",
+    "probs": {
+      "Home Win": 0.644,
+      "Draw": 0.2069,
+      "Away Win": 0.1492
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565792,
+    "utc_date": "2026-09-05T13:30:00Z",
+    "league": "BL1",
+    "home": "M'gladbach",
+    "away": "Elversberg",
+    "home_display": "Borussia Mönchengladbach",
+    "away_display": "Elversberg",
+    "probs": {
+      "Home Win": 0.5193,
+      "Draw": 0.2656,
+      "Away Win": 0.2151
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565793,
+    "utc_date": "2026-09-05T13:30:00Z",
+    "league": "BL1",
+    "home": "Paderborn",
+    "away": "Freiburg",
+    "home_display": "Paderborn",
+    "away_display": "Freiburg",
+    "probs": {
+      "Home Win": 0.2743,
+      "Draw": 0.2734,
+      "Away Win": 0.4523
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565789,
+    "utc_date": "2026-09-05T16:30:00Z",
+    "league": "BL1",
+    "home": "Schalke 04",
+    "away": "Bayern Munich",
+    "home_display": "Schalke 04",
+    "away_display": "Bayern Munich",
+    "probs": {
+      "Home Win": 0.1232,
+      "Draw": 0.1702,
+      "Away Win": 0.7066
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565788,
+    "utc_date": "2026-09-06T13:30:00Z",
+    "league": "BL1",
+    "home": "Hamburg",
+    "away": "Mainz",
+    "home_display": "Hamburg",
+    "away_display": "Mainz",
+    "probs": {
+      "Home Win": 0.3586,
+      "Draw": 0.29,
+      "Away Win": 0.3513
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565786,
+    "utc_date": "2026-09-06T15:30:00Z",
+    "league": "BL1",
+    "home": "Ein Frankfurt",
+    "away": "Augsburg",
+    "home_display": "Eintracht Frankfurt",
+    "away_display": "Augsburg",
+    "probs": {
+      "Home Win": 0.5216,
+      "Draw": 0.263,
+      "Away Win": 0.2154
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565797,
+    "utc_date": "2026-09-11T18:30:00Z",
+    "league": "BL1",
+    "home": "Union Berlin",
+    "away": "Schalke 04",
+    "home_display": "Union Berlin",
+    "away_display": "Schalke 04",
+    "probs": {
+      "Home Win": 0.5081,
+      "Draw": 0.2731,
+      "Away Win": 0.2188
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565794,
+    "utc_date": "2026-09-12T13:30:00Z",
+    "league": "BL1",
+    "home": "Hoffenheim",
+    "away": "Stuttgart",
+    "home_display": "Hoffenheim",
+    "away_display": "Stuttgart",
+    "probs": {
+      "Home Win": 0.3116,
+      "Draw": 0.2824,
+      "Away Win": 0.406
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565795,
+    "utc_date": "2026-09-12T13:30:00Z",
+    "league": "BL1",
+    "home": "Dortmund",
+    "away": "Paderborn",
+    "home_display": "Dortmund",
+    "away_display": "Paderborn",
+    "probs": {
+      "Home Win": 0.7538,
+      "Draw": 0.1467,
+      "Away Win": 0.0995
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565796,
+    "utc_date": "2026-09-12T13:30:00Z",
+    "league": "BL1",
+    "home": "Augsburg",
+    "away": "Leverkusen",
+    "home_display": "Augsburg",
+    "away_display": "Leverkusen",
+    "probs": {
+      "Home Win": 0.2094,
+      "Draw": 0.2457,
+      "Away Win": 0.5449
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565801,
+    "utc_date": "2026-09-12T13:30:00Z",
+    "league": "BL1",
+    "home": "Mainz",
+    "away": "Ein Frankfurt",
+    "home_display": "Mainz",
+    "away_display": "Eintracht Frankfurt",
+    "probs": {
+      "Home Win": 0.4203,
+      "Draw": 0.2804,
+      "Away Win": 0.2992
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565802,
+    "utc_date": "2026-09-12T13:30:00Z",
+    "league": "BL1",
+    "home": "Freiburg",
+    "away": "M'gladbach",
+    "home_display": "Freiburg",
+    "away_display": "Borussia Mönchengladbach",
+    "probs": {
+      "Home Win": 0.4716,
+      "Draw": 0.279,
+      "Away Win": 0.2494
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565798,
+    "utc_date": "2026-09-12T16:30:00Z",
+    "league": "BL1",
+    "home": "FC Koln",
+    "away": "Werder Bremen",
+    "home_display": "FC Köln",
+    "away_display": "Werder Bremen",
+    "probs": {
+      "Home Win": 0.3648,
+      "Draw": 0.2904,
+      "Away Win": 0.3448
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565799,
+    "utc_date": "2026-09-13T13:30:00Z",
+    "league": "BL1",
+    "home": "RB Leipzig",
+    "away": "Hamburg",
+    "home_display": "RB Leipzig",
+    "away_display": "Hamburg",
+    "probs": {
+      "Home Win": 0.6207,
+      "Draw": 0.2216,
+      "Away Win": 0.1578
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565800,
+    "utc_date": "2026-09-13T15:30:00Z",
+    "league": "BL1",
+    "home": "Elversberg",
+    "away": "Bayern Munich",
+    "home_display": "Elversberg",
+    "away_display": "Bayern Munich",
+    "probs": {
+      "Home Win": 0.1295,
+      "Draw": 0.1849,
+      "Away Win": 0.6857
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565804,
+    "utc_date": "2026-09-18T18:30:00Z",
+    "league": "BL1",
+    "home": "Bayern Munich",
+    "away": "Union Berlin",
+    "home_display": "Bayern Munich",
+    "away_display": "Union Berlin",
+    "probs": {
+      "Home Win": 0.7412,
+      "Draw": 0.1664,
+      "Away Win": 0.0923
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565808,
+    "utc_date": "2026-09-19T13:30:00Z",
+    "league": "BL1",
+    "home": "Hamburg",
+    "away": "FC Koln",
+    "home_display": "Hamburg",
+    "away_display": "FC Köln",
+    "probs": {
+      "Home Win": 0.484,
+      "Draw": 0.2723,
+      "Away Win": 0.2437
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565809,
+    "utc_date": "2026-09-19T13:30:00Z",
+    "league": "BL1",
+    "home": "M'gladbach",
+    "away": "Mainz",
+    "home_display": "Borussia Mönchengladbach",
+    "away_display": "Mainz",
+    "probs": {
+      "Home Win": 0.4171,
+      "Draw": 0.2896,
+      "Away Win": 0.2934
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565810,
+    "utc_date": "2026-09-19T13:30:00Z",
+    "league": "BL1",
+    "home": "Werder Bremen",
+    "away": "Augsburg",
+    "home_display": "Werder Bremen",
+    "away_display": "Augsburg",
+    "probs": {
+      "Home Win": 0.3695,
+      "Draw": 0.2932,
+      "Away Win": 0.3373
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565811,
+    "utc_date": "2026-09-19T13:30:00Z",
+    "league": "BL1",
+    "home": "Ein Frankfurt",
+    "away": "Freiburg",
+    "home_display": "Eintracht Frankfurt",
+    "away_display": "Freiburg",
+    "probs": {
+      "Home Win": 0.4699,
+      "Draw": 0.279,
+      "Away Win": 0.2512
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565806,
+    "utc_date": "2026-09-19T16:30:00Z",
+    "league": "BL1",
+    "home": "Stuttgart",
+    "away": "Dortmund",
+    "home_display": "Stuttgart",
+    "away_display": "Dortmund",
+    "probs": {
+      "Home Win": 0.363,
+      "Draw": 0.2814,
+      "Away Win": 0.3557
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565807,
+    "utc_date": "2026-09-20T13:30:00Z",
+    "league": "BL1",
+    "home": "Leverkusen",
+    "away": "RB Leipzig",
+    "home_display": "Leverkusen",
+    "away_display": "RB Leipzig",
+    "probs": {
+      "Home Win": 0.4763,
+      "Draw": 0.2705,
+      "Away Win": 0.2532
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565805,
+    "utc_date": "2026-09-20T15:30:00Z",
+    "league": "BL1",
+    "home": "Schalke 04",
+    "away": "Elversberg",
+    "home_display": "Schalke 04",
+    "away_display": "Elversberg",
+    "probs": {
+      "Home Win": 0.392,
+      "Draw": 0.2819,
+      "Away Win": 0.3261
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 565803,
+    "utc_date": "2026-09-20T17:30:00Z",
+    "league": "BL1",
+    "home": "Paderborn",
+    "away": "Hoffenheim",
+    "home_display": "Paderborn",
+    "away_display": "Hoffenheim",
+    "probs": {
+      "Home Win": 0.2383,
+      "Draw": 0.2521,
+      "Away Win": 0.5096
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558629,
+    "utc_date": "2026-08-22T16:30:00Z",
+    "league": "SA",
+    "home": "Udinese",
+    "away": "Como",
+    "home_display": "Udinese",
+    "away_display": "Como",
+    "probs": {
+      "Home Win": 0.2361,
+      "Draw": 0.2775,
+      "Away Win": 0.4864
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558632,
+    "utc_date": "2026-08-22T16:30:00Z",
+    "league": "SA",
+    "home": "Inter",
+    "away": "Monza",
+    "home_display": "Inter",
+    "away_display": "Monza",
+    "probs": {
+      "Home Win": 0.7907,
+      "Draw": 0.1371,
+      "Away Win": 0.0721
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558631,
+    "utc_date": "2026-08-22T18:45:00Z",
+    "league": "SA",
+    "home": "Genoa",
+    "away": "Napoli",
+    "home_display": "Genoa",
+    "away_display": "Napoli",
+    "probs": {
+      "Home Win": 0.2201,
+      "Draw": 0.267,
+      "Away Win": 0.5129
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558636,
+    "utc_date": "2026-08-22T18:45:00Z",
+    "league": "SA",
+    "home": "Parma",
+    "away": "Cagliari",
+    "home_display": "Parma",
+    "away_display": "Cagliari",
+    "probs": {
+      "Home Win": 0.417,
+      "Draw": 0.2993,
+      "Away Win": 0.2837
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558635,
+    "utc_date": "2026-08-23T16:30:00Z",
+    "league": "SA",
+    "home": "Frosinone",
+    "away": "Juventus",
+    "home_display": "Frosinone",
+    "away_display": "Juventus",
+    "probs": {
+      "Home Win": 0.2534,
+      "Draw": 0.2826,
+      "Away Win": 0.4639
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558637,
+    "utc_date": "2026-08-23T16:30:00Z",
+    "league": "SA",
+    "home": "Venezia",
+    "away": "Lecce",
+    "home_display": "Venezia",
+    "away_display": "Lecce",
+    "probs": {
+      "Home Win": 0.5013,
+      "Draw": 0.282,
+      "Away Win": 0.2167
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558633,
+    "utc_date": "2026-08-23T18:45:00Z",
+    "league": "SA",
+    "home": "Atalanta",
+    "away": "Sassuolo",
+    "home_display": "Atalanta",
+    "away_display": "Sassuolo",
+    "probs": {
+      "Home Win": 0.5358,
+      "Draw": 0.2579,
+      "Away Win": 0.2063
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558634,
+    "utc_date": "2026-08-23T18:45:00Z",
+    "league": "SA",
+    "home": "Torino",
+    "away": "Milan",
+    "home_display": "Torino",
+    "away_display": "Milan",
+    "probs": {
+      "Home Win": 0.2723,
+      "Draw": 0.2797,
+      "Away Win": 0.4479
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558630,
+    "utc_date": "2026-08-24T16:30:00Z",
+    "league": "SA",
+    "home": "Bologna",
+    "away": "Lazio",
+    "home_display": "Bologna",
+    "away_display": "Lazio",
+    "probs": {
+      "Home Win": 0.4202,
+      "Draw": 0.2915,
+      "Away Win": 0.2884
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558638,
+    "utc_date": "2026-08-24T18:45:00Z",
+    "league": "SA",
+    "home": "Roma",
+    "away": "Fiorentina",
+    "home_display": "Roma",
+    "away_display": "Fiorentina",
+    "probs": {
+      "Home Win": 0.5658,
+      "Draw": 0.2448,
+      "Away Win": 0.1894
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558625,
+    "utc_date": "2026-08-28T18:45:00Z",
+    "league": "SA",
+    "home": "Milan",
+    "away": "Venezia",
+    "home_display": "Milan",
+    "away_display": "Venezia",
+    "probs": {
+      "Home Win": 0.5242,
+      "Draw": 0.2625,
+      "Away Win": 0.2133
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558620,
+    "utc_date": "2026-08-29T16:30:00Z",
+    "league": "SA",
+    "home": "Sassuolo",
+    "away": "Torino",
+    "home_display": "Sassuolo",
+    "away_display": "Torino",
+    "probs": {
+      "Home Win": 0.4295,
+      "Draw": 0.2876,
+      "Away Win": 0.283
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558624,
+    "utc_date": "2026-08-29T16:30:00Z",
+    "league": "SA",
+    "home": "Monza",
+    "away": "Udinese",
+    "home_display": "Monza",
+    "away_display": "Udinese",
+    "probs": {
+      "Home Win": 0.287,
+      "Draw": 0.2904,
+      "Away Win": 0.4225
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558627,
+    "utc_date": "2026-08-29T16:30:00Z",
+    "league": "SA",
+    "home": "Fiorentina",
+    "away": "Frosinone",
+    "home_display": "Fiorentina",
+    "away_display": "Frosinone",
+    "probs": {
+      "Home Win": 0.5024,
+      "Draw": 0.2763,
+      "Away Win": 0.2213
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558619,
+    "utc_date": "2026-08-29T18:45:00Z",
+    "league": "SA",
+    "home": "Juventus",
+    "away": "Parma",
+    "home_display": "Juventus",
+    "away_display": "Parma",
+    "probs": {
+      "Home Win": 0.6318,
+      "Draw": 0.2229,
+      "Away Win": 0.1453
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558626,
+    "utc_date": "2026-08-30T16:30:00Z",
+    "league": "SA",
+    "home": "Napoli",
+    "away": "Como",
+    "home_display": "Napoli",
+    "away_display": "Como",
+    "probs": {
+      "Home Win": 0.3717,
+      "Draw": 0.2963,
+      "Away Win": 0.332
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558622,
+    "utc_date": "2026-08-30T18:45:00Z",
+    "league": "SA",
+    "home": "Lazio",
+    "away": "Genoa",
+    "home_display": "Lazio",
+    "away_display": "Genoa",
+    "probs": {
+      "Home Win": 0.4649,
+      "Draw": 0.2831,
+      "Away Win": 0.252
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558623,
+    "utc_date": "2026-08-30T18:45:00Z",
+    "league": "SA",
+    "home": "Cagliari",
+    "away": "Inter",
+    "home_display": "Cagliari",
+    "away_display": "Inter",
+    "probs": {
+      "Home Win": 0.1422,
+      "Draw": 0.2134,
+      "Away Win": 0.6444
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558621,
+    "utc_date": "2026-08-31T16:30:00Z",
+    "league": "SA",
+    "home": "Lecce",
+    "away": "Roma",
+    "home_display": "Lecce",
+    "away_display": "Roma",
+    "probs": {
+      "Home Win": 0.1753,
+      "Draw": 0.2343,
+      "Away Win": 0.5904
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558628,
+    "utc_date": "2026-08-31T18:45:00Z",
+    "league": "SA",
+    "home": "Atalanta",
+    "away": "Bologna",
+    "home_display": "Atalanta",
+    "away_display": "Bologna",
+    "probs": {
+      "Home Win": 0.4845,
+      "Draw": 0.2739,
+      "Away Win": 0.2416
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558609,
+    "utc_date": "2026-09-04T18:45:00Z",
+    "league": "SA",
+    "home": "Genoa",
+    "away": "Como",
+    "home_display": "Genoa",
+    "away_display": "Como",
+    "probs": {
+      "Home Win": 0.2181,
+      "Draw": 0.2695,
+      "Away Win": 0.5124
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558616,
+    "utc_date": "2026-09-05T13:00:00Z",
+    "league": "SA",
+    "home": "Fiorentina",
+    "away": "Torino",
+    "home_display": "Fiorentina",
+    "away_display": "Torino",
+    "probs": {
+      "Home Win": 0.4951,
+      "Draw": 0.2785,
+      "Away Win": 0.2264
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558614,
+    "utc_date": "2026-09-05T16:00:00Z",
+    "league": "SA",
+    "home": "Inter",
+    "away": "Napoli",
+    "home_display": "Inter",
+    "away_display": "Napoli",
+    "probs": {
+      "Home Win": 0.5107,
+      "Draw": 0.257,
+      "Away Win": 0.2323
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558611,
+    "utc_date": "2026-09-05T18:45:00Z",
+    "league": "SA",
+    "home": "Roma",
+    "away": "Atalanta",
+    "home_display": "Roma",
+    "away_display": "Atalanta",
+    "probs": {
+      "Home Win": 0.4752,
+      "Draw": 0.2734,
+      "Away Win": 0.2514
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558612,
+    "utc_date": "2026-09-06T13:00:00Z",
+    "league": "SA",
+    "home": "Parma",
+    "away": "Monza",
+    "home_display": "Parma",
+    "away_display": "Monza",
+    "probs": {
+      "Home Win": 0.4477,
+      "Draw": 0.2962,
+      "Away Win": 0.256
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558615,
+    "utc_date": "2026-09-06T13:00:00Z",
+    "league": "SA",
+    "home": "Frosinone",
+    "away": "Venezia",
+    "home_display": "Frosinone",
+    "away_display": "Venezia",
+    "probs": {
+      "Home Win": 0.4029,
+      "Draw": 0.2915,
+      "Away Win": 0.3056
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558613,
+    "utc_date": "2026-09-06T16:00:00Z",
+    "league": "SA",
+    "home": "Bologna",
+    "away": "Sassuolo",
+    "home_display": "Bologna",
+    "away_display": "Sassuolo",
+    "probs": {
+      "Home Win": 0.4682,
+      "Draw": 0.2801,
+      "Away Win": 0.2517
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558618,
+    "utc_date": "2026-09-06T18:45:00Z",
+    "league": "SA",
+    "home": "Juventus",
+    "away": "Milan",
+    "home_display": "Juventus",
+    "away_display": "Milan",
+    "probs": {
+      "Home Win": 0.4881,
+      "Draw": 0.2777,
+      "Away Win": 0.2342
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558610,
+    "utc_date": "2026-09-07T16:00:00Z",
+    "league": "SA",
+    "home": "Cagliari",
+    "away": "Lecce",
+    "home_display": "Cagliari",
+    "away_display": "Lecce",
+    "probs": {
+      "Home Win": 0.4281,
+      "Draw": 0.295,
+      "Away Win": 0.2769
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558617,
+    "utc_date": "2026-09-07T18:45:00Z",
+    "league": "SA",
+    "home": "Udinese",
+    "away": "Lazio",
+    "home_display": "Udinese",
+    "away_display": "Lazio",
+    "probs": {
+      "Home Win": 0.3987,
+      "Draw": 0.2913,
+      "Away Win": 0.31
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558606,
+    "utc_date": "2026-09-11T18:45:00Z",
+    "league": "SA",
+    "home": "Venezia",
+    "away": "Fiorentina",
+    "home_display": "Venezia",
+    "away_display": "Fiorentina",
+    "probs": {
+      "Home Win": 0.3804,
+      "Draw": 0.304,
+      "Away Win": 0.3156
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558604,
+    "utc_date": "2026-09-12T13:00:00Z",
+    "league": "SA",
+    "home": "Genoa",
+    "away": "Frosinone",
+    "home_display": "Genoa",
+    "away_display": "Frosinone",
+    "probs": {
+      "Home Win": 0.4414,
+      "Draw": 0.2876,
+      "Away Win": 0.271
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558608,
+    "utc_date": "2026-09-12T16:00:00Z",
+    "league": "SA",
+    "home": "Sassuolo",
+    "away": "Juventus",
+    "home_display": "Sassuolo",
+    "away_display": "Juventus",
+    "probs": {
+      "Home Win": 0.2494,
+      "Draw": 0.2704,
+      "Away Win": 0.4802
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558607,
+    "utc_date": "2026-09-12T18:45:00Z",
+    "league": "SA",
+    "home": "Atalanta",
+    "away": "Cagliari",
+    "home_display": "Atalanta",
+    "away_display": "Cagliari",
+    "probs": {
+      "Home Win": 0.5785,
+      "Draw": 0.2465,
+      "Away Win": 0.175
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558603,
+    "utc_date": "2026-09-13T10:30:00Z",
+    "league": "SA",
+    "home": "Torino",
+    "away": "Roma",
+    "home_display": "Torino",
+    "away_display": "Roma",
+    "probs": {
+      "Home Win": 0.2003,
+      "Draw": 0.2534,
+      "Away Win": 0.5463
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558602,
+    "utc_date": "2026-09-13T13:00:00Z",
+    "league": "SA",
+    "home": "Como",
+    "away": "Parma",
+    "home_display": "Como",
+    "away_display": "Parma",
+    "probs": {
+      "Home Win": 0.6052,
+      "Draw": 0.2346,
+      "Away Win": 0.1602
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558605,
+    "utc_date": "2026-09-13T13:00:00Z",
+    "league": "SA",
+    "home": "Lecce",
+    "away": "Monza",
+    "home_display": "Lecce",
+    "away_display": "Monza",
+    "probs": {
+      "Home Win": 0.4123,
+      "Draw": 0.2966,
+      "Away Win": 0.2911
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558599,
+    "utc_date": "2026-09-13T16:00:00Z",
+    "league": "SA",
+    "home": "Napoli",
+    "away": "Bologna",
+    "home_display": "Napoli",
+    "away_display": "Bologna",
+    "probs": {
+      "Home Win": 0.5141,
+      "Draw": 0.2721,
+      "Away Win": 0.2137
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558600,
+    "utc_date": "2026-09-13T18:45:00Z",
+    "league": "SA",
+    "home": "Lazio",
+    "away": "Milan",
+    "home_display": "Lazio",
+    "away_display": "Milan",
+    "probs": {
+      "Home Win": 0.3565,
+      "Draw": 0.2883,
+      "Away Win": 0.3552
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558601,
+    "utc_date": "2026-09-14T18:45:00Z",
+    "league": "SA",
+    "home": "Inter",
+    "away": "Udinese",
+    "home_display": "Inter",
+    "away_display": "Udinese",
+    "probs": {
+      "Home Win": 0.6689,
+      "Draw": 0.2049,
+      "Away Win": 0.1262
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558596,
+    "utc_date": "2026-09-18T18:45:00Z",
+    "league": "SA",
+    "home": "Monza",
+    "away": "Sassuolo",
+    "home_display": "Monza",
+    "away_display": "Sassuolo",
+    "probs": {
+      "Home Win": 0.332,
+      "Draw": 0.2919,
+      "Away Win": 0.3761
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558598,
+    "utc_date": "2026-09-19T13:00:00Z",
+    "league": "SA",
+    "home": "Bologna",
+    "away": "Torino",
+    "home_display": "Bologna",
+    "away_display": "Torino",
+    "probs": {
+      "Home Win": 0.4811,
+      "Draw": 0.2762,
+      "Away Win": 0.2427
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558589,
+    "utc_date": "2026-09-19T13:00:00Z",
+    "league": "SA",
+    "home": "Udinese",
+    "away": "Cagliari",
+    "home_display": "Udinese",
+    "away_display": "Cagliari",
+    "probs": {
+      "Home Win": 0.4895,
+      "Draw": 0.2777,
+      "Away Win": 0.2328
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558593,
+    "utc_date": "2026-09-19T16:00:00Z",
+    "league": "SA",
+    "home": "Roma",
+    "away": "Inter",
+    "home_display": "Roma",
+    "away_display": "Inter",
+    "probs": {
+      "Home Win": 0.3296,
+      "Draw": 0.2743,
+      "Away Win": 0.3961
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558594,
+    "utc_date": "2026-09-19T18:45:00Z",
+    "league": "SA",
+    "home": "Venezia",
+    "away": "Lazio",
+    "home_display": "Venezia",
+    "away_display": "Lazio",
+    "probs": {
+      "Home Win": 0.3826,
+      "Draw": 0.3018,
+      "Away Win": 0.3156
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558591,
+    "utc_date": "2026-09-20T10:30:00Z",
+    "league": "SA",
+    "home": "Fiorentina",
+    "away": "Napoli",
+    "home_display": "Fiorentina",
+    "away_display": "Napoli",
+    "probs": {
+      "Home Win": 0.2807,
+      "Draw": 0.2917,
+      "Away Win": 0.4276
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558592,
+    "utc_date": "2026-09-20T13:00:00Z",
+    "league": "SA",
+    "home": "Frosinone",
+    "away": "Como",
+    "home_display": "Frosinone",
+    "away_display": "Como",
+    "probs": {
+      "Home Win": 0.2197,
+      "Draw": 0.2568,
+      "Away Win": 0.5234
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558590,
+    "utc_date": "2026-09-20T13:00:00Z",
+    "league": "SA",
+    "home": "Parma",
+    "away": "Genoa",
+    "home_display": "Parma",
+    "away_display": "Genoa",
+    "probs": {
+      "Home Win": 0.3594,
+      "Draw": 0.3053,
+      "Away Win": 0.3354
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558595,
+    "utc_date": "2026-09-20T16:00:00Z",
+    "league": "SA",
+    "home": "Juventus",
+    "away": "Atalanta",
+    "home_display": "Juventus",
+    "away_display": "Atalanta",
+    "probs": {
+      "Home Win": 0.4347,
+      "Draw": 0.293,
+      "Away Win": 0.2722
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 558597,
+    "utc_date": "2026-09-20T18:45:00Z",
+    "league": "SA",
+    "home": "Milan",
+    "away": "Lecce",
+    "home_display": "Milan",
+    "away_display": "Lecce",
+    "probs": {
+      "Home Win": 0.573,
+      "Draw": 0.245,
+      "Away Win": 0.182
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559715,
+    "utc_date": "2026-08-21T18:45:00Z",
+    "league": "FL1",
+    "home": "Marseille",
+    "away": "Strasbourg",
+    "home_display": "Marseille",
+    "away_display": "Strasbourg",
+    "probs": {
+      "Home Win": 0.4772,
+      "Draw": 0.2734,
+      "Away Win": 0.2494
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559712,
+    "utc_date": "2026-08-22T15:15:00Z",
+    "league": "FL1",
+    "home": "Lens",
+    "away": "Auxerre",
+    "home_display": "Lens",
+    "away_display": "Auxerre",
+    "probs": {
+      "Home Win": 0.5787,
+      "Draw": 0.2372,
+      "Away Win": 0.1841
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559711,
+    "utc_date": "2026-08-22T18:45:00Z",
+    "league": "FL1",
+    "home": "Le Mans",
+    "away": "Brest",
+    "home_display": "Le Mans",
+    "away_display": "Brest",
+    "probs": {
+      "Home Win": 0.3096,
+      "Draw": 0.2976,
+      "Away Win": 0.3927
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559714,
+    "utc_date": "2026-08-22T18:45:00Z",
+    "league": "FL1",
+    "home": "Troyes",
+    "away": "Paris FC",
+    "home_display": "Troyes",
+    "away_display": "Paris FC",
+    "probs": {
+      "Home Win": 0.2963,
+      "Draw": 0.285,
+      "Away Win": 0.4187
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559716,
+    "utc_date": "2026-08-22T18:45:00Z",
+    "league": "FL1",
+    "home": "Nice",
+    "away": "Lorient",
+    "home_display": "Nice",
+    "away_display": "Lorient",
+    "probs": {
+      "Home Win": 0.381,
+      "Draw": 0.295,
+      "Away Win": 0.324
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559718,
+    "utc_date": "2026-08-22T18:45:00Z",
+    "league": "FL1",
+    "home": "Toulouse",
+    "away": "Lyon",
+    "home_display": "Toulouse",
+    "away_display": "Lyon",
+    "probs": {
+      "Home Win": 0.3388,
+      "Draw": 0.2817,
+      "Away Win": 0.3795
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559717,
+    "utc_date": "2026-08-23T13:00:00Z",
+    "league": "FL1",
+    "home": "Angers",
+    "away": "Lille",
+    "home_display": "Angers",
+    "away_display": "Lille",
+    "probs": {
+      "Home Win": 0.2029,
+      "Draw": 0.2648,
+      "Away Win": 0.5323
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559719,
+    "utc_date": "2026-08-23T15:15:00Z",
+    "league": "FL1",
+    "home": "Le Havre",
+    "away": "Monaco",
+    "home_display": "Le Havre",
+    "away_display": "Monaco",
+    "probs": {
+      "Home Win": 0.2517,
+      "Draw": 0.2753,
+      "Away Win": 0.473
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559713,
+    "utc_date": "2026-08-23T18:45:00Z",
+    "league": "FL1",
+    "home": "Paris SG",
+    "away": "Rennes",
+    "home_display": "Paris Saint-Germain",
+    "away_display": "Rennes",
+    "probs": {
+      "Home Win": 0.6466,
+      "Draw": 0.2046,
+      "Away Win": 0.1489
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559702,
+    "utc_date": "2026-08-28T18:45:00Z",
+    "league": "FL1",
+    "home": "Lille",
+    "away": "Paris SG",
+    "home_display": "Lille",
+    "away_display": "Paris Saint-Germain",
+    "probs": {
+      "Home Win": 0.249,
+      "Draw": 0.2802,
+      "Away Win": 0.4707
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559704,
+    "utc_date": "2026-08-29T15:15:00Z",
+    "league": "FL1",
+    "home": "Strasbourg",
+    "away": "Lens",
+    "home_display": "Strasbourg",
+    "away_display": "Lens",
+    "probs": {
+      "Home Win": 0.3302,
+      "Draw": 0.2795,
+      "Away Win": 0.3903
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559705,
+    "utc_date": "2026-08-29T18:45:00Z",
+    "league": "FL1",
+    "home": "Lorient",
+    "away": "Troyes",
+    "home_display": "Lorient",
+    "away_display": "Troyes",
+    "probs": {
+      "Home Win": 0.5911,
+      "Draw": 0.2371,
+      "Away Win": 0.1718
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559706,
+    "utc_date": "2026-08-29T18:45:00Z",
+    "league": "FL1",
+    "home": "Lyon",
+    "away": "Le Havre",
+    "home_display": "Lyon",
+    "away_display": "Le Havre",
+    "probs": {
+      "Home Win": 0.5673,
+      "Draw": 0.2422,
+      "Away Win": 0.1905
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559708,
+    "utc_date": "2026-08-29T18:45:00Z",
+    "league": "FL1",
+    "home": "Auxerre",
+    "away": "Angers",
+    "home_display": "Auxerre",
+    "away_display": "Angers",
+    "probs": {
+      "Home Win": 0.5582,
+      "Draw": 0.2588,
+      "Away Win": 0.183
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559710,
+    "utc_date": "2026-08-29T18:45:00Z",
+    "league": "FL1",
+    "home": "Brest",
+    "away": "Toulouse",
+    "home_display": "Brest",
+    "away_display": "Toulouse",
+    "probs": {
+      "Home Win": 0.3528,
+      "Draw": 0.2925,
+      "Away Win": 0.3547
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559707,
+    "utc_date": "2026-08-30T13:00:00Z",
+    "league": "FL1",
+    "home": "Paris FC",
+    "away": "Nice",
+    "home_display": "Paris FC",
+    "away_display": "Nice",
+    "probs": {
+      "Home Win": 0.496,
+      "Draw": 0.2786,
+      "Away Win": 0.2254
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559709,
+    "utc_date": "2026-08-30T15:15:00Z",
+    "league": "FL1",
+    "home": "Rennes",
+    "away": "Le Mans",
+    "home_display": "Rennes",
+    "away_display": "Le Mans",
+    "probs": {
+      "Home Win": 0.6305,
+      "Draw": 0.2136,
+      "Away Win": 0.1559
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559703,
+    "utc_date": "2026-08-30T18:45:00Z",
+    "league": "FL1",
+    "home": "Monaco",
+    "away": "Marseille",
+    "home_display": "Monaco",
+    "away_display": "Marseille",
+    "probs": {
+      "Home Win": 0.4304,
+      "Draw": 0.2689,
+      "Away Win": 0.3006
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559693,
+    "utc_date": "2026-09-05T15:00:00Z",
+    "league": "FL1",
+    "home": "Le Havre",
+    "away": "Brest",
+    "home_display": "Le Havre",
+    "away_display": "Brest",
+    "probs": {
+      "Home Win": 0.4024,
+      "Draw": 0.2908,
+      "Away Win": 0.3068
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559694,
+    "utc_date": "2026-09-05T15:00:00Z",
+    "league": "FL1",
+    "home": "Marseille",
+    "away": "Paris FC",
+    "home_display": "Marseille",
+    "away_display": "Paris FC",
+    "probs": {
+      "Home Win": 0.5094,
+      "Draw": 0.259,
+      "Away Win": 0.2316
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559695,
+    "utc_date": "2026-09-05T15:00:00Z",
+    "league": "FL1",
+    "home": "Lens",
+    "away": "Lorient",
+    "home_display": "Lens",
+    "away_display": "Lorient",
+    "probs": {
+      "Home Win": 0.5858,
+      "Draw": 0.2345,
+      "Away Win": 0.1797
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559696,
+    "utc_date": "2026-09-05T15:00:00Z",
+    "league": "FL1",
+    "home": "Toulouse",
+    "away": "Lille",
+    "home_display": "Toulouse",
+    "away_display": "Lille",
+    "probs": {
+      "Home Win": 0.3122,
+      "Draw": 0.2924,
+      "Away Win": 0.3955
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559697,
+    "utc_date": "2026-09-05T15:00:00Z",
+    "league": "FL1",
+    "home": "Paris SG",
+    "away": "Monaco",
+    "home_display": "Paris Saint-Germain",
+    "away_display": "Monaco",
+    "probs": {
+      "Home Win": 0.6436,
+      "Draw": 0.193,
+      "Away Win": 0.1633
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559698,
+    "utc_date": "2026-09-05T15:00:00Z",
+    "league": "FL1",
+    "home": "Angers",
+    "away": "Rennes",
+    "home_display": "Angers",
+    "away_display": "Rennes",
+    "probs": {
+      "Home Win": 0.2538,
+      "Draw": 0.2712,
+      "Away Win": 0.4749
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559699,
+    "utc_date": "2026-09-05T15:00:00Z",
+    "league": "FL1",
+    "home": "Lyon",
+    "away": "Auxerre",
+    "home_display": "Lyon",
+    "away_display": "Auxerre",
+    "probs": {
+      "Home Win": 0.5262,
+      "Draw": 0.2585,
+      "Away Win": 0.2153
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559700,
+    "utc_date": "2026-09-05T15:00:00Z",
+    "league": "FL1",
+    "home": "Troyes",
+    "away": "Strasbourg",
+    "home_display": "Troyes",
+    "away_display": "Strasbourg",
+    "probs": {
+      "Home Win": 0.2519,
+      "Draw": 0.2749,
+      "Away Win": 0.4732
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559701,
+    "utc_date": "2026-09-05T15:00:00Z",
+    "league": "FL1",
+    "home": "Nice",
+    "away": "Le Mans",
+    "home_display": "Nice",
+    "away_display": "Le Mans",
+    "probs": {
+      "Home Win": 0.5049,
+      "Draw": 0.2766,
+      "Away Win": 0.2185
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559689,
+    "utc_date": "2026-09-11T18:45:00Z",
+    "league": "FL1",
+    "home": "Rennes",
+    "away": "Marseille",
+    "home_display": "Rennes",
+    "away_display": "Marseille",
+    "probs": {
+      "Home Win": 0.4343,
+      "Draw": 0.2739,
+      "Away Win": 0.2918
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559687,
+    "utc_date": "2026-09-12T15:15:00Z",
+    "league": "FL1",
+    "home": "Strasbourg",
+    "away": "Monaco",
+    "home_display": "Strasbourg",
+    "away_display": "Monaco",
+    "probs": {
+      "Home Win": 0.4114,
+      "Draw": 0.2731,
+      "Away Win": 0.3156
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559684,
+    "utc_date": "2026-09-12T18:45:00Z",
+    "league": "FL1",
+    "home": "Lorient",
+    "away": "Toulouse",
+    "home_display": "Lorient",
+    "away_display": "Toulouse",
+    "probs": {
+      "Home Win": 0.4493,
+      "Draw": 0.2808,
+      "Away Win": 0.2699
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559688,
+    "utc_date": "2026-09-12T18:45:00Z",
+    "league": "FL1",
+    "home": "Auxerre",
+    "away": "Nice",
+    "home_display": "Auxerre",
+    "away_display": "Nice",
+    "probs": {
+      "Home Win": 0.4738,
+      "Draw": 0.2836,
+      "Away Win": 0.2427
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559690,
+    "utc_date": "2026-09-12T18:45:00Z",
+    "league": "FL1",
+    "home": "Le Havre",
+    "away": "Angers",
+    "home_display": "Le Havre",
+    "away_display": "Angers",
+    "probs": {
+      "Home Win": 0.4645,
+      "Draw": 0.2872,
+      "Away Win": 0.2483
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559692,
+    "utc_date": "2026-09-12T18:45:00Z",
+    "league": "FL1",
+    "home": "Paris FC",
+    "away": "Lyon",
+    "home_display": "Paris FC",
+    "away_display": "Lyon",
+    "probs": {
+      "Home Win": 0.3465,
+      "Draw": 0.2865,
+      "Away Win": 0.367
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559685,
+    "utc_date": "2026-09-13T13:00:00Z",
+    "league": "FL1",
+    "home": "Lille",
+    "away": "Troyes",
+    "home_display": "Lille",
+    "away_display": "Troyes",
+    "probs": {
+      "Home Win": 0.683,
+      "Draw": 0.2014,
+      "Away Win": 0.1155
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559686,
+    "utc_date": "2026-09-13T15:15:00Z",
+    "league": "FL1",
+    "home": "Le Mans",
+    "away": "Lens",
+    "home_display": "Le Mans",
+    "away_display": "Lens",
+    "probs": {
+      "Home Win": 0.1658,
+      "Draw": 0.2273,
+      "Away Win": 0.6069
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559691,
+    "utc_date": "2026-09-13T18:45:00Z",
+    "league": "FL1",
+    "home": "Brest",
+    "away": "Paris SG",
+    "home_display": "Brest",
+    "away_display": "Paris Saint-Germain",
+    "probs": {
+      "Home Win": 0.1427,
+      "Draw": 0.2097,
+      "Away Win": 0.6476
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559676,
+    "utc_date": "2026-09-19T15:00:00Z",
+    "league": "FL1",
+    "home": "Auxerre",
+    "away": "Brest",
+    "home_display": "Auxerre",
+    "away_display": "Brest",
+    "probs": {
+      "Home Win": 0.5127,
+      "Draw": 0.276,
+      "Away Win": 0.2113
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559677,
+    "utc_date": "2026-09-19T15:00:00Z",
+    "league": "FL1",
+    "home": "Le Mans",
+    "away": "Lorient",
+    "home_display": "Le Mans",
+    "away_display": "Lorient",
+    "probs": {
+      "Home Win": 0.2883,
+      "Draw": 0.2872,
+      "Away Win": 0.4244
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559678,
+    "utc_date": "2026-09-19T15:00:00Z",
+    "league": "FL1",
+    "home": "Nice",
+    "away": "Lille",
+    "home_display": "Nice",
+    "away_display": "Lille",
+    "probs": {
+      "Home Win": 0.2398,
+      "Draw": 0.2766,
+      "Away Win": 0.4836
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559679,
+    "utc_date": "2026-09-19T15:00:00Z",
+    "league": "FL1",
+    "home": "Paris FC",
+    "away": "Strasbourg",
+    "home_display": "Paris FC",
+    "away_display": "Strasbourg",
+    "probs": {
+      "Home Win": 0.3672,
+      "Draw": 0.2893,
+      "Away Win": 0.3435
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559680,
+    "utc_date": "2026-09-19T15:00:00Z",
+    "league": "FL1",
+    "home": "Toulouse",
+    "away": "Le Havre",
+    "home_display": "Toulouse",
+    "away_display": "Le Havre",
+    "probs": {
+      "Home Win": 0.4832,
+      "Draw": 0.2778,
+      "Away Win": 0.239
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559681,
+    "utc_date": "2026-09-19T15:00:00Z",
+    "league": "FL1",
+    "home": "Angers",
+    "away": "Troyes",
+    "home_display": "Angers",
+    "away_display": "Troyes",
+    "probs": {
+      "Home Win": 0.4246,
+      "Draw": 0.2928,
+      "Away Win": 0.2826
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559682,
+    "utc_date": "2026-09-19T15:00:00Z",
+    "league": "FL1",
+    "home": "Monaco",
+    "away": "Lens",
+    "home_display": "Monaco",
+    "away_display": "Lens",
+    "probs": {
+      "Home Win": 0.371,
+      "Draw": 0.2767,
+      "Away Win": 0.3522
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559683,
+    "utc_date": "2026-09-19T15:00:00Z",
+    "league": "FL1",
+    "home": "Lyon",
+    "away": "Rennes",
+    "home_display": "Lyon",
+    "away_display": "Rennes",
+    "probs": {
+      "Home Win": 0.4734,
+      "Draw": 0.268,
+      "Away Win": 0.2587
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 559675,
+    "utc_date": "2026-09-20T18:45:00Z",
+    "league": "FL1",
+    "home": "Marseille",
+    "away": "Paris SG",
+    "home_display": "Marseille",
+    "away_display": "Paris Saint-Germain",
+    "probs": {
+      "Home Win": 0.2199,
+      "Draw": 0.2662,
+      "Away Win": 0.5139
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567265,
+    "utc_date": "2026-08-09T17:00:00Z",
+    "league": "PPL",
+    "home": "Porto",
+    "away": "Alverca",
+    "home_display": "Porto",
+    "away_display": "Alverca",
+    "probs": {
+      "Home Win": 0.7631,
+      "Draw": 0.1565,
+      "Away Win": 0.0804
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567261,
+    "utc_date": "2026-08-09T19:30:00Z",
+    "league": "PPL",
+    "home": "Gil Vicente",
+    "away": "Rio Ave",
+    "home_display": "Gil Vicente",
+    "away_display": "Rio Ave",
+    "probs": {
+      "Home Win": 0.487,
+      "Draw": 0.2794,
+      "Away Win": 0.2337
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567274,
+    "utc_date": "2026-08-15T19:30:00Z",
+    "league": "PPL",
+    "home": "Rio Ave",
+    "away": "Porto",
+    "home_display": "Rio Ave",
+    "away_display": "Porto",
+    "probs": {
+      "Home Win": 0.1325,
+      "Draw": 0.1958,
+      "Away Win": 0.6717
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567267,
+    "utc_date": "2026-08-16T19:30:00Z",
+    "league": "PPL",
+    "home": "Casa Pia",
+    "away": "Benfica",
+    "home_display": "Casa Pia",
+    "away_display": "Benfica",
+    "probs": {
+      "Home Win": 0.1189,
+      "Draw": 0.1991,
+      "Away Win": 0.682
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567272,
+    "utc_date": "2026-08-17T19:15:00Z",
+    "league": "PPL",
+    "home": "Arouca",
+    "away": "Moreirense",
+    "home_display": "Arouca",
+    "away_display": "Moreirense",
+    "probs": {
+      "Home Win": 0.4736,
+      "Draw": 0.2803,
+      "Away Win": 0.2461
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567275,
+    "utc_date": "2026-08-23T15:00:00Z",
+    "league": "PPL",
+    "home": "Sp Lisbon",
+    "away": "Alverca",
+    "home_display": "Sporting CP",
+    "away_display": "Alverca",
+    "probs": {
+      "Home Win": 0.8359,
+      "Draw": 0.1182,
+      "Away Win": 0.0458
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567277,
+    "utc_date": "2026-08-23T15:00:00Z",
+    "league": "PPL",
+    "home": "Gil Vicente",
+    "away": "Casa Pia",
+    "home_display": "Gil Vicente",
+    "away_display": "Casa Pia",
+    "probs": {
+      "Home Win": 0.497,
+      "Draw": 0.2806,
+      "Away Win": 0.2224
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567280,
+    "utc_date": "2026-08-23T15:00:00Z",
+    "league": "PPL",
+    "home": "Porto",
+    "away": "Arouca",
+    "home_display": "Porto",
+    "away_display": "Arouca",
+    "probs": {
+      "Home Win": 0.7451,
+      "Draw": 0.1657,
+      "Away Win": 0.0892
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567282,
+    "utc_date": "2026-08-23T15:00:00Z",
+    "league": "PPL",
+    "home": "Moreirense",
+    "away": "Benfica",
+    "home_display": "Moreirense",
+    "away_display": "Benfica",
+    "probs": {
+      "Home Win": 0.1233,
+      "Draw": 0.179,
+      "Away Win": 0.6976
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567285,
+    "utc_date": "2026-08-30T15:00:00Z",
+    "league": "PPL",
+    "home": "Alverca",
+    "away": "Santa Clara",
+    "home_display": "Alverca",
+    "away_display": "Santa Clara",
+    "probs": {
+      "Home Win": 0.358,
+      "Draw": 0.3021,
+      "Away Win": 0.3399
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567290,
+    "utc_date": "2026-08-30T15:00:00Z",
+    "league": "PPL",
+    "home": "Casa Pia",
+    "away": "Moreirense",
+    "home_display": "Casa Pia",
+    "away_display": "Moreirense",
+    "probs": {
+      "Home Win": 0.3829,
+      "Draw": 0.2995,
+      "Away Win": 0.3175
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567291,
+    "utc_date": "2026-08-30T15:00:00Z",
+    "league": "PPL",
+    "home": "Rio Ave",
+    "away": "Sp Lisbon",
+    "home_display": "Rio Ave",
+    "away_display": "Sporting CP",
+    "probs": {
+      "Home Win": 0.1004,
+      "Draw": 0.1636,
+      "Away Win": 0.7359
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567299,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PPL",
+    "home": "Porto",
+    "away": "Moreirense",
+    "home_display": "Porto",
+    "away_display": "Moreirense",
+    "probs": {
+      "Home Win": 0.7757,
+      "Draw": 0.1482,
+      "Away Win": 0.0761
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567300,
+    "utc_date": "2026-09-06T15:00:00Z",
+    "league": "PPL",
+    "home": "Santa Clara",
+    "away": "Rio Ave",
+    "home_display": "Santa Clara",
+    "away_display": "Rio Ave",
+    "probs": {
+      "Home Win": 0.4832,
+      "Draw": 0.2843,
+      "Away Win": 0.2325
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567304,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PPL",
+    "home": "Benfica",
+    "away": "Gil Vicente",
+    "home_display": "Benfica",
+    "away_display": "Gil Vicente",
+    "probs": {
+      "Home Win": 0.7658,
+      "Draw": 0.1522,
+      "Away Win": 0.0819
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567307,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PPL",
+    "home": "Casa Pia",
+    "away": "Porto",
+    "home_display": "Casa Pia",
+    "away_display": "Porto",
+    "probs": {
+      "Home Win": 0.1262,
+      "Draw": 0.1962,
+      "Away Win": 0.6776
+    },
+    "pick": "Away Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567310,
+    "utc_date": "2026-09-13T15:00:00Z",
+    "league": "PPL",
+    "home": "Arouca",
+    "away": "Santa Clara",
+    "home_display": "Arouca",
+    "away_display": "Santa Clara",
+    "probs": {
+      "Home Win": 0.4294,
+      "Draw": 0.2917,
+      "Away Win": 0.2789
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567313,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PPL",
+    "home": "Sp Lisbon",
+    "away": "Arouca",
+    "home_display": "Sporting CP",
+    "away_display": "Arouca",
+    "probs": {
+      "Home Win": 0.7727,
+      "Draw": 0.1536,
+      "Away Win": 0.0737
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567316,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PPL",
+    "home": "Porto",
+    "away": "Benfica",
+    "home_display": "Porto",
+    "away_display": "Benfica",
+    "probs": {
+      "Home Win": 0.3826,
+      "Draw": 0.2931,
+      "Away Win": 0.3243
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  },
+  {
+    "match_id": 567318,
+    "utc_date": "2026-09-20T15:00:00Z",
+    "league": "PPL",
+    "home": "Alverca",
+    "away": "Rio Ave",
+    "home_display": "Alverca",
+    "away_display": "Rio Ave",
+    "probs": {
+      "Home Win": 0.4314,
+      "Draw": 0.2939,
+      "Away Win": 0.2747
+    },
+    "pick": "Home Win",
+    "logged_at": "2026-07-28",
+    "status": "pending",
+    "actual": null,
+    "actual_score": null,
+    "settled_at": null
+  }
+]

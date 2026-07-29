@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Predict-XI &middot; Track record{% endblock %}
+{% block content %}
+<div class="hero"><h1>Live track record</h1>
+  <p>Every prediction is logged with a date <em>before</em> kickoff, then graded against the real
+     result once the match is played. Nothing here can flatter the model &mdash; it's the honest,
+     out-of-sample proof, accumulating as the season unfolds.</p></div>
+
+{% if s.error %}<div class="alert err">Track record unavailable: {{ s.error }}</div>{% endif %}
+
+<div class="card">
+  <div class="stat-grid">
+    <div class="stat"><div class="v">{{ s.n_logged }}</div><div class="l">Predictions logged</div></div>
+    <div class="stat"><div class="v">{{ s.n_pending }}</div><div class="l">Awaiting result</div></div>
+    <div class="stat"><div class="v">{{ s.n_settled }}</div><div class="l">Graded</div></div>
+  </div>
+  <p class="muted" style="margin-top:.9rem; font-size:.8rem;">
+    Refresh the record with <code>python track_record.py log</code> (record upcoming fixtures) and
+    <code>python track_record.py settle</code> (grade finished ones).</p>
+</div>
+
+{% if s.n_settled and s.n_settled > 0 %}
+<div class="card">
+  <h2>How it's done <span class="tag">{{ s.n_settled }} graded</span></h2>
+  <div class="stat-grid">
+    <div class="stat"><div class="v">{{ (s.accuracy*100)|round(1) }}%</div><div class="l">Accuracy</div>
+      <div class="sub">always-home {{ (s.baseline_acc*100)|round(1) }}%</div></div>
+    <div class="stat"><div class="v">{{ s.rps }}</div><div class="l">RPS</div>
+      <div class="sub">market ≈ 0.204 · lower better</div></div>
+    <div class="stat"><div class="v">{{ s.log_loss }}</div><div class="l">Log-loss</div></div>
+    <div class="stat"><div class="v">{{ s.brier }}</div><div class="l">Brier</div></div>
+  </div>
+</div>
+
+{% if s.calibration %}
+<div class="card">
+  <h2>Calibration <span class="tag">stated vs. actual</span></h2>
+  <p class="muted" style="margin:-.4rem 0 1rem; font-size:.82rem;">
+    When the model said it was this confident, how often was the pick right? A well-calibrated model
+    hugs the diagonal (stated ≈ actual).</p>
+  <div class="calib">
+    {% for c in s.calibration %}
+    <div class="calib-row">
+      <span class="calib-label">{{ c.band }}</span>
+      <div class="calib-track">
+        <span class="calib-said" style="width:{{ c.predicted }}%"></span>
+        <span class="calib-got" style="width:{{ c.actual }}%"></span>
+      </div>
+      <span class="calib-obs">{{ c.actual }}%</span>
+      <span class="calib-n">n={{ c.n }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="calib-key">
+    <span><i class="k-said"></i>stated confidence</span>
+    <span><i class="k-got"></i>actual accuracy</span>
+  </div>
+</div>
+{% endif %}
+
+{% if s.per_league %}
+<div class="card">
+  <h2>By league</h2>
+  <div class="sim-scroll"><table class="sim-proj">
+    <thead><tr><th class="l">League</th><th class="r">Graded</th><th class="r">Accuracy</th><th class="r">RPS</th></tr></thead>
+    <tbody>
+    {% for r in s.per_league %}
+    <tr><td class="l">{{ r.name }}</td><td class="r">{{ r.n }}</td>
+      <td class="r">{{ (r.accuracy*100)|round(1) }}%</td><td class="r">{{ r.rps }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Recent results</h2>
+  <div class="sim-scroll"><table class="sim-proj">
+    <thead><tr><th class="l">Match</th><th class="r">Pick</th><th class="r">Conf</th><th class="r">Result</th><th class="c"></th></tr></thead>
+    <tbody>
+    {% for r in s.recent %}
+    <tr>
+      <td class="l">{{ r.home }} <span class="muted">v</span> {{ r.away }}</td>
+      <td class="r">{{ r.pick }}</td>
+      <td class="r muted">{{ r.conf }}%</td>
+      <td class="r">{{ r.actual }} <span class="muted">({{ r.score }})</span></td>
+      <td class="c">{% if r.correct %}<span class="diff diff-strong">✓</span>{% else %}<span class="diff diff-open">✗</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% elif not s.error %}
+<div class="card"><p class="muted">
+  {% if s.n_pending %}{{ s.n_pending }} prediction{{ 's' if s.n_pending != 1 }} logged and waiting on
+  results &mdash; accuracy, RPS and calibration will appear here as those matches are played.
+  {% else %}No predictions logged yet. Run <code>python track_record.py log</code> to start the record
+  (needs a football-data.org token and upcoming fixtures).{% endif %}</p></div>
+{% endif %}
+{% endblock %}

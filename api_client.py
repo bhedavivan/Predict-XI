@@ -84,3 +84,12 @@ def fetch_upcoming_matches(league_code: str) -> list:
     # Sort by date
     all_matches.sort(key=lambda m: m.get("utcDate", ""))
     return all_matches
+
+
+def fetch_finished_matches(league_code: str) -> list:
+    """Fetch FINISHED matches (with final scores) for a league — used by the
+    prediction track record to settle logged predictions against reality."""
+    url = f"{BASE_URL}/competitions/{league_code}/matches?status=FINISHED"
+    data = _make_request(url)
+    return [m for m in data.get("matches", [])
+            if (m.get("score", {}).get("fullTime", {}).get("home")) is not None]
